@@ -40,6 +40,67 @@ O texto aborda quatro tecnologias/experimentos espaciais voltados para a saúde,
 | **Bio-Monitor** | Agência Espacial Canadense (CSA) | Monitorar sinais vitais de forma contínua e não invasiva por meio de roupas inteligentes. | Apoio a pessoas acamadas/rurais, monitoramento de trabalhadores em áreas de risco e pesquisas médicas (*Hexoskin*). |
 | **ACTIS** | Projeto de exploração espacial / parceiros | Avaliar riscos de coágulos sanguíneos medindo D-Dímero de forma rápida (resultados em 15 min). | Suporte médico autônomo para futuras missões espaciais de longa duração no espaço profundo. |
 | **Microflow** | Tecnologia portátil canadense | Analisar células e hormônios em amostras líquidas usando fibra óptica e laser em minutos. | Testes rápidos em comunidades remotas ou áreas de desastres, e controle de qualidade alimentar. |
+***
+<Br>
+
+*Aviso importante:* Os conteúdos a seguir descrevem **fases experimentais, estudos em andamento e propostas de pesquisa** conduzidas pelo Programa de Pesquisa Humana da NASA e missões associadas (como Artemis e ISS). Portanto, devem ser entendidos como investigações científicas em desenvolvimento, e não como verdades absolutas ou procedimentos médicos definitivos.
+
+---
+<Br>
+
+### Estudo de Bem-Estar e Actigrafia na Campanha Artemis
+
+* **Objetivo:** Medir o bem-estar, nível de atividade, padrões de sono e interações dos astronautas durante a campanha Artemis, que levará humanos de volta ao espaço profundo e à Lua na cápsula Orion após mais de 50 anos.
+* **Metodologia:** Coleta de dados por meio de actigrafia e pesquisas de desempenho comportamental antes, durante e após a missão, visando entender os efeitos combinados de riscos como isolamento e radiação para desenvolver protocolos para futuras missões a Marte.
+
+<Br>
+
+### Missão SpaceX Crew-10, Estudo "Zero T2" e Investigações Conexas
+
+* **O Contexto do Zero T2:** Como espaçonaves futuras para o espaço profundo não terão espaço para equipamentos volumosos como esteiras (*treadmills*), a NASA está testando se a ausência de esteira afeta a saúde e a função motora. A tripulação é dividida em três grupos: treino normal, sem esteira (usando outros aparelhos) e usando uma nova máquina de exercício compacta.
+* **Outros Estudos Associados na ISS:**
+* **CIPHER (*Complement of Integrated Protocols for Human Exploration Research*):** Avalia de forma abrangente como múltiplos sistemas do corpo (olhos, ossos, coração, músculos, sistema imune) se ajustam a diferentes durações de missões através de exames de visão, testes cognitivos e ressonâncias magnéticas (RMs).
+* **Spaceflight Standard Measures:** Coleta de dados padronizados (sangue, saliva, urina, RM, testes de equilíbrio, vestibular e muscular) para servir de base para outros estudos sobre a adaptação do corpo e da mente.
+* **Omics Archive:** Análise de como o corpo reage a voos de longa duração a nível molecular através de amostras biológicas.
+* **Sanes/SANS (Síndrome Neuro-ocular):** Teste de suplementos diários de **vitamina B** e **manguitos (cuffs) nas coxas** para verificar se ajudam a conter o deslocamento de fluidos corporais para a cabeça e amenizar os sintomas.
+* **Pesquisas pós-pouso:** Questionários e sensores para registrar desconfortos ou lesões associadas à aterrissagem, auxiliando no design de futuros veículos.
+
+<Br>
+
+### Biomarcadores Imunológicos e Alterações na Imunidade
+
+* **Objetivo:** Investigar como o voo espacial de longa duração e fatores como estresse fisiológico, radiação e microgravidade alteram a resposta imunológica e podem reativar vírus latentes (como o que causa o cobreiro/*shingles*).
+* **Metodologia:** Sob a liderança do cientista Dr. Brian Crucian, a equipe analisa amostras de sangue (entregues em temperatura ambiente da ISS em até 37 horas), urina e saliva (incluindo amostras secas em papel especial). Um grupo de controle terrestre com 10 civis da mesma idade e gênero fornece a base de comparação. O intuito é embasar contramedidas, como imunoestimulantes, para missões profundas.
+
+<Br>
+
+### Artemis II Standard Measures (Medidas Padrão)
+
+* **Objetivo:** Expandir o banco de dados de medidas fisiológicas padrão para o ambiente específico da missão Artemis II (além da órbita baixa da Terra).
+* **Metodologia:** Abrange análises de sangue, saliva, urina, RMs, testes de nutrição, saúde cardiovascular, imunidade, equilíbrio e enjoo espacial. Inclui testes físicos exclusivos para a ramificação Artemis, como a **saída rápida de uma cápsula (*egress*)** e a **simulação de caminhadas lunares em traje pressurizado** logo após o retorno à Terra.
+
+<Br>
+
+###  Risco de Alteração da Função Sensoriomotora e Vestibular
+
+* **Problema:** Mudanças e transições de gravidade provocam enjoo espacial e desorientação, o que pode prejudicar tarefas da missão, controle de veículos e caminhadas espaciais. A maioria dos astronautas sofre de enjoo no espaço (e o enjoo terrestre em carros/aviões não serve de parâmetro preditivo).
+* **Mitigação e Pesquisa:** Pesquisas buscam caracterizar a desorientação pós-pouso, testar remédios combinados com treinamentos, avaliar medicamentos utilizados pelos tripulantes, realizar testes de movimento de cabeça em parceria com a Marinha dos EUA e conduzir experimentos de repouso prolongado no leito.
+
+---
+<Br>
+
+### Tabela Resumo dos Experimentos e Estudos
+
+| Nome do Estudo / Experimento | Foco Principal / Objetivo | Métodos de Coleta e Avaliação |
+| --- | --- | --- |
+| **Artemis Actigraphy Study** | Bem-estar, sono e interações na cápsula Orion (espaço profundo/Lua). | Actigrafia e pesquisas de desempenho comportamental. |
+| **Zero T2 (SpaceX Crew-10)** | Avaliar a viabilidade de treinos sem esteira (*treadmill*) para economizar espaço e massa. | Divisão da tripulação em 3 grupos de treino e comparação de dados de condicionamento e recuperação. |
+| **CIPHER** | Visão geral da adaptação de múltiplos sistemas do corpo em diferentes durações de missões. | Avaliações visuais, testes cognitivos e ressonâncias magnéticas (RMs). |
+| **Immune Biomarkers** | Entender o impacto do voo na imunidade e a reativação de vírus latentes (ex: cobreiro). | Análise de sangue, urina e saliva (líquida e seca) comparada a um grupo de controle terrestre. |
+| **Artemis II Standard Measures** | Expandir dados de saúde física e mental para missões além da órbita baixa da Terra. | Amostras biológicas, RM, testes de equilíbrio e simulação prática pós-pouso (saída de cápsula e *moonwalk*). |
+| **Estudo de SANS (Vitamina B / Manguitos)** | Investigar se suplementos de vitamina B e manguitos nas coxas atenuam o inchaço ocular/cerebral. | Testes práticos com os tripulantes a bordo da ISS. |
+***
+<br>
 
 # Material de apoio
 

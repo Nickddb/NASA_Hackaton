@@ -53,3 +53,10 @@
 | **Hipóxia** | Hipóxia leve decorrente da despressurização parcial da cabine em missões profundas. | Otimização de oxigênio/pressão, trajes de pressão ajustável e testes em câmaras simuladas. |
 | **Nutrição** | Dificuldade de prover variedade, segurança e durabilidade sem reabastecimento regular. | Redução de sódio, novos itens de cardápio e testes do sistema alimentar em ambientes analógicos. |
 | **SANS** | Inchaço no nervo óptico e alterações oculares provocadas pelo deslocamento de fluidos. | Suplementos nutricionais, intervenções mecânicas e estudos em repouso (*head-down tilt*). |
+
+***
+<Br>
+
+# Material de apoio
+
+[Site oficial da NASA](https://www.nasa.gov/hrp/risks/)
