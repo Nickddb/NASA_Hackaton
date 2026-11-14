@@ -1,4 +1,4 @@
-# Dessincronia circadiana
+﻿# Dessincronia circadiana
 
 Causada pelo desalinhamento do relógio biológico interno do corpo com os sinais temporais externos — pode levar a uma série de efeitos adversos, incluindo comprometimento cognitivo (como desatenção, lentidão nos reflexos, dificuldade na tomada de decisões e distração), distúrbios metabólicos e sono interrompido. 
 
