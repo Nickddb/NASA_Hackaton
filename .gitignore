@@ -1,6 +1,8 @@
 # Dependencies & build
 node_modules/
 dist/
+.vite/
+frontend/.vite/
 .venv/
 __pycache__/
 *.egg-info/

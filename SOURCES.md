@@ -31,3 +31,4 @@
 - **Frontend Stack:** React, Vite, Tailwind CSS (`@tailwindcss/vite`), Three.js (`three`, `@react-three/fiber`, `@react-three/drei`), Recharts (`recharts`), Lucide React (`lucide-react`) — MIT / ISC Licenses.
 - **Backend & AI Stack:** Python 3, FastAPI, Uvicorn, Pydantic, HTTPX, scikit-learn, NumPy, Pandas, LangChain (`langchain`, `langchain-core`, `langchain-google-genai`) — MIT / BSD-3-Clause Licenses.
 - **Typography:** Google Fonts (`Space Grotesk`, `Inter`, `JetBrains Mono`) — SIL Open Font License 1.1.
+- **3D Anatomical Base Mesh Reference (`base_male_body`):** by **xiaofeihui** on Sketchfab — https://sketchfab.com/3d-models/base-male-body-0119efadabf64016ad9227b107a55509

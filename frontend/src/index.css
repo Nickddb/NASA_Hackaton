@@ -22,12 +22,8 @@
 @layer base {
   body {
     font-family: "Inter", system-ui, sans-serif;
-    background-color: #F7FBF9;
-    color: #113D2E;
-    background-image:
-      radial-gradient(circle at 12% 8%, rgba(200, 238, 144, 0.28), transparent 36%),
-      radial-gradient(circle at 88% 12%, rgba(186, 230, 253, 0.34), transparent 38%),
-      radial-gradient(circle at 50% 92%, rgba(220, 245, 229, 0.4), transparent 44%);
+    background-color: #050B1A;
+    color: #E2E8F0;
   }
 
   h1, h2, h3, h4 {
@@ -74,4 +70,49 @@
 .animate-ecg {
   stroke-dasharray: 240;
   animation: ecgSweep 2.2s linear infinite;
+}
+
+/* ---------- Vertical Continuum Theme: Deep Cosmos -> Aurora -> Stratosphere -> Emerald Biosphere ---------- */
+.space-bg {
+  background-color: #050B1A;
+  background-image:
+    /* Starfield in upper cosmos */
+    radial-gradient(1px 1px at 8% 6%, rgba(255, 255, 255, 0.9), transparent 60%),
+    radial-gradient(1.5px 1.5px at 22% 14%, rgba(216, 180, 254, 0.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 37% 4%, rgba(191, 219, 254, 0.95), transparent 60%),
+    radial-gradient(1px 1px at 54% 11%, rgba(255, 255, 255, 0.75), transparent 60%),
+    radial-gradient(1.5px 1.5px at 68% 7%, rgba(244, 114, 182, 0.8), transparent 60%),
+    radial-gradient(1px 1px at 83% 15%, rgba(255, 255, 255, 0.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 91% 5%, rgba(167, 243, 208, 0.9), transparent 60%),
+    /* Cosmic Magenta/Violet Nebula (Top) */
+    radial-gradient(ellipse 65% 24% at 32% 8%, rgba(168, 85, 247, 0.28), transparent 70%),
+    radial-gradient(ellipse 50% 20% at 75% 10%, rgba(236, 72, 153, 0.2), transparent 70%),
+    /* Aurora Borealis Ribbon (Upper-Mid) */
+    radial-gradient(ellipse 90% 18% at 50% 24%, rgba(16, 185, 129, 0.26), transparent 72%),
+    radial-gradient(ellipse 75% 16% at 62% 28%, rgba(56, 189, 248, 0.28), transparent 70%),
+    /* Stratosphere Azure Sky Glow (Middle) */
+    radial-gradient(ellipse 95% 28% at 50% 52%, rgba(14, 165, 233, 0.24), transparent 75%),
+    /* Emerald Biosphere & Waterfall Mist (Bottom) */
+    radial-gradient(ellipse 90% 30% at 30% 88%, rgba(16, 185, 129, 0.28), transparent 72%),
+    radial-gradient(ellipse 80% 26% at 78% 94%, rgba(132, 204, 22, 0.22), transparent 70%),
+    /* Master Vertical Continuum Gradient: Cosmos -> Aurora -> Stratosphere -> Biosphere */
+    linear-gradient(
+      180deg,
+      #040714 0%,
+      #0B102B 14%,
+      #09223A 28%,
+      #0C385A 46%,
+      #0E4459 64%,
+      #0B3B3C 82%,
+      #072923 100%
+    );
+}
+
+.earth {
+  background:
+    radial-gradient(circle at 35% 70%, rgba(167, 243, 208, 0.55) 0%, rgba(56, 189, 248, 0.55) 28%, rgba(30, 58, 138, 0.85) 52%, #071233 70%);
+  box-shadow:
+    0 0 65px 12px rgba(56, 189, 248, 0.35),
+    inset -40px 40px 90px rgba(167, 243, 208, 0.28);
+  opacity: 0.72;
 }
