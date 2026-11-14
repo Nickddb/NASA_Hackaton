@@ -1,0 +1,15 @@
+# Dependencies & build
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Local reference kit (skills já copiadas para .agents/skills/)
+space-apps-2026-kit/
+
+# Env & OS
+.env
+.env.local
+.DS_Store
+Thumbs.db
