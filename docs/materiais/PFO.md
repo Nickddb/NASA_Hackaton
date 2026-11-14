@@ -1,4 +1,4 @@
-# Forame Oval Patente (PFO) — OCHMO-MTB-011
+# Forame Oval Patente (PFO) 
 
 ## Visão Geral e Fisiologia
 

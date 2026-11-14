@@ -1,4 +1,4 @@
-# Contexto Técnico: Equipamentos Médicos e de Saúde da NASA (CHeCS/ISS)
+# Contexto Técnico: Equipamentos Médicos e de Saúde da NASA
 
 Este documento atua como base de conhecimento sobre a infraestrutura médica, sistemas de diagnóstico de saúde e ecossistema de alimentação e conservação a bordo da Estação Espacial Internacional (ISS) e de veículos de exploração espacial profunda da NASA.
 
