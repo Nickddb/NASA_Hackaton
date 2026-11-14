@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #F7FBF9;
+  --color-surface: #FFFFFF;
+  --color-surface-mint: #EFF9F2;
+  --color-surface-sky: #EAF6FA;
+  --color-border: #D5E8DD;
+  --color-text-primary: #113D2E;
+  --color-text-secondary: #476458;
+  --color-accent: #16A34A;
+  --color-accent-lime: #C8EE90;
+  --color-accent-sky: #0284C7;
+  --color-nominal: #059669;
+  --color-warning: #D97706;
+  --color-critical: #DC2626;
+  --font-sans: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+  --radius-md: 1rem;
+}
+
+@layer base {
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+    background-color: #F7FBF9;
+    color: #113D2E;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(200, 238, 144, 0.28), transparent 36%),
+      radial-gradient(circle at 88% 12%, rgba(186, 230, 253, 0.34), transparent 38%),
+      radial-gradient(circle at 50% 92%, rgba(220, 245, 229, 0.4), transparent 44%);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+    color: #113D2E;
+  }
+
+  .font-mono-telemetry {
+    font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.eco-card {
+  background-color: #FFFFFF;
+  border: 1px solid #D5E8DD;
+  box-shadow: 0 10px 30px -12px rgba(17, 61, 46, 0.08);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EFF9F2;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(17, 61, 46, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 61, 46, 0.45);
+}
+
+@keyframes ecgSweep {
+  0% {
+    stroke-dashoffset: 240;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-ecg {
+  stroke-dasharray: 240;
+  animation: ecgSweep 2.2s linear infinite;
+}
