@@ -4,7 +4,9 @@
 
 ## NASA Data, Standards & Clinical Resources
 - **NASA Space Apps Challenge 2026 — Challenge 05 (*Create Health Monitoring Software for Astronauts on Space Missions*):** https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/
-- **NASA DONKI (Space Weather Database Of Notifications, Knowledge, Information) API (`FLR` & `SEP`):** https://api.nasa.gov/DONKI/FLR and https://api.nasa.gov/DONKI/SEP (Public Domain; queried via backend proxy with local curated sample fallback `nasa_donki_sample.json`).
+- **NASA DONKI (Space Weather Database Of Notifications, Knowledge, Information) API (`FLR`, `SEP`, `CME`, `GST`):** https://api.nasa.gov/DONKI/FLR, https://api.nasa.gov/DONKI/SEP, https://api.nasa.gov/DONKI/CME, and https://api.nasa.gov/DONKI/GST (Public Domain; queried via backend proxy with local curated sample fallback `nasa_donki_sample.json`).
+- **NASA JPL Horizons Ephemeris System API:** https://ssd.jpl.nasa.gov/api/horizons.api (Public Domain; Earth–Moon and Earth–Mars distance & one-way light-time communication delay calculation with local fallback `nasa_horizons_sample.json`).
+- **NASA Open Science Data Repository (OSDR — `OSD-570` & `OSD-571` Spaceflight Standard Measures):** https://osdr.nasa.gov/bio/repo/data/studies/OSD-570 and https://osdr.nasa.gov/bio/repo/data/studies/OSD-571 (Public Domain; longitudinal gravitational phase adaptation priors for Adaptive Individual Baseline).
 - **NASA Human Research Program (HRP) — *5 Hazards of Human Spaceflight*:** https://www.nasa.gov/hrp/hazards/
 - **NASA Human Research Program (HRP) — *Risks of Human Spaceflight*:** https://www.nasa.gov/hrp/risks/
 - **NASA Human Research Program (HRP) — *Ongoing HRP Research in Space*:** https://www.nasa.gov/hrp/ongoing-hrp-research/
