@@ -269,8 +269,8 @@ LIGHT_KM_S = 299_792.458
 # environment -> (Horizons COMMAND, label). orbital_station stays curated: ISS/Gateway latency is relay-bound,
 # not light-time. transit uses the range to Mars (the transfer destination) as its worst-case latency.
 HORIZONS_TARGETS: dict[str, tuple[str, str]] = {
-    "planetary_surface": ("499", "Mars (499) — surface habitat, live Earth range"),
-    "transit": ("499", "Earth–Mars transfer — range to destination Mars (499), live"),
+    "planetary_surface": ("499", "Mars (499) — surface habitat"),
+    "transit": ("499", "Earth–Mars transfer — range to destination Mars (499)"),
 }
 _horizons_live: dict[str, dict[str, Any]] = {}  # COMMAND -> {"delta_au", "fetched_at", "source", "status"}
 
