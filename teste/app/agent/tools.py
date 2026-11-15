@@ -197,7 +197,7 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
         """
         Pillar 1: Inspect the astronaut's Adaptive Individual Baseline (EWMA, MAD, Ledoit-Wolf Mahalanobis
         distance, NASA OSDR phase adaptation offset, and individual_z_score vs population_z_score).
-        Can also switch astronaut profile if 'elena', 'lucas', or 'kenji' is named.
+        Can also switch astronaut profile if 'elena', 'lucas', 'kenji', 'amara', or 'liam' is named.
         """
         q_low = astronaut_query.lower()
         if "lucas" in q_low and state_manager.astronaut_id != "lucas_ferreira":
@@ -206,6 +206,10 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
             state_manager.switch_astronaut("kenji_sato")
         elif "elena" in q_low and state_manager.astronaut_id != "elena_vance":
             state_manager.switch_astronaut("elena_vance")
+        elif "amara" in q_low and state_manager.astronaut_id != "amara_okafor":
+            state_manager.switch_astronaut("amara_okafor")
+        elif "liam" in q_low and state_manager.astronaut_id != "liam_soren":
+            state_manager.switch_astronaut("liam_soren")
 
         state = state_manager.get_state()
         ab = state.adaptive_baseline

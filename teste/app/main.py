@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.agent.orchestrator import AstraCareOrchestrator
 from app.models.schemas import (
@@ -16,6 +19,8 @@ from app.models.schemas import (
     CompleteReassessmentRequest,
     ContextualIntelligenceReport,
     ContextUpdateRequest,
+    CrewRosterResponse,
+    DispatchAlertRequest,
     EarthSyncPackage,
     ExplainableAlert,
     MeasurementResponse,
@@ -26,6 +31,7 @@ from app.models.schemas import (
     RecordActionRequest,
     RecordConfirmationRequest,
     SpaceWeatherSummary,
+    StabilizeRequest,
     TelemedicineDossier,
 )
 from app.state_manager import MissionStateManager
@@ -80,8 +86,65 @@ def health_check() -> dict[str, Any]:
 
 
 @app.get("/api/state", response_model=MissionState)
-def get_mission_state() -> MissionState:
-    return state_manager.get_state()
+def get_mission_state(crew_id: str | None = None) -> MissionState:
+    try:
+        return state_manager.get_state(crew_id=crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# --- Crew Hub Multi-Astronaut Telemetry & Alert Endpoints ---
+@app.get("/api/crew", response_model=CrewRosterResponse)
+def get_crew_roster() -> CrewRosterResponse:
+    return state_manager.get_crew_roster()
+
+
+@app.post("/api/crew/{crew_id}/select", response_model=MissionState)
+def select_crew_member(crew_id: str) -> MissionState:
+    try:
+        return state_manager.select_crew_member(crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/crew/{crew_id}/state", response_model=MissionState)
+def get_crew_member_state(crew_id: str) -> MissionState:
+    try:
+        return state_manager.get_state(crew_id=crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/alert", response_model=CrewRosterResponse)
+def dispatch_crew_alert(crew_id: str, payload: DispatchAlertRequest) -> CrewRosterResponse:
+    try:
+        return state_manager.dispatch_alert(crew_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/acknowledge", response_model=CrewRosterResponse)
+def acknowledge_crew_alert(crew_id: str) -> CrewRosterResponse:
+    try:
+        return state_manager.acknowledge_alert(crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/stabilize", response_model=MissionState)
+def stabilize_crew_member(crew_id: str, payload: StabilizeRequest | None = None) -> MissionState:
+    try:
+        return state_manager.stabilize_crew_member(crew_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/measure", response_model=MeasurementResponse)
+def measure_crew_member(crew_id: str, system_id: str = "full_body") -> MeasurementResponse:
+    try:
+        return state_manager.trigger_measurement(system_id, crew_id=crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 # --- PILLAR 1: Adaptive Individual Baseline Endpoints ---
@@ -194,25 +257,25 @@ def list_central_psych_alerts() -> list[CentralPsychAlertRecord]:
 
 # --- Core Mission Scenarios, Measurements & NASA Feeds ---
 @app.post("/api/scenario/{scenario_id}", response_model=MissionState)
-def set_scenario(scenario_id: str) -> MissionState:
+def set_scenario(scenario_id: str, crew_id: str | None = None) -> MissionState:
     try:
-        return state_manager.switch_scenario(scenario_id)
+        return state_manager.switch_scenario(scenario_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/environment/{env_id}", response_model=MissionState)
-def set_environment(env_id: str) -> MissionState:
+def set_environment(env_id: str, crew_id: str | None = None) -> MissionState:
     try:
-        return state_manager.switch_environment(env_id)
+        return state_manager.switch_environment(env_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/measure/{system_id}", response_model=MeasurementResponse)
-def trigger_measurement(system_id: str) -> MeasurementResponse:
+def trigger_measurement(system_id: str, crew_id: str | None = None) -> MeasurementResponse:
     try:
-        return state_manager.trigger_measurement(system_id)
+        return state_manager.trigger_measurement(system_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -223,11 +286,40 @@ async def get_space_weather() -> SpaceWeatherSummary:
 
 
 @app.post("/api/telemedicine/dossier", response_model=TelemedicineDossier)
-def generate_telemedicine_dossier() -> TelemedicineDossier:
-    return state_manager.compile_dossier()
+def generate_telemedicine_dossier(crew_id: str | None = None) -> TelemedicineDossier:
+    try:
+        return state_manager.compile_dossier(crew_id=crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/agent/chat", response_model=ChatResponse)
 async def agent_chat(payload: ChatRequest) -> ChatResponse:
     """Phase 2 Agentic Chatbot & Clinical Decision-Support Orchestrator (9 Tools across 5 Pillars)."""
-    return await orchestrator.handle_chat(payload.message)
+    return await orchestrator.handle_chat(payload.message, crew_id=payload.crew_id)
+
+
+# --- Optional built frontend SPA serving (single-port production/offline mode) ---
+FRONTEND_DIST = next(
+    (
+        p
+        for p in (
+            Path(__file__).resolve().parents[1] / "frontend" / "dist",
+            Path(__file__).resolve().parents[2] / "frontend" / "dist",
+        )
+        if p.exists()
+    ),
+    None,
+)
+
+if FRONTEND_DIST is not None:
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+    if (FRONTEND_DIST / "data").exists():
+        app.mount("/data", StaticFiles(directory=FRONTEND_DIST / "data"), name="data")
+
+    @app.get("/{full_path:path}")
+    def serve_spa(full_path: str):
+        candidate = FRONTEND_DIST / full_path
+        if full_path and candidate.exists() and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")

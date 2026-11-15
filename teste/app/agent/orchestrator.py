@@ -33,7 +33,12 @@ class AstraCareOrchestrator:
     def __init__(self, state_manager: MissionStateManager) -> None:
         self.state_manager = state_manager
 
-    async def handle_chat(self, message: str) -> ChatResponse:
+    async def handle_chat(self, message: str, crew_id: str | None = None) -> ChatResponse:
+        if crew_id:
+            try:
+                self.state_manager.select_crew_member(crew_id)
+            except KeyError:
+                pass
         trace_log: list[ToolTraceItem] = []
         tools = build_agent_tools(self.state_manager, trace_log)
         tools_by_name = {t.name: t for t in tools}
@@ -127,7 +132,7 @@ class AstraCareOrchestrator:
         reply_parts: list[str] = []
 
         # 1. Check if switching or querying astronaut baseline
-        if any(w in lower for w in ["lucas", "kenji", "elena", "baseline", "individual", "mahalanobis", "histórico", "historico"]):
+        if any(w in lower for w in ["lucas", "kenji", "elena", "amara", "liam", "baseline", "individual", "mahalanobis", "histórico", "historico"]):
             res_base = tools_by_name["inspect_adaptive_baseline_tool"].invoke({"astronaut_query": message})
             header = "**Baseline Individual Adaptativo:**" if is_pt else "**Adaptive Individual Baseline:**"
             reply_parts.append(f"{header} {res_base}")
