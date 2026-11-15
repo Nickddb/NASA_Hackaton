@@ -478,7 +478,7 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
         for MCC-Houston Flight Surgeons, or synchronize queued offline packages ('sync').
         """
         if "sync" in operation.lower() and "dossier" not in operation.lower():
-            pkgs = state_manager.earth_sync.synchronize_queued_packages()
+            pkgs = state_manager.synchronize_with_earth()
             last_pkg = pkgs[-1] if pkgs else state_manager.create_earth_sync_package()
             trace_log.append(
                 ToolTraceItem(

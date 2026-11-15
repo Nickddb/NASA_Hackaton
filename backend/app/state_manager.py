@@ -391,6 +391,12 @@ class MissionStateManager:
         self._touch()
         return case
 
+    def synchronize_with_earth(self) -> list[EarthSyncPackage]:
+        """Flush queued packages only when the current link window allows it."""
+        return self.earth_sync.synchronize_queued_packages(
+            comms_available=self.horizons_link.comms_available
+        )
+
     async def refresh_space_weather(self) -> SpaceWeatherSummary:
         self.space_weather = await fetch_nasa_space_weather()
         self._touch()

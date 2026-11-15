@@ -160,7 +160,13 @@ def create_sync_package() -> EarthSyncPackage:
 
 @app.post("/api/earth-sync/synchronize", response_model=list[EarthSyncPackage])
 def synchronize_with_earth() -> list[EarthSyncPackage]:
-    return state_manager.earth_sync.synchronize_queued_packages()
+    return state_manager.synchronize_with_earth()
+
+
+@app.get("/api/earth-sync/verify")
+def verify_earth_sync_ledger() -> dict[str, Any]:
+    """Recompute the package and audit hash chains (what ground does on receipt)."""
+    return state_manager.earth_sync.verify_integrity()
 
 
 @app.get("/api/earth-sync/ledger")
