@@ -25,7 +25,8 @@ import {
   Sun,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./BodyModel3D";
+import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./AnatomyBody3D";
+import PainReportPanel from "./PainReportPanel";
 import { getVitalStatuses } from "../services/api";
 import { EnvironmentCockpitPanel } from "./EnvironmentPanel";
 import { PsychCockpitCard } from "./PsychRankPanel";
@@ -476,11 +477,14 @@ export default function HomeDashboard({
   donkiRefreshing = false,
   live = false,
   // Which blocks to render; App spreads them across separate pages
-  sections = ["telemetry", "baseline", "vitals", "environment", "psych", "trends"],
+  sections = ["telemetry", "baseline", "vitals", "environment", "psych", "body", "trends"],
+  onReportPain,
+  onResolvePain,
+  painBusy = false,
 }) {
   const show = (id) => sections.includes(id);
   const [regionId, setRegionId] = useState("arm");
-  const [selectedPartId, setSelectedPartId] = useState("left_upper_arm");
+  const [selectedPartId, setSelectedPartId] = useState(null);
   const [measuring, setMeasuring] = useState(false);
   const [stabilizing, setStabilizing] = useState(false);
   const [lastReading, setLastReading] = useState(null);
@@ -502,13 +506,6 @@ export default function HomeDashboard({
   const displayReading = activePartDetail?.reading || region.reading;
   const displayStatus = activePartDetail?.status || region.status;
   const activeSystemId = activePartMeta?.systemId || region.system;
-
-  const selectRegion = (r) => {
-    setRegionId(r.id);
-    setSelectedPartId(null);
-    setLastReading(null);
-    onSelectSystem?.(r.system);
-  };
 
   const handleSelectPart3D = (partId, meta) => {
     setSelectedPartId(partId);
@@ -659,9 +656,34 @@ export default function HomeDashboard({
       {show("psych") && <PsychCockpitCard state={state} />}
 
       {/* Charts + hologram */}
+      {show("body") && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#161A21] to-[#07090D] lg:col-span-7">
+            <HoloBodyCanvas
+              selectedPartId={selectedPartId}
+              onSelectPart={handleSelectPart3D}
+              painReports={v.pain_reports || []}
+              measuring={measuring}
+            />
+          </div>
+          <div className="lg:col-span-5">
+            <PainReportPanel
+              partId={selectedPartId}
+              reports={v.pain_reports || []}
+              crossDiagnosis={state.cross_diagnosis}
+              mlPainSummary={state.ml_prediction?.pain_summary}
+              live={live}
+              busy={painBusy}
+              onReport={(payload) => onReportPain?.(payload)}
+              onResolve={(region) => onResolvePain?.(region)}
+            />
+          </div>
+        </div>
+      )}
+
       {show("trends") && (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="flex flex-col gap-4 lg:col-span-7">
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <TrendChart
             title="Blood Pressure"
             icon={Activity}
@@ -681,6 +703,8 @@ export default function HomeDashboard({
             domain={[Math.min(45, Math.round(v.heart_rate_bpm) - 15), Math.max(110, Math.round(v.heart_rate_bpm) + 15)]}
             status={toDashStatus(metricStatuses.hr)}
           />
+
+        </div>
 
           {/* Selected exam */}
           <GlassCard className="flex flex-wrap items-center gap-5 p-5">
@@ -714,43 +738,6 @@ export default function HomeDashboard({
             )}
           </GlassCard>
         </div>
-
-        {/* Custom Procedural 3D Body + Region Selector */}
-        <div className="relative flex min-h-[480px] items-stretch lg:col-span-5">
-          <div className="relative flex-1">
-            <div className="pointer-events-none absolute inset-x-8 bottom-6 h-24 rounded-[50%] bg-white/[0.04] blur-2xl" />
-            <HoloBodyCanvas
-              state={state}
-              selectedSystem={activeSystemId}
-              selectedRegion={regionId}
-              selectedPartId={selectedPartId}
-              onSelectPart={handleSelectPart3D}
-              onSelectSystem={onSelectSystem}
-              measuring={measuring}
-            />
-          </div>
-          <div className="flex flex-col justify-center gap-4 pl-2">
-            {regions.map((r) => {
-              const Icon = r.icon;
-              const active = r.id === regionId;
-              return (
-                <button key={r.id} type="button" onClick={() => selectRegion(r)} className="group flex flex-col items-center gap-1 cursor-pointer">
-                  <span
-                    className={`flex h-14 w-14 items-center justify-center rounded-full border transition ${
-                      active
-                        ? "border-sky-400 bg-sky-500/20 shadow-[0_0_18px_rgba(56,189,248,0.45)]"
-                        : "border-white/15 bg-[#12161F] group-hover:border-white/40"
-                    }`}
-                  >
-                    <Icon className={`h-6 w-6 ${active ? "text-white" : "text-slate-300"}`} strokeWidth={1.4} />
-                  </span>
-                  <span className={`text-[11px] ${active ? "font-semibold text-white" : "text-slate-400"}`}>{r.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
       )}
     </div>
   );

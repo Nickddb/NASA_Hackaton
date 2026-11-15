@@ -24,6 +24,8 @@ import {
   getSpaceWeather,
   measureCrewMember,
   nextTelemetryReading,
+  reportPain,
+  resolvePain,
   selectCrewMember,
   sendAgentChat,
   stabilizeCrewMember,
@@ -291,6 +293,23 @@ export default function App() {
     }
   };
 
+  const [painBusy, setPainBusy] = useState(false);
+  const withPain = async (fn) => {
+    setPainBusy(true);
+    try {
+      const next = await fn();
+      setState(next);
+      setRoster(await getCrewRoster(next));
+      setError("");
+    } catch (err) {
+      setError(err?.message || "Could not update the pain report.");
+    } finally {
+      setPainBusy(false);
+    }
+  };
+  const handleReportPain = (payload) => withPain(() => reportPain(activeCrewId, payload));
+  const handleResolvePain = (region) => withPain(() => resolvePain(activeCrewId, region));
+
   const handleSendChat = async (message) => {
     const res = await sendAgentChat(message, activeCrewId);
     await loadState(activeCrewId);
@@ -442,7 +461,7 @@ export default function App() {
         return (
           <div className="flex flex-col gap-6">
             <EmergencyProtocol state={state} onOpenDossier={handleOpenDossier} />
-            <HomeDashboard key={dashboardKey} {...dashboardProps} sections={["baseline", "vitals", "telemetry", "trends"]} />
+            <HomeDashboard key={dashboardKey} {...dashboardProps} sections={["baseline", "vitals", "body", "telemetry", "trends"]} />
           </div>
         );
       case "diagnosis":
@@ -518,6 +537,9 @@ export default function App() {
     onSelectSystem: setSelectedSystem,
     onStabilizeCrew: handleStabilizeCrew,
     onSwitchEnvironment: handleSwitchEnvironment,
+    onReportPain: handleReportPain,
+    onResolvePain: handleResolvePain,
+    painBusy,
   };
 
   return (
