@@ -256,3 +256,49 @@ def test_ml_attribution_is_clinically_plausible():
     assert "ctb_reaction_time_ms" in top("behavioral_fatigue")
     assert "radiation_msv_h" in top("solar_storm")
     assert "glucose_mg_dl" in top("hypoglycemia")
+
+
+# ---------------- Pain reported on the 3D body ----------------
+def _pain(client, region, intensity, quality="aching", crew="elena_vance"):
+    return client.post(f"/api/crew/{crew}/pain", json={"region": region, "intensity": intensity, "quality": quality})
+
+
+def test_chest_pain_is_an_immediate_cardiac_red_flag(client):
+    client.post("/api/crew/elena_vance/select")
+    client.post("/api/scenario/nominal")
+    st = _pain(client, "chest", 5, "pressure").json()
+    assert st["cross_diagnosis"]["earth_priority"] == "IMMEDIATE"
+    assert "cardiac" in st["cross_diagnosis"]["title"].lower()
+    assert st["clinical_evaluation"]["systems"]["cardiovascular"]["status"] == "CRITICAL"
+    client.delete("/api/crew/elena_vance/pain/chest")
+
+
+def test_pain_reaches_the_ml_and_explains_its_effect(client):
+    client.post("/api/scenario/nominal")
+    st = _pain(client, "head", 6, "throbbing").json()
+    ml = st["ml_prediction"]
+    assert "Head 6/10" in ml["pain_summary"]
+    assert {f for f in client.get("/api/ml/validation").json()["feature_names"] if f.startswith("pain_")} == {
+        "pain_head", "pain_chest", "pain_abdominal", "pain_musculoskeletal"
+    }
+    client.delete("/api/crew/elena_vance/pain/head")
+
+
+def test_shoulder_pain_syncs_legacy_score_and_is_never_sent_to_psych(client):
+    client.post("/api/scenario/behavioral_fatigue")
+    st = _pain(client, "right_shoulder", 7).json()
+    assert st["vitals"]["shoulder_pain_score"] == 7
+    assert st["cross_diagnosis"]["root_cause"] == "INTERNAL_PHYSIOLOGICAL"
+    st = client.delete("/api/crew/elena_vance/pain/right_shoulder").json()
+    assert st["vitals"]["shoulder_pain_score"] == 0 and st["vitals"]["pain_reports"] == []
+
+
+def test_pain_report_validation_and_persistence(client):
+    assert _pain(client, "tail", 3).status_code == 409
+    assert _pain(client, "head", 11).status_code == 422
+    _pain(client, "lower_back", 4)
+    st = client.post("/api/scenario/cabin_co2_pocket").json()
+    assert [r["region"] for r in st["vitals"]["pain_reports"]] == ["lower_back"]
+    assert client.delete("/api/crew/elena_vance/pain/neck").status_code == 404
+    client.delete("/api/crew/elena_vance/pain/lower_back")
+    client.post("/api/scenario/nominal")
