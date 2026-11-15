@@ -4,6 +4,7 @@ import inspect
 import re
 from typing import Any, Callable
 
+from app.engine.cross_diagnosis import evaluate_cross_diagnosis, render_cross_diagnosis
 from app.models.schemas import (
     CompleteReassessmentRequest,
     ContextUpdateRequest,
@@ -664,8 +665,28 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
             f"Scheduled Reassessment: T+{alert_rec.reassessment_scheduled_in_minutes} min."
         )
 
+    @tool
+    def evaluate_cross_diagnosis_tool(crew_message: str = "") -> str:
+        """Cross-diagnosis tree: decide whether the current anomaly is external (NASA DONKI SEP/FLR/RBE space weather),
+        internal physical/onboard, or psychological/neurocognitive, with evidence and ruled-out causes. Pass the crew's
+        own words in crew_message so reported symptoms are considered."""
+        st = state_manager.get_state()
+        c = evaluate_cross_diagnosis(
+            st.vitals, st.mission_context, st.space_weather, st.contextual_intelligence, st.clinical_evaluation, crew_message
+        )
+        trace_log.append(
+            ToolTraceItem(
+                tool_name="cross_diagnosis_tree",
+                status="CRITICAL" if c.earth_priority == "IMMEDIATE" else ("WARNING" if c.layer else "OK"),
+                summary=f"Layer {c.layer}: {c.root_cause} — {c.title}",
+                rule_or_score=c.earth_priority,
+            )
+        )
+        return render_cross_diagnosis(c, pt=False)
+
     return [
         inspect_adaptive_baseline_tool,
+        evaluate_cross_diagnosis_tool,
         evaluate_contextual_intelligence_tool,
         predict_calibrated_ml_and_uncertainty_tool,
         audit_explainable_alerts_and_rules_tool,

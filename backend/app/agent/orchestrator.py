@@ -10,6 +10,7 @@ from app.agent.tools import (
     parse_nutrition_text,
     parse_sleep_mood_context_text,
 )
+from app.engine.cross_diagnosis import evaluate_cross_diagnosis, render_cross_diagnosis, SYMPTOM_REPORT, _norm
 from app.models.schemas import ChatResponse, ToolTraceItem
 from app.state_manager import MissionStateManager
 
@@ -121,10 +122,50 @@ class AstraCareOrchestrator:
                 "previsao",
                 "exercício",
                 "exercicio",
+                "vejo",
+                "sinto",
+                "sentindo",
+                "cheiro",
+                "enjoo",
+                "luz",
+                "irritado",
+                "quero",
+                "nao",
+                "não",
+                "nada",
+                "ninguem",
+                "ninguém",
+                "você",
+                "voce",
             ]
         )
 
         reply_parts: list[str] = []
+
+        # 0. Cross diagnosis first: physical vs. NASA DONKI space weather vs. psychological
+        if SYMPTOM_REPORT.search(_norm(message)):
+            self.state_manager.record_reported_symptom(message[:160])
+        cross_state = self.state_manager.get_state()
+        cross = evaluate_cross_diagnosis(
+            cross_state.vitals, cross_state.mission_context, cross_state.space_weather,
+            cross_state.contextual_intelligence, cross_state.clinical_evaluation, message,
+        )
+        trace_log.append(
+            ToolTraceItem(
+                tool_name="cross_diagnosis_tree",
+                status="CRITICAL" if cross.earth_priority == "IMMEDIATE" else ("WARNING" if cross.layer else "OK"),
+                summary=f"Layer {cross.layer}: {cross.root_cause} — {cross.title}",
+                rule_or_score=cross.earth_priority,
+            )
+        )
+        reply_parts.append(render_cross_diagnosis(cross, is_pt))
+        if cross.psych_protocol and cross.psych_protocol.escalate_to_earth:
+            pkg = self.state_manager.escalate_psych_priority(cross.psych_protocol.escalation_reason or "severe psychological risk")
+            reply_parts.append(
+                f"**Alerta imediato enviado à Terra** (pacote `{pkg.package_id}`): o cirurgião de voo e a equipe de saúde comportamental foram acionados."
+                if is_pt
+                else f"**Immediate alert sent to Earth** (package `{pkg.package_id}`): Flight Surgeon and behavioral health team notified."
+            )
 
         # 1. Check if switching or querying astronaut baseline
         if any(w in lower for w in ["lucas", "kenji", "elena", "baseline", "individual", "mahalanobis", "histórico", "historico"]):
@@ -193,20 +234,15 @@ class AstraCareOrchestrator:
             reply_parts.append(f"{header} {res_nasa}")
 
         # 6. Check Psychophysiological Biofeedback Countermeasure trigger (explicit or automatic biometric threshold)
-        pre_check_state = self.state_manager.get_state()
         psych_requested = bool(
             re.search(
                 r"\b(ansioso|ansiedade|estressado|estresse|triste|sozinho|solidão|solidao|saudade|família|familia|música|musica|jogo|natureza|animais|anxious|anxiety|lonely|sad|depressed|family|video|music|game|nature|stimulus|estímulo|estimulo|psicológico|psicologico|mental)\b",
                 lower,
             )
         )
-        auto_psych_due = bool(
-            pre_check_state.psych_biofeedback
-            and pre_check_state.psych_biofeedback.auto_trigger_recommended
-            and not pre_check_state.psych_biofeedback.operational_block_active
-            and pre_check_state.psych_biofeedback.last_triggered_alert is None
-        )
-        if psych_requested or auto_psych_due:
+        # Only an explicit request dispatches the stimulus + central alert. The biometric auto-trigger used to fire on
+        # any message (even "what is the status?"); the cross-diagnosis PsychGuard protocol now covers that case.
+        if psych_requested:
             res_psych = tools_by_name["trigger_psychological_biofeedback_tool"].invoke(
                 {"reason": "conversational_or_biometric_auto_trigger"}
             )
