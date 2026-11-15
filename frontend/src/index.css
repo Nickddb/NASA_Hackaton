@@ -237,3 +237,45 @@
     inset -40px 40px 90px rgba(167, 243, 208, 0.28);
   opacity: 0.72;
 }
+
+/* ---------- Crew Hub Spacesuit Alert Blink & Zoom Animations ---------- */
+@keyframes suitAlertCritical {
+  0%, 100% {
+    box-shadow: 0 0 22px 2px rgba(239, 68, 68, 0.55), inset 0 0 26px rgba(239, 68, 68, 0.22);
+    border-color: rgba(248, 113, 113, 0.95);
+  }
+  50% {
+    box-shadow: 0 0 42px 8px rgba(239, 68, 68, 0.22), inset 0 0 10px rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+}
+
+@keyframes suitAlertWarning {
+  0%, 100% {
+    box-shadow: 0 0 20px 2px rgba(245, 158, 11, 0.48), inset 0 0 22px rgba(245, 158, 11, 0.18);
+    border-color: rgba(251, 191, 36, 0.92);
+  }
+  50% {
+    box-shadow: 0 0 34px 6px rgba(245, 158, 11, 0.16), inset 0 0 8px rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.32);
+  }
+}
+
+@keyframes suitBlinkCore {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.28;
+    transform: scale(0.94);
+  }
+}
+
+.suit-blink-critical {
+  animation: suitBlinkCore 0.78s ease-in-out infinite;
+}
+
+.suit-blink-warning {
+  animation: suitBlinkCore 1.2s ease-in-out infinite;
+}

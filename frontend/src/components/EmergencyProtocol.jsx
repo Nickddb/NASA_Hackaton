@@ -35,6 +35,11 @@ export default function EmergencyProtocol({ state, onOpenDossier }) {
                 <span className="rounded-full bg-[#DC2626] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
                   CRITICAL MEDICAL ALERT
                 </span>
+                {state?.crew_member && (
+                  <span className="rounded-full bg-[#FEE2E2] px-2.5 py-0.5 text-[11px] font-bold text-[#991B1B]">
+                    {state.crew_member}
+                  </span>
+                )}
                 <span className="text-xs font-semibold text-[#991B1B]">
                   One-Way Earth Latency: {latency}s
                 </span>
@@ -43,7 +48,9 @@ export default function EmergencyProtocol({ state, onOpenDossier }) {
                 {clinical?.primary_diagnosis || "Critical Crew Health Anomaly Detected"}
               </h3>
               <p className="text-xs text-[#7F1D1D]">
-                Autonomous onboard stabilization active. Execute NASA-STD-3001 immediate countermeasures and transmit Telemedicine Dossier.
+                {state?.pending_verification_measurement
+                  ? "Stabilization applied — execute a confirmatory biometric scan to verify vitals within personal baseline and clear alert."
+                  : "Autonomous onboard stabilization active. Execute NASA-STD-3001 immediate countermeasures and transmit Telemedicine Dossier."}
               </p>
             </div>
           </div>

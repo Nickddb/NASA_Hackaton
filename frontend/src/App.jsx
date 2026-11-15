@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BarChart3, Home, LogOut, Orbit, Settings } from "lucide-react";
+import { ArrowLeft, BarChart3, Home, LogOut, Orbit, Satellite, Settings, Users } from "lucide-react";
 import AgentChatPanel from "./components/AgentChatPanel";
 import BodyModel3D from "./components/BodyModel3D";
 import ChatBar from "./components/ChatBar";
+import CrewHub from "./components/CrewHub";
 import EmergencyProtocol from "./components/EmergencyProtocol";
 import HomeDashboard from "./components/HomeDashboard";
 import SmartwatchSim from "./components/SmartwatchSim";
 import TelemedDossier from "./components/TelemedDossier";
 import VitalsDashboard from "./components/VitalsDashboard";
 import {
+  acknowledgeCrewAlert,
+  dispatchCrewAlert,
   generateTelemedicineDossier,
+  getCrewRoster,
   getMissionState,
   getSpaceWeather,
+  measureCrewMember,
+  selectCrewMember,
   sendAgentChat,
+  stabilizeCrewMember,
   switchEnvironment,
   switchScenario,
   triggerMeasurement,
@@ -47,6 +54,9 @@ const OCHMO_LIBRARY = [
 
 export default function App() {
   const [state, setState] = useState(null);
+  const [roster, setRoster] = useState(null);
+  const [activeCrewId, setActiveCrewId] = useState("elena_vance");
+  const [viewMode, setViewMode] = useState("control");
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState(false);
   const [error, setError] = useState("");
@@ -57,8 +67,7 @@ export default function App() {
   const [showOchmoModal, setShowOchmoModal] = useState(false);
   const [showWeatherDrawer, setShowWeatherDrawer] = useState(false);
   const [spaceWeather, setSpaceWeather] = useState(null);
-  const [activeNavDock, setActiveNavDock] = useState("cockpit");
-  const [tab, setTab] = useState("home");
+  const [tab, setTab] = useState("crew");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef(null);
 
@@ -70,17 +79,23 @@ export default function App() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const loadState = useCallback(async () => {
+  const loadState = useCallback(async (crewOverride = null) => {
+    const targetCrew = crewOverride || activeCrewId;
     try {
-      const data = await getMissionState();
-      setState(data);
+      const [rosterData, stateData] = await Promise.all([
+        getCrewRoster(),
+        getMissionState(targetCrew),
+      ]);
+      setRoster(rosterData);
+      setState(stateData);
+      if (stateData?.crew_id) setActiveCrewId(stateData.crew_id);
       setError("");
     } catch (err) {
       setError(err?.message || "Failed to connect to AstraCare backend.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeCrewId]);
 
   useEffect(() => {
     loadState();
@@ -99,11 +114,99 @@ export default function App() {
     }
   };
 
+  const handleSelectAstronaut = async (crewId) => {
+    setBusyAction(true);
+    try {
+      const next = await selectCrewMember(crewId);
+      setActiveCrewId(crewId);
+      setState(next);
+      const rosterData = await getCrewRoster();
+      setRoster(rosterData);
+      setTab("home");
+      setError("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(err?.message || "Failed to select crew member.");
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
+  const handleDispatchAlert = async (crewId, payload) => {
+    setBusyAction(true);
+    try {
+      const nextRoster = await dispatchCrewAlert(crewId, payload);
+      setRoster(nextRoster);
+      if (crewId === activeCrewId) {
+        const nextState = await getMissionState(crewId);
+        setState(nextState);
+      }
+      setError("");
+    } catch (err) {
+      setError(err?.message || "Failed to dispatch alert.");
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
+  const handleAcknowledgeAlert = async (crewId) => {
+    setBusyAction(true);
+    try {
+      const nextRoster = await acknowledgeCrewAlert(crewId);
+      setRoster(nextRoster);
+      if (crewId === activeCrewId) {
+        const nextState = await getMissionState(crewId);
+        setState(nextState);
+      }
+      setError("");
+    } catch (err) {
+      setError(err?.message || "Failed to acknowledge alert.");
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
+  const handleStabilizeCrew = async (crewId, note) => {
+    setBusyAction(true);
+    try {
+      const nextState = await stabilizeCrewMember(crewId, note);
+      if (crewId === activeCrewId) setState(nextState);
+      const nextRoster = await getCrewRoster();
+      setRoster(nextRoster);
+      setError("");
+      return nextState;
+    } catch (err) {
+      setError(err?.message || "Stabilization protocol failed.");
+      return null;
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
+  const handleMeasureCrew = async (crewId, systemId = "full_body") => {
+    setBusyAction(true);
+    try {
+      const reading = await measureCrewMember(crewId, systemId);
+      if (crewId === activeCrewId && reading?.state) setState(reading.state);
+      const nextRoster = await getCrewRoster();
+      setRoster(nextRoster);
+      setError("");
+      return reading;
+    } catch (err) {
+      setError(err?.message || "Measurement failed.");
+      return null;
+    } finally {
+      setBusyAction(false);
+    }
+  };
+
   const handleSwitchScenario = async (scenarioId) => {
     setBusyAction(true);
     try {
-      const next = await switchScenario(scenarioId);
+      const next = await switchScenario(scenarioId, activeCrewId);
       setState(next);
+      const nextRoster = await getCrewRoster();
+      setRoster(nextRoster);
       setError("");
     } catch (err) {
       setError(err?.message || "Failed to switch scenario.");
@@ -115,8 +218,10 @@ export default function App() {
   const handleSwitchEnvironment = async (envId) => {
     setBusyAction(true);
     try {
-      const next = await switchEnvironment(envId);
+      const next = await switchEnvironment(envId, activeCrewId);
       setState(next);
+      const nextRoster = await getCrewRoster();
+      setRoster(nextRoster);
       setError("");
     } catch (err) {
       setError(err?.message || "Failed to switch environment.");
@@ -128,8 +233,10 @@ export default function App() {
   const handleTriggerMeasurement = async (systemId) => {
     setBusyAction(true);
     try {
-      const reading = await triggerMeasurement(systemId);
-      await loadState();
+      const reading = await triggerMeasurement(systemId, activeCrewId);
+      if (reading?.state) setState(reading.state);
+      const nextRoster = await getCrewRoster();
+      setRoster(nextRoster);
       setError("");
       return reading;
     } catch (err) {
@@ -144,7 +251,7 @@ export default function App() {
     setDossierLoading(true);
     setDossier(null);
     try {
-      const data = await generateTelemedicineDossier();
+      const data = await generateTelemedicineDossier(activeCrewId);
       setDossier(data);
     } catch (err) {
       setError(err?.message || "Could not generate telemedicine dossier.");
@@ -154,12 +261,19 @@ export default function App() {
   };
 
   const handleSendChat = async (message) => {
-    const res = await sendAgentChat(message);
-    await loadState();
+    const res = await sendAgentChat(message, activeCrewId);
+    await loadState(activeCrewId);
     return res;
   };
 
-  const overallStatus = state?.clinical_evaluation?.overall_status || "NOMINAL";
+  const fleetCounts = roster?.summary_counts;
+  const fleetStatus =
+    (fleetCounts?.critical || 0) > 0
+      ? "CRITICAL"
+      : (fleetCounts?.warning || 0) > 0
+      ? "WARNING"
+      : "NOMINAL";
+  const overallStatus = tab === "crew" ? fleetStatus : (state?.clinical_evaluation?.overall_status || "NOMINAL");
   const statusDot =
     overallStatus === "CRITICAL"
       ? "bg-[#EF4444] animate-ping"
@@ -270,11 +384,11 @@ export default function App() {
           </svg>
         </div>
 
-        <div className="relative z-10 mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
-          {/* Left: Brand + Animated Orbital Emblem + NOMINAL Status Pill */}
+        <div className="relative z-10 mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-8">
+          {/* Left: Brand + Animated Orbital Emblem + Status Pill */}
           <button
             type="button"
-            onClick={() => setTab("home")}
+            onClick={() => setTab("crew")}
             className="group flex items-center gap-3.5 text-left cursor-pointer"
           >
             <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/35 bg-[#051224]/85 shadow-[0_0_24px_rgba(16,185,129,0.3)] backdrop-blur-md transition group-hover:border-emerald-300/70">
@@ -302,56 +416,95 @@ export default function App() {
             </div>
           </button>
 
-          {/* Center: Unique Live Arctic Magnetosphere & Biometric Aurora Wave Pill */}
-          <div className="hidden lg:flex items-center gap-4 rounded-full border border-emerald-300/20 bg-[#040E1E]/70 px-4 py-1.5 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-200">
-                AURORA MAGNETOSPHERE SYNC
-              </span>
+          {/* Center: View Role Toggle (Mission Control vs Crew Onboard) + Bio-Wave */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div
+              className="flex items-center rounded-full border border-emerald-300/25 bg-[#040E1E]/85 p-1 backdrop-blur-md"
+              role="group"
+              aria-label="Perspective Mode"
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("control")}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition cursor-pointer ${
+                  viewMode === "control"
+                    ? "bg-gradient-to-r from-[#0284C7] to-[#10B981] text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <Satellite className="h-3.5 w-3.5" />
+                Mission Control
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("crew")}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition cursor-pointer ${
+                  viewMode === "crew"
+                    ? "bg-gradient-to-r from-[#0284C7] to-[#10B981] text-white shadow-[0_0_12px_rgba(56,189,248,0.4)]"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Crew Onboard
+              </button>
             </div>
 
-            <div className="h-3.5 w-[1px] bg-white/15" />
+            <div className="hidden xl:flex items-center gap-3 rounded-full border border-emerald-300/20 bg-[#040E1E]/70 px-4 py-1.5 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-200">
+                  AURORA SYNC
+                </span>
+              </div>
 
-            {/* Live Shimmering Bio-Wave SVG */}
-            <svg viewBox="0 0 110 24" className="h-5 w-24">
-              <path
-                d="M0,12 L18,12 L23,6 L28,18 L34,3 L40,21 L45,12 L68,12 L74,7 L80,12 L110,12"
-                fill="none"
-                stroke="url(#ecgAuroraGrad)"
-                strokeWidth="2"
-                className="animate-ecg"
-              />
-              <defs>
-                <linearGradient id="ecgAuroraGrad" x1="0" y1="0" x2="110" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#34D399" />
-                  <stop offset="0.5" stopColor="#38BDF8" />
-                  <stop offset="1" stopColor="#C084FC" />
-                </linearGradient>
-              </defs>
-            </svg>
+              <div className="h-3.5 w-[1px] bg-white/15" />
 
-            <div className="font-mono text-[11px] font-semibold text-sky-200">
-              {state?.vitals ? `${Math.round(state.vitals.heart_rate_bpm)} BPM` : "72 BPM"}
-              <span className="mx-1.5 text-white/30">|</span>
-              <span className="text-emerald-300">
-                {state?.vitals ? `${state.vitals.radiation_msv_h.toFixed(2)} mSv/h` : "0.04 mSv/h"}
-              </span>
+              {/* Live Shimmering Bio-Wave SVG */}
+              <svg viewBox="0 0 110 24" className="h-5 w-20">
+                <path
+                  d="M0,12 L18,12 L23,6 L28,18 L34,3 L40,21 L45,12 L68,12 L74,7 L80,12 L110,12"
+                  fill="none"
+                  stroke="url(#ecgAuroraGrad)"
+                  strokeWidth="2"
+                  className="animate-ecg"
+                />
+                <defs>
+                  <linearGradient id="ecgAuroraGrad" x1="0" y1="0" x2="110" y2="0" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#34D399" />
+                    <stop offset="0.5" stopColor="#38BDF8" />
+                    <stop offset="1" stopColor="#C084FC" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              <div className="font-mono text-[11px] font-semibold text-sky-200">
+                {tab === "crew"
+                  ? `${fleetCounts?.total ?? 5} CREW • ${(fleetCounts?.critical ?? 0) + (fleetCounts?.warning ?? 0)} ALERTS`
+                  : state?.vitals
+                  ? `${Math.round(state.vitals.heart_rate_bpm)} BPM | ${state.vitals.radiation_msv_h.toFixed(2)} mSv/h`
+                  : "72 BPM"}
+              </div>
             </div>
           </div>
 
-          {/* Right: Iconic 4-Button Dock (Preserving Base Structure with Aurora Glow) */}
+          {/* Right: Iconic Navigation Dock (Crew Hub, Home Cockpit, Analytics, Settings, Return) */}
           <nav className="flex items-center gap-1.5 rounded-2xl border border-white/12 bg-[#040D1C]/75 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
-            <button type="button" title="Home" onClick={() => setTab("home")} className={navBtn(tab === "home")}>
+            <button type="button" title="All Crew (ISS & Mission)" onClick={() => setTab("crew")} className={navBtn(tab === "crew")}>
+              <Users className="h-5 w-5" strokeWidth={1.8} />
+              {tab === "crew" && (
+                <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] via-[#38BDF8] to-[#C084FC] shadow-[0_0_8px_#34D399]" />
+              )}
+            </button>
+            <button type="button" title="Astronaut Cockpit" onClick={() => setTab("home")} className={navBtn(tab === "home")}>
               <Home className="h-5 w-5" strokeWidth={1.8} />
               {tab === "home" && (
                 <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] via-[#38BDF8] to-[#C084FC] shadow-[0_0_8px_#34D399]" />
               )}
             </button>
-            <button type="button" title="Analytics" onClick={() => setTab("analytics")} className={navBtn(tab === "analytics")}>
+            <button type="button" title="Clinical Analytics" onClick={() => setTab("analytics")} className={navBtn(tab === "analytics")}>
               <BarChart3 className="h-5 w-5" strokeWidth={1.8} />
               {tab === "analytics" && (
                 <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] via-[#38BDF8] to-[#C084FC] shadow-[0_0_8px_#38BDF8]" />
@@ -367,6 +520,7 @@ export default function App() {
               {settingsOpen && (
                 <div className="absolute right-0 top-13 z-40 w-64 overflow-hidden rounded-2xl border border-emerald-400/30 bg-[#061226]/95 p-1.5 text-sm shadow-[0_16px_40px_rgba(0,0,0,0.75)] backdrop-blur-xl">
                   {[
+                    { label: "Crew & ISS Command Hub", action: () => setTab("crew") },
                     { label: "NASA DONKI Aurora & Weather", action: handleToggleWeather },
                     { label: "OCHMO Clinical Standards", action: () => setShowOchmoModal(true) },
                     { label: "Telemedicine Dossier", action: handleOpenDossier },
@@ -389,9 +543,9 @@ export default function App() {
             </div>
             <button
               type="button"
-              title="End session"
+              title="Back to Crew Hub"
               onClick={() => {
-                setTab("home");
+                setTab("crew");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               className={navBtn(false)}
@@ -432,26 +586,56 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 mx-auto w-full max-w-[1400px] flex-1 px-4 pb-6 pt-10 sm:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[1400px] flex-1 px-4 pb-6 pt-8 sm:px-8">
         {/* Hero */}
-        <section className="mb-8">
+        <section className="mb-7">
+          {tab !== "crew" && (
+            <button
+              type="button"
+              onClick={() => setTab("crew")}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-sky-300/40 bg-[#04142B]/85 px-4 py-1.5 text-xs font-semibold text-sky-100 shadow-[0_0_16px_rgba(56,189,248,0.2)] transition hover:border-emerald-300/70 hover:text-white cursor-pointer"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              All Crew (ISS &amp; Mission)
+            </button>
+          )}
+
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#34D399]/35 bg-[#064E3B]/40 px-3.5 py-1 text-[11px] font-semibold tracking-wide text-[#A7F3D0] backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-[#34D399]" />
-            COSMOS → AURORA → STRATOSPHERE → EARTH BIOSPHERE TELEMETRY
+            {tab === "crew"
+              ? "ISS ORBITAL & DEEP SPACE MISSION CREW COMMAND"
+              : "COSMOS → AURORA → STRATOSPHERE → EARTH BIOSPHERE TELEMETRY"}
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Welcome,{" "}
-            <span className="bg-gradient-to-r from-[#C084FC] via-[#38BDF8] to-[#34D399] bg-clip-text text-transparent">
-              Astronaut!
-            </span>
-          </h1>
-          <p className="mt-2 text-base text-[#E2E8F0]">
-            Track your exams and monitor your health in real time — from deep-space orbit down to Earth biosphere vitals.
-            <span className="ml-2 text-xs text-[#A7F3D0]/80">
-              {state?.crew_member || "Cmdr. Elena Vance"} • Mission Day {state?.mission_day ?? 142} • Latency{" "}
-              {state?.one_way_latency_seconds ?? 0}s
-            </span>
-          </p>
+
+          {tab === "crew" ? (
+            <>
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                Crew Health &amp;{" "}
+                <span className="bg-gradient-to-r from-[#C084FC] via-[#38BDF8] to-[#34D399] bg-clip-text text-transparent">
+                  Spacesuit Monitor
+                </span>
+              </h1>
+              <p className="mt-2 text-base text-[#E2E8F0]">
+                Unified status across ISS Orbital stations and Deep Space vehicles — click any astronaut to zoom into their individual medical cockpit.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                Welcome,{" "}
+                <span className="bg-gradient-to-r from-[#C084FC] via-[#38BDF8] to-[#34D399] bg-clip-text text-transparent">
+                  {state?.crew_member || "Astronaut!"}
+                </span>
+              </h1>
+              <p className="mt-2 text-base text-[#E2E8F0]">
+                Track your exams and monitor your health in real time — from deep-space orbit down to Earth biosphere vitals.
+                <span className="ml-2 text-xs text-[#A7F3D0]/80">
+                  {state?.crew_role || "Crew"} • {state?.location_module || "ISS"} • Mission Day {state?.mission_day ?? 142} • Latency{" "}
+                  {state?.one_way_latency_seconds ?? 0}s
+                </span>
+              </p>
+            </>
+          )}
         </section>
 
         {error && (
@@ -460,20 +644,33 @@ export default function App() {
           </div>
         )}
 
-        {loading && !state ? (
+        {loading && !state && !roster ? (
           <div className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-[#3B82F6]/30 bg-[#0B1530]/60 p-8">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1E3A8A] border-t-[#60A5FA]" />
             <p className="mt-4 text-sm font-semibold text-[#BFDBFE]">Initializing AstraCare telemetry...</p>
           </div>
         ) : (
           <>
-            <EmergencyProtocol state={state} onOpenDossier={handleOpenDossier} />
+            {tab !== "crew" && <EmergencyProtocol state={state} onOpenDossier={handleOpenDossier} />}
 
-            {tab === "home" ? (
+            {tab === "crew" ? (
+              <CrewHub
+                roster={roster}
+                viewMode={viewMode}
+                busyAction={busyAction}
+                onSelectAstronaut={handleSelectAstronaut}
+                onDispatchAlert={handleDispatchAlert}
+                onAcknowledgeAlert={handleAcknowledgeAlert}
+                onStabilizeCrew={handleStabilizeCrew}
+                onMeasureCrew={handleMeasureCrew}
+              />
+            ) : tab === "home" ? (
               <HomeDashboard
+                key={state?.crew_id || "active"}
                 state={state}
                 onTriggerMeasurement={handleTriggerMeasurement}
                 onSelectSystem={setSelectedSystem}
+                onStabilizeCrew={handleStabilizeCrew}
               />
             ) : (
               /* Detailed clinical workspace (original panels) */
