@@ -1,1 +1,2 @@
-"""AstraCare AI — Real ML, Adaptive Baseline, Contextual Intelligence, Closed-Loop Follow-Up & Earth Continuity Backend."""
+"""AstraCare backend package. Importing it loads backend/.env before any module reads the environment."""
+from app import config as _config  # noqa: F401
