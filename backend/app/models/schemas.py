@@ -26,7 +26,7 @@ class VitalSigns(BaseModel):
     spo2_pct: float = Field(..., description="Blood oxygen saturation percentage")
     respiration_rpm: float = Field(..., description="Respiratory rate in breaths per minute")
     sleep_hours: float = Field(..., description="Latest sleep cycle duration in hours")
-    sleep_streak_low_days: int = Field(0, description="Consecutive days with < 5.0h sleep")
+    sleep_streak_low_days: int = Field(0, description="Consecutive nights with < 4.5h sleep (NASA critical trigger at 2)")
     rem_sleep_pct: float = Field(21.0, description="REM sleep stage share (%)")
     mood_score: int = Field(..., ge=1, le=5, description="Subjective mood check-in (1-5)")
     stress_index: float = Field(..., ge=0, le=100, description="Composite physiological/behavioral stress index")
@@ -38,6 +38,13 @@ class VitalSigns(BaseModel):
     )
     urinary_calcium_mg_d: float = Field(180.0, description="Urolux urinary calcium excretion mg/day")
     intraocular_pressure_mmhg: float = Field(15.0, description="Tonometry intraocular pressure for SANS screening")
+    ctb_reaction_time_ms: float = Field(
+        275.0, description="Cognition Test Battery mean reaction time (ms); NASA SSM baseline 250-300 ms"
+    )
+    reported_symptoms: list[str] = Field(
+        default_factory=list,
+        description="Crew-reported symptoms (e.g. nausea, light flashes, unusual smell, irritability) used by the cross-diagnosis tree",
+    )
 
 
 class MeasurementQualityProfile(BaseModel):
