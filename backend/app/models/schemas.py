@@ -573,7 +573,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    mode: Literal["langchain_gemini", "offline_hybrid_edge", "ml_only_stage"]
+    mode: Literal["groq", "langchain_gemini", "offline_hybrid_edge", "ml_only_stage"]
     tool_trace: list[ToolTraceItem] = Field(default_factory=list)
     state: MissionState
 
