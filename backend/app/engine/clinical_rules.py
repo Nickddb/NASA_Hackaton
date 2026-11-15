@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.engine import nasa_calibration as cal
+from app.engine.body_regions import SHOULDER_REGIONS
 from app.models.schemas import (
     AdaptiveBaselineProfile,
     AutonomyGuardrail,
@@ -432,6 +433,46 @@ def evaluate_clinical_and_explainable_rules(
         sys_alerts["metabolic"].append(f"Nutritional/hydration deficit ({cal_pct:.0f}% kcal, {water_pct:.0f}% H2O goal)")
         matched_rules.append("SPACE-NUTRITION-DEFICIT")
 
+    # 4b. Crew-reported pain (3D body model). Shoulder pain keeps using the EVA rule below.
+    for report in vitals.pain_reports:
+        if report.region in SHOULDER_REGIONS:
+            continue
+        if report.category == "chest":
+            sev = "CRITICAL" if report.intensity >= 4 else "WARNING"
+            sys_status["cardiovascular"] = _max_status(sys_status["cardiovascular"], sev)
+            sys_alerts["cardiovascular"].append(
+                f"Chest pain {report.intensity}/10 ({report.quality}) — 12-lead ECG and vitals now; treat as cardiac until ruled out."
+            )
+            sys_actions["cardiovascular"] = (
+                "Rest the crew member, acquire 12-lead ECG + SpO2 + BP, and contact the Flight Surgeon with the trace."
+            )
+            matched_rules.append("CREW-PAIN-CHEST")
+        elif report.category == "head" and report.intensity >= 4:
+            sys_status["nervous_sleep"] = _max_status(
+                sys_status["nervous_sleep"], "CRITICAL" if report.intensity >= 8 else "WARNING"
+            )
+            sys_alerts["nervous_sleep"].append(
+                f"Headache {report.intensity}/10 ({report.quality}) — check cabin CO2, hydration and visual changes (SANS)."
+            )
+            matched_rules.append("CREW-PAIN-HEAD")
+        elif report.category == "abdominal" and report.intensity >= 4:
+            sys_status["metabolic"] = _max_status(
+                sys_status["metabolic"], "CRITICAL" if report.intensity >= 8 else "WARNING"
+            )
+            sys_alerts["metabolic"].append(
+                f"Abdominal pain {report.intensity}/10 ({report.quality}) — screen for renal stone (urinary calcium "
+                f"{vitals.urinary_calcium_mg_d:.0f} mg/d) and GI causes."
+            )
+            matched_rules.append("CREW-PAIN-ABDOMEN")
+        elif report.category == "musculoskeletal" and report.intensity >= 4:
+            sys_status["musculoskeletal"] = _max_status(
+                sys_status["musculoskeletal"], "CRITICAL" if report.intensity >= 8 else "WARNING"
+            )
+            sys_alerts["musculoskeletal"].append(
+                f"{report.region_label} pain {report.intensity}/10 ({report.quality}) reported by the crew member."
+            )
+            matched_rules.append("CREW-PAIN-MSK")
+
     # 5. Musculoskeletal
     if vitals.shoulder_pain_score >= 7:
         sys_status["musculoskeletal"] = _max_status(sys_status["musculoskeletal"], "CRITICAL")
@@ -592,6 +633,15 @@ def evaluate_clinical_and_explainable_rules(
             "Relocate crew member to high-ventilation node and increase inter-module fan flow.",
             "Reassess respiratory rate, SpO2, and headache/IOP status 30 minutes after ventilation adjustment.",
         ]
+
+    # Pain alone (normal vitals) must still name what is wrong instead of "Nominal ... Status"
+    flagged_pain = [r for r in vitals.pain_reports if r.category == "chest" or r.intensity >= 4]
+    if syndrome_code == "nominal" and flagged_pain:
+        worst = max(flagged_pain, key=lambda r: (r.category == "chest", r.intensity))
+        syndrome_code = "crew_reported_pain"
+        primary_diagnosis = f"Crew-reported {worst.region_label.lower()} pain ({worst.intensity}/10, {worst.quality})"
+        notify_crew = True
+        notify_earth = notify_earth or worst.category == "chest" or worst.intensity >= 7
 
     # Build system evaluations
     decon_required = bool(env_info.get("decontamination_required", False))
