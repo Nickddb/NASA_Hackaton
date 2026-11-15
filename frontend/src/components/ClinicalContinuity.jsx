@@ -9,6 +9,7 @@ import {
   Clock,
   CloudOff,
   FileCheck2,
+  GitBranch,
   Link2,
   Minus,
   Satellite,
@@ -82,7 +83,14 @@ function SectionTitle({ icon: Icon, children, aside }) {
   );
 }
 
-const fmtNum = (v, digits = 1) => (typeof v === "number" ? v.toFixed(digits).replace(/\.0+$/, "") : "–");
+// Small magnitudes (dose rates ~0.03 mSv/h) need more decimals or they collapse to "0"
+const fmtNum = (v, digits = 1) => {
+  if (typeof v !== "number") return "–";
+  const d = Math.abs(v) > 0 && Math.abs(v) < 1 ? Math.max(digits, 3) : digits;
+  const txt = v.toFixed(d);
+  // Trim trailing zeros only after the decimal point ("120" must stay "120")
+  return txt.includes(".") ? txt.replace(/0+$/, "").replace(/\.$/, "") : txt;
+};
 
 function relativeDue(iso, now) {
   if (!iso) return null;
@@ -758,6 +766,116 @@ function EarthLinkPanel({ state, onChanged, onError }) {
 }
 
 // ======================================================================
+// Cross diagnosis: physical vs. space weather (DONKI) vs. psychological
+// ======================================================================
+const LAYER_COPY = {
+  NOMINAL: { label: "No anomaly", tone: "NOMINAL" },
+  EXTERNAL_SPACE_WEATHER: { label: "Layer 1 · External: space weather", tone: "CRITICAL" },
+  ONBOARD_ENVIRONMENT: { label: "Layer 2 · Onboard environment", tone: "WARNING" },
+  CONTEXTUAL_BENIGN: { label: "Layer 2 · Benign context", tone: "NOMINAL" },
+  INTERNAL_PHYSIOLOGICAL: { label: "Layer 2 · Internal physical", tone: "CRITICAL" },
+  PSYCHOLOGICAL_NEUROCOGNITIVE: { label: "Layer 3 · Psychological / neurocognitive", tone: "WARNING" },
+};
+
+function CrossDiagnosisPanel({ result }) {
+  if (!result) return null;
+  const copy = LAYER_COPY[result.root_cause] || { label: result.root_cause, tone: "WARNING" };
+  const supports = result.evidence.filter((e) => e.supports);
+  const ruled = result.evidence.filter((e) => !e.supports);
+  const pp = result.psych_protocol;
+  const flags = [
+    result.shelter_recommended && "Storm shelter now",
+    result.eva_hold_recommended && "Hold EVA",
+    result.notify_earth && `Notify Earth · ${result.earth_priority.toLowerCase()}`,
+  ].filter(Boolean);
+
+  return (
+    <section className={panel} aria-labelledby="cross-title">
+      <SectionTitle icon={GitBranch} aside={<Pill tone={copy.tone}>{copy.label}</Pill>}>
+        <span id="cross-title">Root cause</span>
+      </SectionTitle>
+      <h3 className="text-[15px] font-bold leading-snug text-[#113D2E]">{result.title}</h3>
+      <p className="mt-1 text-sm leading-relaxed text-[#334E44]">{result.summary}</p>
+
+      {flags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {flags.map((f) => (
+            <Pill key={f} tone={result.earth_priority === "IMMEDIATE" ? "CRITICAL" : "WARNING"}>
+              {f}
+            </Pill>
+          ))}
+        </div>
+      )}
+
+      <div className={`mt-4 grid gap-4 ${ruled.length ? "sm:grid-cols-2" : ""}`}>
+        <div>
+          <p className="text-xs font-semibold text-[#476458]">Evidence</p>
+          {supports.length === 0 ? (
+            <p className="mt-1 text-[13px] text-[#476458]">Nothing abnormal to attribute.</p>
+          ) : (
+            <ul className="mt-1 space-y-1 text-[13px] text-[#113D2E]">
+              {supports.map((e, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <CircleDot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D97706]" />
+                  <span>
+                    {e.signal} <span className="font-mono-telemetry">{e.value}</span>
+                    <span className="text-[#6B8579]"> · {e.rule}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {ruled.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-[#476458]">Ruled out</p>
+          <ul className="mt-1 space-y-1 text-[13px] text-[#476458]">
+            {ruled.map((e, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#059669]" />
+                <span>
+                  {e.signal}: {e.value}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        )}
+      </div>
+
+      {pp ? (
+        <div className="mt-4 rounded-xl bg-[#EAF6FA] p-4 text-[#0C4A6E]">
+          <p className="text-sm font-bold">{pp.name}</p>
+          <p className="mt-1 text-[13px] leading-relaxed">{pp.reassurance}</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-[13px] leading-relaxed">
+            {pp.grounding_steps.map((g) => (
+              <li key={g}>{g}</li>
+            ))}
+          </ol>
+          {pp.escalate_to_earth && (
+            <p role="alert" className="mt-3 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[13px] font-semibold text-[#991B1B]">
+              Immediate escalation to the Earth Flight Surgeon: {pp.escalation_reason}
+            </p>
+          )}
+        </div>
+      ) : (
+        result.recommended_actions.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-[#476458]">Protocol steps for the crew medical officer</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[13px] text-[#334E44]">
+              {result.recommended_actions.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      )}
+      <p className="mt-3 text-[11px] leading-snug text-[#6B8579]">{result.disclaimer}</p>
+    </section>
+  );
+}
+
+// ======================================================================
 // Workspace
 // ======================================================================
 export default function ClinicalContinuity({ state, connection, onRefresh }) {
@@ -812,6 +930,7 @@ export default function ClinicalContinuity({ state, connection, onRefresh }) {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
         <div className="space-y-5 xl:col-span-7">
+          <CrossDiagnosisPanel result={state.cross_diagnosis} />
           <section className={panel} aria-labelledby="followup-title">
             <SectionTitle
               icon={FileCheck2}
