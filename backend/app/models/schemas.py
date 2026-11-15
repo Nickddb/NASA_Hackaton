@@ -440,6 +440,9 @@ class EarthSyncPackage(BaseModel):
     synchronized_at: str | None = None
     sync_status: SyncStatus
     sha256_integrity_hash: str
+    previous_package_hash: str | None = Field(
+        None, description="Hash of the previous package: packages form a tamper-evident chain."
+    )
     astronaut_id: str
     crew_member: str
     mission_day: int
