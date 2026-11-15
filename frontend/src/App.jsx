@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BarChart3, Home, LogOut, Orbit, Settings } from "lucide-react";
 import AgentChatPanel from "./components/AgentChatPanel";
 import BodyModel3D from "./components/BodyModel3D";
@@ -57,6 +57,7 @@ export default function App() {
   const [showOchmoModal, setShowOchmoModal] = useState(false);
   const [showWeatherDrawer, setShowWeatherDrawer] = useState(false);
   const [spaceWeather, setSpaceWeather] = useState(null);
+  const [activeNavDock, setActiveNavDock] = useState("cockpit");
   const [tab, setTab] = useState("home");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef(null);
@@ -160,11 +161,24 @@ export default function App() {
 
   const overallStatus = state?.clinical_evaluation?.overall_status || "NOMINAL";
   const statusDot =
-    overallStatus === "CRITICAL" ? "bg-[#EF4444] animate-ping" : overallStatus === "WARNING" ? "bg-[#F59E0B]" : "bg-[#22C55E]";
+    overallStatus === "CRITICAL"
+      ? "bg-[#EF4444] animate-ping"
+      : overallStatus === "WARNING"
+      ? "bg-[#F59E0B] animate-pulse"
+      : "bg-[#34D399] shadow-[0_0_8px_#34D399]";
+
+  const statusBadgeClass =
+    overallStatus === "CRITICAL"
+      ? "border-red-400/50 bg-red-950/75 text-red-200 shadow-[0_0_16px_rgba(239,68,68,0.4)]"
+      : overallStatus === "WARNING"
+      ? "border-amber-400/50 bg-amber-950/75 text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.3)]"
+      : "border-emerald-400/40 bg-[#071E2E]/85 text-emerald-200 shadow-[0_0_16px_rgba(52,211,153,0.28)]";
 
   const navBtn = (active) =>
-    `relative flex h-11 w-11 items-center justify-center rounded-xl transition ${
-      active ? "text-white" : "text-[#CBD5E1] hover:bg-white/5 hover:text-white"
+    `relative flex h-11 w-11 items-center justify-center rounded-xl transition cursor-pointer ${
+      active
+        ? "border border-emerald-300/45 bg-gradient-to-b from-emerald-400/20 via-sky-400/15 to-transparent text-white shadow-[0_0_18px_rgba(52,211,153,0.3)]"
+        : "border border-transparent text-[#CBD5E1] hover:border-white/15 hover:bg-white/5 hover:text-white"
     }`;
 
   return (
@@ -212,36 +226,149 @@ export default function App() {
         </svg>
       </div>
 
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-30 border-b border-[#3B82F6]/30 bg-[#050B1A]/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-8">
-          <button type="button" onClick={() => setTab("home")} className="flex items-center gap-3">
-            <Orbit className="h-9 w-9 text-white" strokeWidth={1.6} />
-            <span className="text-lg font-semibold tracking-tight text-white">AstraCare</span>
-            <span className="hidden items-center gap-1.5 rounded-full border border-[#3B82F6]/40 px-2.5 py-0.5 text-[10px] font-semibold text-[#BFDBFE] sm:inline-flex">
-              <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
-              {overallStatus}
-            </span>
+      {/* Top Navigation — Arctic Aurora Borealis & Orbital Telemetry Header */}
+      <header className="aurora-header-shell sticky top-0 z-30 relative border-b border-emerald-400/20 backdrop-blur-xl">
+        {/* Dynamic Aurora Borealis Ribbons & Starfield Layers (Clipped to Header Bar so Dropdowns can overflow) */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="aurora-starfield absolute inset-0 opacity-85" />
+          <div className="aurora-curtain-primary absolute -inset-x-16 -top-10 h-44" />
+          <div className="aurora-curtain-secondary absolute inset-0 opacity-90" />
+
+          {/* Subtle SVG Polar Ionosphere Wave Curtains */}
+          <svg
+            className="absolute inset-0 h-full w-full opacity-35"
+            preserveAspectRatio="none"
+            viewBox="0 0 1440 84"
+            fill="none"
+          >
+            <path
+              d="M0 62 C320 14, 620 82, 960 32 C1180 6, 1320 48, 1440 22"
+              stroke="url(#auroraWave1)"
+              strokeWidth="1.8"
+            />
+            <path
+              d="M0 26 C280 70, 740 8, 1080 54 C1260 76, 1360 24, 1440 44"
+              stroke="url(#auroraWave2)"
+              strokeWidth="1.2"
+              strokeDasharray="6 6"
+            />
+            <defs>
+              <linearGradient id="auroraWave1" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0" />
+                <stop offset="28%" stopColor="#34D399" stopOpacity="0.95" />
+                <stop offset="62%" stopColor="#38BDF8" stopOpacity="0.9" />
+                <stop offset="86%" stopColor="#C084FC" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#A7F3D0" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="auroraWave2" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0" />
+                <stop offset="45%" stopColor="#A7F3D0" stopOpacity="0.75" />
+                <stop offset="80%" stopColor="#818CF8" stopOpacity="0.65" />
+                <stop offset="100%" stopColor="#34D399" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div className="relative z-10 mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
+          {/* Left: Brand + Animated Orbital Emblem + NOMINAL Status Pill */}
+          <button
+            type="button"
+            onClick={() => setTab("home")}
+            className="group flex items-center gap-3.5 text-left cursor-pointer"
+          >
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/35 bg-[#051224]/85 shadow-[0_0_24px_rgba(16,185,129,0.3)] backdrop-blur-md transition group-hover:border-emerald-300/70">
+              <div className="pointer-events-none absolute -inset-1 rounded-2xl bg-gradient-to-tr from-emerald-400/25 via-sky-400/25 to-purple-400/25 blur-sm transition group-hover:opacity-100" />
+              <Orbit className="relative h-6 w-6 text-emerald-200 transition-transform duration-700 group-hover:rotate-90" strokeWidth={1.8} />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2.5">
+                <span className="bg-gradient-to-r from-white via-emerald-100 to-sky-200 bg-clip-text text-xl font-extrabold tracking-tight text-transparent drop-shadow-[0_2px_12px_rgba(52,211,153,0.3)]">
+                  AstraCare
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase backdrop-blur-md ${statusBadgeClass}`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
+                  {overallStatus}
+                </span>
+              </div>
+              <div className="hidden items-center gap-2 text-[11px] text-emerald-100/75 sm:flex">
+                <span>Polar &amp; Orbital Bio-Shield</span>
+                <span className="text-emerald-400/60">•</span>
+                <span className="font-mono text-emerald-300">SOL {state?.mission_day ?? 142}</span>
+              </div>
+            </div>
           </button>
 
-          <nav className="flex items-center gap-2">
+          {/* Center: Unique Live Arctic Magnetosphere & Biometric Aurora Wave Pill */}
+          <div className="hidden lg:flex items-center gap-4 rounded-full border border-emerald-300/20 bg-[#040E1E]/70 px-4 py-1.5 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-200">
+                AURORA MAGNETOSPHERE SYNC
+              </span>
+            </div>
+
+            <div className="h-3.5 w-[1px] bg-white/15" />
+
+            {/* Live Shimmering Bio-Wave SVG */}
+            <svg viewBox="0 0 110 24" className="h-5 w-24">
+              <path
+                d="M0,12 L18,12 L23,6 L28,18 L34,3 L40,21 L45,12 L68,12 L74,7 L80,12 L110,12"
+                fill="none"
+                stroke="url(#ecgAuroraGrad)"
+                strokeWidth="2"
+                className="animate-ecg"
+              />
+              <defs>
+                <linearGradient id="ecgAuroraGrad" x1="0" y1="0" x2="110" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#34D399" />
+                  <stop offset="0.5" stopColor="#38BDF8" />
+                  <stop offset="1" stopColor="#C084FC" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            <div className="font-mono text-[11px] font-semibold text-sky-200">
+              {state?.vitals ? `${Math.round(state.vitals.heart_rate_bpm)} BPM` : "72 BPM"}
+              <span className="mx-1.5 text-white/30">|</span>
+              <span className="text-emerald-300">
+                {state?.vitals ? `${state.vitals.radiation_msv_h.toFixed(2)} mSv/h` : "0.04 mSv/h"}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Iconic 4-Button Dock (Preserving Base Structure with Aurora Glow) */}
+          <nav className="flex items-center gap-1.5 rounded-2xl border border-white/12 bg-[#040D1C]/75 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-md">
             <button type="button" title="Home" onClick={() => setTab("home")} className={navBtn(tab === "home")}>
-              <Home className="h-6 w-6" strokeWidth={1.7} />
-              {tab === "home" && <span className="absolute -bottom-1.5 left-1 right-1 h-0.5 rounded bg-[#60A5FA]" />}
+              <Home className="h-5 w-5" strokeWidth={1.8} />
+              {tab === "home" && (
+                <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] via-[#38BDF8] to-[#C084FC] shadow-[0_0_8px_#34D399]" />
+              )}
             </button>
             <button type="button" title="Analytics" onClick={() => setTab("analytics")} className={navBtn(tab === "analytics")}>
-              <BarChart3 className="h-6 w-6" strokeWidth={1.7} />
-              {tab === "analytics" && <span className="absolute -bottom-1.5 left-1 right-1 h-0.5 rounded bg-[#60A5FA]" />}
+              <BarChart3 className="h-5 w-5" strokeWidth={1.8} />
+              {tab === "analytics" && (
+                <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] via-[#38BDF8] to-[#C084FC] shadow-[0_0_8px_#38BDF8]" />
+              )}
             </button>
             <div className="relative" ref={settingsRef}>
               <button type="button" title="Settings" onClick={() => setSettingsOpen((o) => !o)} className={navBtn(settingsOpen)}>
-                <Settings className="h-6 w-6" strokeWidth={1.7} />
+                <Settings className="h-5 w-5" strokeWidth={1.8} />
+                {settingsOpen && (
+                  <span className="absolute -bottom-1 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-[#34D399] to-[#38BDF8]" />
+                )}
               </button>
               {settingsOpen && (
-                <div className="absolute right-0 top-12 z-40 w-60 overflow-hidden rounded-2xl border border-[#3B82F6]/30 bg-[#0B1530]/95 p-1.5 text-sm shadow-xl backdrop-blur-md">
+                <div className="absolute right-0 top-13 z-40 w-64 overflow-hidden rounded-2xl border border-emerald-400/30 bg-[#061226]/95 p-1.5 text-sm shadow-[0_16px_40px_rgba(0,0,0,0.75)] backdrop-blur-xl">
                   {[
-                    { label: "NASA DONKI Space Weather", action: handleToggleWeather },
-                    { label: "OCHMO Standards", action: () => setShowOchmoModal(true) },
+                    { label: "NASA DONKI Aurora & Weather", action: handleToggleWeather },
+                    { label: "OCHMO Clinical Standards", action: () => setShowOchmoModal(true) },
                     { label: "Telemedicine Dossier", action: handleOpenDossier },
                     { label: "Scenarios & Smartwatch", action: () => setTab("analytics") },
                   ].map((item) => (
@@ -252,7 +379,7 @@ export default function App() {
                         setSettingsOpen(false);
                         item.action();
                       }}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-[#DBEAFE] hover:bg-[#1D4ED8]/30"
+                      className="block w-full rounded-xl px-3.5 py-2.5 text-left text-xs font-medium text-emerald-50 transition hover:bg-gradient-to-r hover:from-emerald-500/25 hover:to-sky-500/20 hover:text-white cursor-pointer"
                     >
                       {item.label}
                     </button>
@@ -269,16 +396,21 @@ export default function App() {
               }}
               className={navBtn(false)}
             >
-              <LogOut className="h-6 w-6" strokeWidth={1.7} />
+              <LogOut className="h-5 w-5" strokeWidth={1.8} />
             </button>
           </nav>
         </div>
 
+        {/* Dynamic Shimmering Aurora Horizon Ribbon at Bottom Border */}
+        <div className="aurora-horizon-beam h-[2.5px] w-full" />
+
         {showWeatherDrawer && (
-          <div className="border-t border-[#3B82F6]/30 bg-[#0B1530]/90 px-4 py-2.5 sm:px-8">
+          <div className="relative z-10 border-t border-emerald-400/25 bg-[#041022]/90 px-4 py-2.5 backdrop-blur-xl sm:px-8">
             <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="rounded-full bg-[#2563EB] px-3 py-1 font-bold text-white">DONKI FEED</span>
+                <span className="rounded-full border border-emerald-300/40 bg-emerald-500/20 px-3 py-1 font-bold text-emerald-200">
+                  DONKI AURORA FEED
+                </span>
                 <span className="text-[#DBEAFE]">
                   {spaceWeather?.alara_instruction ||
                     spaceWeather?.summary ||
@@ -287,10 +419,10 @@ export default function App() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[11px] text-[#94A3B8]">
+                <span className="font-mono text-[11px] text-emerald-300/80">
                   Source: {spaceWeather?.source || "NASA DONKI + Onboard Dosimetry"}
                 </span>
-                <button type="button" onClick={handleToggleWeather} className="text-[#93C5FD] hover:text-white">
+                <button type="button" onClick={handleToggleWeather} className="text-emerald-300 hover:text-white cursor-pointer">
                   ✕
                 </button>
               </div>
