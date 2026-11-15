@@ -10,6 +10,7 @@ export default function CriticalAlertModal({
   onAcknowledge,
   onDismiss,
   onDismissAll,
+  onMinimize,
 }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -60,7 +61,7 @@ export default function CriticalAlertModal({
       role="alertdialog"
       aria-live="assertive"
       aria-label="Critical Mission Medical Alert"
-      className="fixed right-4 top-4 z-50 w-[min(450px,calc(100vw-2rem))] overflow-hidden rounded-2xl border-2 border-red-500/90 bg-gradient-to-br from-[#2B0814]/95 via-[#101832]/95 to-[#061428]/95 p-4 text-white shadow-[0_12px_45px_rgba(239,68,68,0.5)] backdrop-blur-xl sm:right-6 sm:top-5"
+      className="fixed bottom-20 right-4 z-50 w-[min(420px,calc(100vw-2rem))] lg:bottom-6 overflow-hidden rounded-2xl border-2 border-red-500/90 bg-gradient-to-br from-[#2B0814]/95 via-[#101832]/95 to-[#061428]/95 p-4 text-white shadow-[0_12px_45px_rgba(239,68,68,0.5)] backdrop-blur-xl sm:right-6"
     >
       {/* Compact Header */}
       <div className="flex items-start justify-between gap-3">
@@ -88,8 +89,9 @@ export default function CriticalAlertModal({
 
         <button
           type="button"
-          onClick={() => onDismiss(current.key)}
-          title="Close pop-up (alert lights stay flashing until stabilized & verified)"
+          onClick={() => (onMinimize ? onMinimize() : onDismiss(current.key))}
+          aria-label="Minimize alert"
+          title="Minimize (alert lights stay on until stabilized & verified)"
           className="rounded-lg border border-white/15 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-white cursor-pointer"
         >
           <X className="h-4 w-4" />
