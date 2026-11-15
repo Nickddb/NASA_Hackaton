@@ -7,26 +7,19 @@ import {
   CheckCircle2,
   HeartPulse,
   Lock,
-  Radio,
-  Satellite,
   Scan,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Thermometer,
-  Users,
   Wind,
 } from "lucide-react";
-import { GlassCard } from "./HomeDashboard";
 import MercurySuitFigure from "./MercurySuitFigure";
 import { getVitalStatuses } from "../services/api";
 import {
-  EnvironmentCrewChips,
-  EnvironmentSectorSummary,
   METRIC_LIGHT_STYLE,
   StatusLedDot,
 } from "./EnvironmentPanel";
-import { PsychCrewBar } from "./PsychRankPanel";
 
 const FILTERS = [
   { id: "ALL", label: "All Crew" },
@@ -138,92 +131,61 @@ export default function CrewHub({
 
   return (
     <div className="space-y-6">
-      {/* Mode & Telemetry Banner */}
-      <GlassCard className="p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-500/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-200">
-                {viewMode === "control" ? <Satellite className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
-                {viewMode === "control" ? "Mission Control Console (Earth)" : "Crew Onboard Shared Monitor (ISS / Ship)"}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1 font-mono text-[11px] text-sky-200">
-                <Radio className="h-3.5 w-3.5 text-sky-300" />
-                Live Sync • SOL {roster?.mission_day ?? 142}
-              </span>
-            </div>
-            <p className="text-xs leading-relaxed text-[#CBD5E1]">
-              {viewMode === "control"
-                ? "Click any astronaut spacesuit to zoom into their individual biometric & 3D anatomical cockpit, or dispatch Yellow/Red operational alerts directly."
-                : "Shared live crew status across ISS and Deep Space Mission. Active alerts cannot be silenced — they only clear after stabilization and a new measurement within personal baseline."}
-            </p>
-          </div>
-
-          {/* Summary KPI Pills */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="rounded-xl border border-white/15 bg-[#151922] px-3.5 py-2 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Crew</div>
-              <div className="font-mono text-lg font-bold text-white">{counts.total}</div>
-            </div>
-            <div className="rounded-xl border border-emerald-400/45 bg-emerald-950/70 px-3.5 py-2 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Nominal</div>
-              <div className="font-mono text-lg font-bold text-emerald-200">{counts.nominal}</div>
-            </div>
-            <div className="rounded-xl border border-amber-400/55 bg-amber-950/75 px-3.5 py-2 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">Warning</div>
-              <div className="font-mono text-lg font-bold text-amber-200">{counts.warning}</div>
-            </div>
-            <div className="rounded-xl border border-red-400/65 bg-red-950/80 px-3.5 py-2 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-red-300">Critical</div>
-              <div className="font-mono text-lg font-bold text-red-200">{counts.critical}</div>
-            </div>
-          </div>
+      {/* Toolbar: location filter + fleet counts (the page title lives in App) */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div role="group" aria-label="Filter crew by location" className="flex flex-wrap gap-2">
+          {FILTERS.map((f) => {
+            const active = filter === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(f.id)}
+                className={`min-h-[36px] rounded-full px-4 text-xs font-semibold transition cursor-pointer ${
+                  active
+                    ? "bg-white text-slate-950"
+                    : "border border-white/15 text-slate-300 hover:border-white/35 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
+        <dl className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-400">
+          {[
+            ["Crew", counts.total, "bg-slate-400"],
+            ["Nominal", counts.nominal, "bg-emerald-400"],
+            ["Warning", counts.warning, "bg-amber-400"],
+            ["Critical", counts.critical, "bg-red-500"],
+          ].map(([label, value, dot]) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden="true" />
+              <dt>{label}</dt>
+              <dd className="font-mono font-semibold text-white">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <p className="-mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
+        <Lock className="h-3 w-3" aria-hidden="true" />
+        Alerts cannot be silenced: they clear only after stabilization and a new reading inside the personal baseline.
+      </p>
 
-        {/* Location Filter Strip + Safety Lock Notice */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3.5">
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => {
-              const active = filter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilter(f.id)}
-                  className={`min-h-[38px] rounded-full px-4 text-xs font-semibold transition cursor-pointer ${
-                    active
-                      ? "bg-white text-slate-950 font-bold shadow-sm"
-                      : "border border-white/15 bg-[#151922] text-slate-200 hover:border-white/35 hover:text-white"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-[#171209] px-3 py-1.5 text-[11px] text-amber-200">
-            <Lock className="h-3.5 w-3.5 text-amber-300" />
-            <span>Alert Lock: No manual silence — re-measure within personal baseline required</span>
-          </div>
+      {feedbackToast && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-sky-400/40 bg-[#131924] px-3.5 py-2 font-mono text-xs text-slate-100">
+          <span>{feedbackToast}</span>
+          <button
+            type="button"
+            onClick={() => setFeedbackToast("")}
+            className="text-slate-300 hover:text-white cursor-pointer"
+          >
+            ✕
+          </button>
         </div>
+      )}
 
-        {feedbackToast && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-sky-400/40 bg-[#131924] px-3.5 py-2 font-mono text-xs text-slate-100">
-            <span>{feedbackToast}</span>
-            <button
-              type="button"
-              onClick={() => setFeedbackToast("")}
-              className="text-slate-300 hover:text-white cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-      </GlassCard>
-
-      {/* Unified Habitat & Cabin Environmental Telemetry by Sector */}
-      <EnvironmentSectorSummary crew={filteredCrew} />
       {/* Astronauts Full-Body Pedestal Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {filteredCrew.map((member) => {
@@ -363,11 +325,6 @@ export default function CrewHub({
                   );
                 })()}
 
-                {/* Per-Astronaut Cabin & Suit Environmental Sensors */}
-                <EnvironmentCrewChips member={member} />
-
-                {/* Psychological Readiness Rank & Tier */}
-                <PsychCrewBar member={member} />
                 {/* Personal Normality & Active Alert Status */}
                 <div className="mt-3 space-y-2">
                   {member.within_personal_baseline ? (
