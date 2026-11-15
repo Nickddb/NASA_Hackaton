@@ -50,6 +50,41 @@ python -m venv .venv
 
 A porta 8000 é a que o proxy do Vite (`frontend/vite.config.js`) usa.
 
+## Variáveis de ambiente
+
+Copie `backend/.env.example` para `backend/.env` e preencha. O arquivo é lido sozinho na inicialização (`app/config.py`), está no `.gitignore` e as variáveis já definidas no sistema têm prioridade sobre ele.
+
+| Variável | Para que serve | Padrão |
+| --- | --- | --- |
+| `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`) | Liga o LLM no chat. Sem ela, o agente usa o pipeline offline determinístico. Requer `pip install -r requirements-llm.txt` | vazio |
+| `ASTRACARE_LLM_MODEL` | Modelo Gemini | `gemini-2.5-flash` |
+| `ASTRACARE_LLM_MAX_TOOL_ROUNDS` | Rodadas de tool calls encadeadas por mensagem | `5` |
+| `ASTRACARE_LLM_TIMEOUT_S` | Timeout de cada chamada ao LLM, em segundos | `12` |
+| `NASA_API_KEY` | Chave da api.nasa.gov para o DONKI (TODO: trocar a `DEMO_KEY`) | `DEMO_KEY` |
+| `ASTRACARE_SCHEDULER_ENABLED` | Liga o laço que roda os exames agendados do smartwatch | `true` |
+| `ASTRACARE_SCHEDULER_TICK_S` | Intervalo de verificação do laço, em segundos | `30` |
+| `ASTRACARE_ALERT_COOLDOWN_MIN` | Janela, em minutos, sem reenviar o mesmo alerta central | `30` |
+| `ASTRACARE_STATE_DIR` | Pasta do ledger, dos casos e do cache do DONKI | `backend/data` |
+
+No frontend, a única variável é `VITE_API_BASE` (`frontend/.env.example`). Chaves secretas nunca entram lá, porque tudo que começa com `VITE_` vai para o navegador.
+
+## Agente multi-tool (encadeamento)
+
+Quatro tools em `app/agent/mission_tools.py`, que só orquestram os serviços existentes. A saída de cada uma decide a próxima:
+
+1. `schedule_smartwatch_exam`: agenda um exame periódico (`interval_minutes`) e/ou coleta agora (`trigger_now`). Os tipos são `full_panel`, `cardio`, `cognitive_ctb`, `dosimetry`, `respiratory` e `metabolic`.
+2. `analyze_telemetry_and_diagnose`: cruza o payload com o baseline individual, os limites da NASA e o DONKI (SEP/FLR/RBE). Devolve `status` (NORMAL/WARNING/CRITICAL), `category` (NONE/PHYSICAL_ENVIRONMENTAL/PSYCHOLOGICAL), `probable_diagnosis`, `confidence_score` e `next_tools`. Uma alteração comportamental só vira PSYCHOLOGICAL quando não há causa física nem DONKI.
+3. `trigger_central_alert`: dispara em CRITICAL, ou em WARNING com prioridade PRIORITY/IMMEDIATE. Gera o alerta à tripulação, o pacote para os cirurgiões de voo e o registro no log de auditoria, com cooldown.
+4. `activate_psychological_stimuli`: aciona o Personal Crew Vault e o console de saúde comportamental, só quando a categoria é PSYCHOLOGICAL (ou quando o astronauta pede).
+
+Endpoints:
+
+- `POST /api/agent/smartwatch/{crew_id}`, `GET /api/agent/smartwatch` e `DELETE /api/agent/smartwatch/{crew_id}/{exam_type}`
+- `POST /api/agent/analyze/{crew_id}`
+- `POST /api/agent/cycle/{crew_id}` (a cadeia completa)
+
+No chat, o LLM encadeia as tools em várias rodadas. Sem LLM, frases como "agendar exame cardio do Kenji a cada 30 min" rodam a mesma cadeia.
+
 ## Testes
 
 ```powershell
