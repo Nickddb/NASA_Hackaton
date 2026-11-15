@@ -270,37 +270,50 @@ function buildLocalMLPrediction(clinicalEval, vitals) {
   };
 }
 
+// Offline fallback: same DONKI response schema as the backend sample (arrays per endpoint).
+// Events count as active only inside the last 72 h, so the curated past-dated sample reads as nominal.
 function buildLocalDonkiSummary() {
-  const flr = localDonki.flr_events || [];
-  const sep = localDonki.sep_events || [];
+  const activeSince = Date.now() - 72 * 3600 * 1000;
+  const pick = (kind, timeField, idField, intensity) =>
+    (localDonki?.[kind] || []).map((e) => {
+      const t = Date.parse(e[timeField]);
+      return {
+        event_id: e[idField],
+        event_type: kind,
+        begin_time: e[timeField],
+        peak_time: e.peakTime || null,
+        class_or_intensity: intensity(e),
+        source_location: e.sourceLocation || "",
+        note: e.note || `NASA DONKI ${kind} notification`,
+        is_active: Number.isFinite(t) && t >= activeSince,
+        origin: "nasa_donki",
+      };
+    });
+  const inst = (e) => (e.instruments || []).map((i) => i.displayName).join(", ");
   const events = [
-    ...flr.map((f) => ({
-      event_id: f.flrID,
-      event_type: "FLR",
-      begin_time: f.beginTime,
-      peak_time: f.peakTime,
-      class_or_intensity: f.classType,
-      source_location: f.sourceLocation,
-      note: f.note,
-    })),
-    ...sep.map((s) => ({
-      event_id: s.sepID,
-      event_type: "SEP",
-      begin_time: s.eventTime,
-      peak_time: s.eventTime,
-      class_or_intensity: s.intensity,
-      source_location: s.sourceLocation,
-      note: s.note,
-    })),
+    ...pick("SEP", "eventTime", "sepID", (e) => inst(e) || "SEP"),
+    ...pick("FLR", "beginTime", "flrID", (e) => e.classType || "Flare"),
+    ...pick("RBE", "eventTime", "rbeID", (e) => inst(e) || "RBE"),
   ];
+  const active = events.filter((e) => e.is_active);
+  const sep = active.filter((e) => e.event_type === "SEP");
+  const flr = active.filter((e) => e.event_type === "FLR");
+  const rbe = active.filter((e) => e.event_type === "RBE");
+  const mx = flr.filter((e) => /^[MX]/i.test(e.class_or_intensity));
+  const alert = sep.length || flr.some((e) => /^X/i.test(e.class_or_intensity)) ? "CRITICAL" : mx.length || rbe.length ? "WARNING" : "NOMINAL";
   return {
     source: "curated_local_fallback",
     fetched_at: new Date().toISOString(),
-    alert_level: sep.length > 0 ? "CRITICAL" : "WARNING",
+    alert_level: alert,
+    status_label: sep.length ? "SEP alert active" : mx.length ? `Class ${mx[0].class_or_intensity} flare detected` : rbe.length ? "Radiation belt enhancement active" : "Nominal",
+    fetch_status: "backend offline -> browser copy of the curated DONKI sample",
     active_flare_count: flr.length,
     active_sep_count: sep.length,
+    active_rbe_count: rbe.length,
+    active_window_hours: 72,
+    uses_demo_key: true,
     recommended_dose_limit_msv_h: 0.5,
-    alara_instruction: "Curated NASA DONKI FLR/SEP feed active: X1.9 Flare + S2 SEP proton event. Maintain ALARA shelter readiness.",
+    alara_instruction: "Offline: NASA DONKI unreachable from the browser fallback. Continue onboard dosimetry (ALARA).",
     events,
   };
 }
