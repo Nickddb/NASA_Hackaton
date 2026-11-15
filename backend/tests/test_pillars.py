@@ -203,3 +203,51 @@ def test_packages_stay_queued_without_comms_window(tmp_path):
     # Ledger survives restart and the sync handshake did not break the chain.
     reloaded = EarthSyncManager(ledger_path=tmp_path / "ledger.json")
     assert reloaded.verify_integrity()["verified"] is True
+
+
+# ---------- Multi-Crew Hub & Alert/Stabilization/Measurement Lifecycle ----------
+def test_multi_crew_roster_and_stabilization_lifecycle(client):
+    roster = client.get("/api/crew").json()
+    assert roster["total_crew"] == 5
+    crew_ids = {c["crew_id"] for c in roster["crew"]}
+    assert crew_ids == {"elena_vance", "lucas_ferreira", "kenji_sato", "amara_okafor", "liam_soren"}
+
+    # Select Amara Okafor and dispatch a warning alert
+    st = client.post("/api/crew/amara_okafor/select").json()
+    assert st["crew_id"] == "amara_okafor"
+
+    st = client.post(
+        "/api/crew/amara_okafor/alert",
+        json={
+            "severity": "WARNING",
+            "syndrome_code": "external_medical_alert",
+            "title": "Alerta Biomédico de Telemetria",
+            "summary": "Taquicardia induzida durante turno",
+            "target_system_id": "cardiovascular",
+            "simulate_vitals_drift": True,
+        },
+    ).json()
+    assert st["active_alert"]["status"] == "OPEN"
+    assert st["clinical_evaluation"]["overall_status"] in ("WARNING", "CRITICAL")
+
+    # Acknowledge alert
+    st = client.post("/api/crew/amara_okafor/acknowledge").json()
+    assert st["active_alert"]["status"] == "ACKNOWLEDGED"
+
+    # Stabilize crew member: vitals return to nominal, but status awaits confirmatory measurement
+    st = client.post(
+        "/api/crew/amara_okafor/stabilize",
+        json={"intervention_note": "Hidratação e repouso aplicados"},
+    ).json()
+    assert st["active_alert"]["status"] == "STABILIZING"
+    assert st["pending_verification_measurement"] is True
+    assert st["clinical_evaluation"]["overall_status"] != "NOMINAL"
+
+    # Confirmatory full_body measurement resolves alert and normalizes status
+    meas = client.post("/api/crew/amara_okafor/measure?system_id=full_body").json()
+    assert meas["status"] == "NOMINAL"
+    assert meas["state"]["active_alert"] is None
+    assert meas["state"]["pending_verification_measurement"] is False
+
+    # Restore active crew to elena_vance
+    client.post("/api/crew/elena_vance/select")
