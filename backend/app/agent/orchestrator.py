@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import os
+import json
 import re
 from typing import Any
 
+from app import config
+from app.agent.mission_tools import MissionAgentTools, build_mission_tools
 from app.agent.tools import (
     build_agent_tools,
     parse_followup_command_text,
@@ -21,7 +23,26 @@ You MUST adhere strictly to the 5 AstraCare AI Clinical & Machine Learning Pilla
 3. CLOSED-LOOP FOLLOW-UP CYCLE: Never stop at an alert. Reference the active ClinicalFollowUpCase, required confirmation measurements, executed protocol actions, and scheduled timed reassessments (T+15m / T+30m).
 4. EXPLAINABLE & AUDITABLE AI: State originating signals, sensor measurement quality (SNR %, motion artifact, NIBP verification), epistemic + aleatoric uncertainty %, 72h Bayesian forecast, and exact NASA-STD-3001 / OCHMO / OSDR references. NEVER invent treatments or make autonomous medical decisions — all actions are protocol checklists requiring Crew Medical Officer (CMO) / Flight Surgeon confirmation.
 5. SPACECRAFT–EARTH CONTINUITY: Reference NASA JPL Horizons one-way light-time latency, NASA DONKI solar radiation alerts, and SHA-256 store-and-forward EarthSyncPackage bundles when discussing ground coordination.
-Respond in the same language as the user (Portuguese if the user writes in Portuguese; English otherwise)."""
+Respond in the same language as the user (Portuguese if the user writes in Portuguese; English otherwise).
+MULTI-TOOL MONITORING (tool chaining): to check a crew member, call schedule_smartwatch_exam (trigger_now) or
+run_monitoring_cycle, then analyze_telemetry_and_diagnose. Read its status/category/next_tools: call
+trigger_central_alert when it lists it (CRITICAL or escalated WARNING) and activate_psychological_stimuli only when the
+category is PSYCHOLOGICAL (never for a physical or space-weather cause). Each tool returns JSON; base the next call on it."""
+
+# chat intents for the multi-tool chain when no LLM is configured
+EXAM_INTENT = re.compile(
+    r"\b(agend\w*|schedul\w*|exame|exam|smartwatch|rel[oó]gio|ciclo de monitoramento|monitoring cycle|"
+    r"verificar? (?:agora|o|a)|check (?:now|on)|analis\w+ telemetria|analy[sz]e telemetry)\b",
+    re.IGNORECASE,
+)
+EXAM_TYPE_WORDS = {
+    "cardio": ("cardio", "coração", "coracao", "heart", "pressão", "pressao"),
+    "cognitive_ctb": ("cognit", "ctb", "reação", "reacao", "reaction"),
+    "dosimetry": ("dosim", "radia"),
+    "respiratory": ("respir", "spo2", "oxig"),
+    "metabolic": ("metab", "glic", "glucose"),
+}
+INTERVAL = re.compile(r"(?:a cada|every)\s+(\d+(?:[.,]\d+)?)\s*(h|hora|hour|min)", re.IGNORECASE)
 
 
 class AstraCareOrchestrator:
@@ -31,17 +52,18 @@ class AstraCareOrchestrator:
     grounded in all 5 ML & Clinical Continuity Pillars.
     """
 
-    def __init__(self, state_manager: MissionStateManager) -> None:
+    def __init__(self, state_manager: MissionStateManager, mission_agent: MissionAgentTools | None = None) -> None:
         self.state_manager = state_manager
+        self.mission_agent = mission_agent or MissionAgentTools(state_manager)
 
     async def handle_chat(self, message: str, crew_id: str | None = None) -> ChatResponse:
         if crew_id and crew_id in self.state_manager.crew_records:
             self.state_manager.select_crew_member(crew_id)
         trace_log: list[ToolTraceItem] = []
-        tools = build_agent_tools(self.state_manager, trace_log)
+        tools = build_agent_tools(self.state_manager, trace_log) + build_mission_tools(self.mission_agent, trace_log)
         tools_by_name = {t.name: t for t in tools}
 
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        api_key = config.GEMINI_API_KEY
         if api_key:
             try:
                 import asyncio
@@ -50,7 +72,7 @@ class AstraCareOrchestrator:
 
                 lc_tools = [t.to_langchain_tool() for t in tools]
                 llm = ChatGoogleGenerativeAI(
-                    model=os.getenv("ASTRACARE_LLM_MODEL", "gemini-2.5-flash"),
+                    model=config.LLM_MODEL,
                     google_api_key=api_key,
                     temperature=0.15,
                 ).bind_tools(lc_tools)
@@ -72,17 +94,22 @@ class AstraCareOrchestrator:
                     HumanMessage(content=message),
                 ]
 
-                ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=8.0)
-                messages.append(ai_msg)
-
-                if getattr(ai_msg, "tool_calls", None):
+                # tool chaining: each round's tool results go back to the model, which decides the next call
+                ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
+                rounds = 0
+                used_tools = False
+                while getattr(ai_msg, "tool_calls", None) and rounds < config.LLM_MAX_TOOL_ROUNDS:
+                    used_tools = True
+                    rounds += 1
+                    messages.append(ai_msg)
                     for tc in ai_msg.tool_calls:
                         fn = tools_by_name.get(tc["name"])
-                        if fn:
-                            result = fn.invoke(tc["args"])
-                            messages.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
-                    final_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=8.0)
-                    reply_text = str(final_msg.content)
+                        result = fn.invoke(tc["args"]) if fn else json.dumps({"error": f"unknown tool {tc['name']}"})
+                        messages.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
+                    ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
+
+                if used_tools:
+                    reply_text = str(ai_msg.content or "") or "\n".join(f"- {t.tool_name}: {t.summary}" for t in trace_log)
                 else:
                     tools_by_name["inspect_adaptive_baseline_tool"].invoke({"astronaut_query": "current"})
                     tools_by_name["predict_calibrated_ml_and_uncertainty_tool"].invoke({"horizon": "72h"})
@@ -168,6 +195,10 @@ class AstraCareOrchestrator:
                 if is_pt
                 else f"**Immediate alert sent to Earth** (package `{pkg.package_id}`): Flight Surgeon and behavioral health team notified."
             )
+
+        # 0b. Multi-tool chain: smartwatch exam -> diagnosis -> central alert -> psychological stimuli
+        if EXAM_INTENT.search(message):
+            reply_parts.append(self._run_exam_intent(message, lower, tools_by_name, is_pt))
 
         # 1. Check if switching or querying astronaut baseline
         if any(
@@ -389,3 +420,56 @@ class AstraCareOrchestrator:
             tool_trace=trace_log,
             state=state,
         )
+
+    def _run_exam_intent(self, message: str, lower: str, tools_by_name: dict[str, Any], is_pt: bool) -> str:
+        """Offline version of the LLM's tool chain: same tools, same order, decisions read from each JSON output."""
+        sm = self.state_manager
+        crew = next((cid for cid in sm.crew_records if cid.split("_")[0] in lower), sm.active_crew_id)
+        exam = next((ex for ex, words in EXAM_TYPE_WORDS.items() if any(w in lower for w in words)), "full_panel")
+        m = INTERVAL.search(message)
+        interval = 0.0
+        if m:
+            interval = float(m.group(1).replace(",", "."))
+            interval *= 60 if m.group(2).lower().startswith("h") else 1
+
+        exam_out = json.loads(tools_by_name["schedule_smartwatch_exam"].invoke(
+            {"astronaut_id": crew, "exam_type": exam, "interval_minutes": interval, "trigger_now": True}
+        ))
+        if "error" in exam_out:
+            return f"**Smartwatch:** {exam_out['error']}"
+        report = json.loads(tools_by_name["analyze_telemetry_and_diagnose"].invoke({"astronaut_id": crew}))
+        lines = []
+        if exam_out.get("schedule"):
+            every = exam_out["schedule"]["interval_minutes"]
+            lines.append(f"Exame `{exam}` agendado a cada {every:g} min." if is_pt else f"`{exam}` exam scheduled every {every:g} min.")
+        lines.append(
+            (f"Leitura coletada: {exam_out['reading_summary']}" if is_pt else f"Reading collected: {exam_out['reading_summary']}")
+        )
+        lines.append(
+            f"**Diagnóstico:** `{report['status']}` · `{report['category']}` — {report['probable_diagnosis']} "
+            f"(confiança {report['confidence_score']:.0%})"
+            if is_pt
+            else f"**Diagnosis:** `{report['status']}` · `{report['category']}` — {report['probable_diagnosis']} "
+            f"(confidence {report['confidence_score']:.0%})"
+        )
+        if "trigger_central_alert" in report["next_tools"]:
+            alert = json.loads(tools_by_name["trigger_central_alert"].invoke({"astronaut_id": crew}))
+            if alert.get("dispatched"):
+                lines.append(
+                    f"**Alerta central enviado** aos cirurgiões de voo (pacote `{alert['earth_package_id']}`)."
+                    if is_pt
+                    else f"**Central alert sent** to the Flight Surgeons (package `{alert['earth_package_id']}`)."
+                )
+            else:
+                lines.append(f"Alerta central não reenviado: {alert.get('reason')}" if is_pt else f"Central alert not re-sent: {alert.get('reason')}")
+        if "activate_psychological_stimuli" in report["next_tools"]:
+            stim = json.loads(tools_by_name["activate_psychological_stimuli"].invoke({"astronaut_id": crew}))
+            if stim.get("activated"):
+                titles = "; ".join(s["title"] for s in stim["stimuli"][:3])
+                lines.append(
+                    f"**Estímulos psicológicos ativados** ({stim['central_alert_id']}): {titles}."
+                    if is_pt
+                    else f"**Psychological stimuli started** ({stim['central_alert_id']}): {titles}."
+                )
+        header = "**Agente de monitoramento (smartwatch → diagnóstico → ação):**" if is_pt else "**Monitoring agent (smartwatch → diagnosis → action):**"
+        return header + "\n" + "\n".join(f"- {line}" for line in lines)
