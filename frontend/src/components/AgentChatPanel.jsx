@@ -12,14 +12,14 @@ function FormattedReply({ text }) {
   if (!text) return null;
   const lines = text.split("\n");
   return (
-    <div className="space-y-1.5 text-sm leading-relaxed text-[#113D2E]">
+    <div className="space-y-1.5 text-sm leading-relaxed text-white">
       {lines.map((line, i) => {
         const trimmed = line.trim();
         if (!trimmed) return <div key={i} className="h-1" />;
         const parts = trimmed.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
           if (part.startsWith("**") && part.endsWith("**")) {
             return (
-              <strong key={idx} className="font-semibold text-[#113D2E]">
+              <strong key={idx} className="font-semibold text-white">
                 {part.slice(2, -2)}
               </strong>
             );
@@ -29,7 +29,7 @@ function FormattedReply({ text }) {
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           return (
             <div key={i} className="flex gap-2 pl-1">
-              <span className="text-[#059669] font-bold">•</span>
+              <span className="text-emerald-400 font-bold">•</span>
               <span>{parts}</span>
             </div>
           );
@@ -108,11 +108,11 @@ export default function AgentChatPanel({ state, onSendChat }) {
   const envLabel = state?.environment?.replaceAll("_", " ") || "ISS LEO";
 
   return (
-    <section className="eco-card flex h-full min-h-[600px] flex-col rounded-3xl bg-white p-5">
+    <section className="flex h-full min-h-[600px] flex-col rounded-2xl border border-white/10 bg-[#0B0E14]/80 p-5">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D5E8DD] pb-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#113D2E] text-[#C8EE90] shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/15 text-emerald-300">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path
                 strokeLinecap="round"
@@ -122,24 +122,24 @@ export default function AgentChatPanel({ state, onSendChat }) {
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-bold tracking-tight text-[#113D2E]">
+            <h2 className="text-base font-bold tracking-tight text-white">
               Autonomous Flight Surgeon
             </h2>
-            <p className="text-xs text-[#476458]">
+            <p className="text-xs text-slate-300">
               Tool-Calling Clinical Agent • {envLabel}
             </p>
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#CBE2D5] bg-[#EFF9F2] px-3 py-1 text-[11px] font-semibold text-[#113D2E]">
-          <span className="h-2 w-2 rounded-full bg-[#059669] animate-pulse" />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-white">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           ONBOARD AI READY
         </span>
       </div>
 
       {/* Quick Prompts Strip */}
-      <div className="mt-3 rounded-2xl border border-[#CBE2D5] bg-[#EFF9F2] p-2.5">
-        <div className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-[#476458]">
+      <div className="mt-3 rounded-2xl border border-white/10 bg-emerald-500/10 p-2.5">
+        <div className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
           Quick Clinical Queries
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -149,7 +149,7 @@ export default function AgentChatPanel({ state, onSendChat }) {
               type="button"
               disabled={sending}
               onClick={() => handleSend(q)}
-              className="rounded-full border border-[#CBE2D5] bg-white px-3 py-1.5 text-left text-xs font-medium text-[#113D2E] transition hover:border-[#113D2E] hover:bg-[#C8EE90]/40 disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-[#151922] px-3 py-1.5 text-left text-xs font-medium text-white transition hover:border-white/35 hover:text-white disabled:opacity-50"
             >
               {q}
             </button>
@@ -160,7 +160,7 @@ export default function AgentChatPanel({ state, onSendChat }) {
       {/* Messages Feed */}
       <div
         ref={scrollRef}
-        className="mt-3 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-[#E2EFE8] bg-[#F7FBF9] p-3.5"
+        className="mt-3 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-[#151922] p-3.5"
       >
         {messages.map((m) => {
           const isUser = m.role === "user";
@@ -169,15 +169,15 @@ export default function AgentChatPanel({ state, onSendChat }) {
               <div
                 className={`max-w-[92%] rounded-2xl px-4 py-3 shadow-sm ${
                   isUser
-                    ? "bg-[#113D2E] text-white"
-                    : "border border-[#CBE2D5] bg-white text-[#113D2E]"
+                    ? "bg-sky-600 text-white"
+                    : "border border-white/10 bg-[#151922] text-white"
                 }`}
               >
                 <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-wider">
-                  <span className={isUser ? "text-[#C8EE90]" : "text-[#059669]"}>
+                  <span className={isUser ? "text-sky-100" : "text-emerald-400"}>
                     {isUser ? "CREW / FLIGHT SURGEON" : `ASTRACARE AGENT • ${m.mode}`}
                   </span>
-                  <span className={isUser ? "text-white/70" : "text-[#476458]"}>{m.timestamp}</span>
+                  <span className={isUser ? "text-white/70" : "text-slate-300"}>{m.timestamp}</span>
                 </div>
 
                 {isUser ? (
@@ -188,8 +188,8 @@ export default function AgentChatPanel({ state, onSendChat }) {
 
                 {/* Tool Trace Pills */}
                 {!isUser && m.tool_trace && m.tool_trace.length > 0 && (
-                  <div className="mt-3 space-y-1.5 border-t border-[#E2EFE8] pt-2.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-[#476458]">
+                  <div className="mt-3 space-y-1.5 border-t border-white/10 pt-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">
                       Executed Clinical Tools
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -197,17 +197,17 @@ export default function AgentChatPanel({ state, onSendChat }) {
                         const statusUpper = String(t.status || "").toUpperCase();
                         const badgeClass =
                           statusUpper === "CRITICAL"
-                            ? "border-[#FCA5A5] bg-[#FEF2F2] text-[#991B1B]"
+                            ? "border-red-400/30 bg-red-500/10 text-red-300"
                             : statusUpper === "WARNING"
-                            ? "border-[#FCD34D] bg-[#FFFBEB] text-[#92400E]"
-                            : "border-[#A7F3D0] bg-[#ECFDF5] text-[#065F46]";
+                            ? "border-amber-400/30 bg-amber-500/10 text-amber-200"
+                            : "border-emerald-400/30 bg-emerald-500/10 text-emerald-300";
                         return (
                           <div
                             key={idx}
-                            className="rounded-xl border border-[#CBE2D5] bg-[#EFF9F2] px-2.5 py-2 text-xs"
+                            className="rounded-xl border border-white/10 bg-emerald-500/10 px-2.5 py-2 text-xs"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-1.5">
-                              <span className="font-mono font-semibold text-[#113D2E]">
+                              <span className="font-mono font-semibold text-white">
                                 {t.tool_name}
                               </span>
                               <span
@@ -217,10 +217,10 @@ export default function AgentChatPanel({ state, onSendChat }) {
                               </span>
                             </div>
                             {t.summary && (
-                              <p className="mt-1 text-[11px] text-[#476458]">{t.summary}</p>
+                              <p className="mt-1 text-[11px] text-slate-300">{t.summary}</p>
                             )}
                             {t.rule_or_score && (
-                              <p className="mt-0.5 font-mono text-[10px] font-medium text-[#113D2E]">
+                              <p className="mt-0.5 font-mono text-[10px] font-medium text-white">
                                 {t.rule_or_score}
                               </p>
                             )}
@@ -237,7 +237,7 @@ export default function AgentChatPanel({ state, onSendChat }) {
 
         {sending && (
           <div className="flex items-start">
-            <div className="rounded-2xl border border-[#CBE2D5] bg-white px-4 py-3 text-xs font-medium text-[#476458] shadow-sm">
+            <div className="rounded-2xl border border-white/10 bg-[#151922] px-4 py-3 text-xs font-medium text-slate-300 shadow-sm">
               Running NASA-STD-3001 clinical rules & ML anomaly assessment...
             </div>
           </div>
@@ -258,12 +258,12 @@ export default function AgentChatPanel({ state, onSendChat }) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask the Autonomous Flight Surgeon..."
           disabled={sending}
-          className="min-h-[44px] flex-1 rounded-full border border-[#CBE2D5] bg-[#F7FBF9] px-4 text-sm text-[#113D2E] placeholder-[#476458]/70 outline-none transition focus:border-[#113D2E] focus:bg-white"
+          className="min-h-[44px] flex-1 rounded-full border border-white/10 bg-[#151922] px-4 text-sm text-white placeholder-slate-500 outline-none transition focus:border-sky-400 focus:bg-[#151922]"
         />
         <button
           type="submit"
           disabled={sending || !input.trim()}
-          className="min-h-[44px] rounded-full bg-[#113D2E] px-5 text-sm font-semibold text-white transition hover:bg-[#195440] disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[44px] rounded-full bg-sky-600 px-5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending ? "Thinking..." : "Send"}
         </button>
