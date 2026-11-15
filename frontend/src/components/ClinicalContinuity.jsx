@@ -61,6 +61,19 @@ const btnGhost =
 const field =
   "min-h-[44px] w-full rounded-xl border border-[#D5E8DD] bg-[#F7FBF9] px-3 text-sm text-[#113D2E] placeholder:text-[#6B8579] focus:border-[#16A34A] focus:outline-none focus:ring-2 focus:ring-[#16A34A]/25";
 
+const HORIZONS_SOURCE = {
+  live_nasa_jpl_horizons: "Live NASA JPL Horizons",
+  cached_nasa_jpl_horizons: "NASA JPL Horizons (cached)",
+  curated_local_fallback: "Reference value",
+};
+
+function formatDelay(seconds) {
+  if (seconds < 90) return `${Math.round(seconds)} s`;
+  const min = Math.floor(seconds / 60);
+  const sec = Math.round(seconds % 60);
+  return sec ? `${min} min ${sec} s` : `${min} min`;
+}
+
 function Pill({ tone = "NOMINAL", children, className = "" }) {
   return (
     <span
@@ -686,7 +699,7 @@ function EarthLinkPanel({ state, onChanged, onError }) {
         <div>
           <dt className="text-[11px] text-[#6B8579]">One-way delay</dt>
           <dd className="font-mono-telemetry text-lg font-bold text-[#113D2E]">
-            {link ? `${Math.round(link.one_way_light_time_seconds / 60)} min` : "–"}
+            {link ? formatDelay(link.one_way_light_time_seconds) : "–"}
           </dd>
         </div>
         <div>
@@ -696,6 +709,12 @@ function EarthLinkPanel({ state, onChanged, onError }) {
           </dd>
         </div>
       </dl>
+      {link && (
+        <p className="mt-2 text-[11px] text-[#6B8579]" title={link.fetch_status || undefined}>
+          {HORIZONS_SOURCE[link.source] || "JPL Horizons"} · {link.target_body} ·{" "}
+          {link.distance_km >= 1e6 ? `${(link.distance_km / 1e6).toFixed(1)} million km` : `${Math.round(link.distance_km)} km`}
+        </p>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" className={btnPrimary} disabled={!!busy} onClick={() => run("package", createEarthSyncPackage)}>
