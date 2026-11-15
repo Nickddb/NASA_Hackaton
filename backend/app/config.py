@@ -40,8 +40,14 @@ def _float(name: str, default: float) -> float:
 load_env_file()
 
 # LLM (optional: without a key the agent runs the deterministic offline pipeline)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-LLM_MODEL = os.getenv("ASTRACARE_LLM_MODEL", "gemini-2.5-flash")
+# groq | gemini | offline. Empty = first provider with a key (Groq first).
+LLM_PROVIDER = (os.getenv("ASTRACARE_LLM_PROVIDER") or ("groq" if GROQ_API_KEY else "gemini" if GEMINI_API_KEY else "offline")).lower()
+DEFAULT_MODELS = {"groq": "qwen/qwen3.8-27b", "gemini": "gemini-2.5-flash"}
+LLM_MODEL = os.getenv("ASTRACARE_LLM_MODEL") or DEFAULT_MODELS.get(LLM_PROVIDER, "")
+# Groq reasoning models (Qwen): "hidden" drops the <think> trace from the answer; empty = provider default
+GROQ_REASONING_FORMAT = os.getenv("ASTRACARE_GROQ_REASONING_FORMAT", "hidden")
 LLM_MAX_TOOL_ROUNDS = int(_float("ASTRACARE_LLM_MAX_TOOL_ROUNDS", 5))
 LLM_TIMEOUT_S = _float("ASTRACARE_LLM_TIMEOUT_S", 12.0)
 
