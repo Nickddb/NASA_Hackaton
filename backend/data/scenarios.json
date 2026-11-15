@@ -110,12 +110,12 @@
         "bp_systolic": 5.5,
         "bp_diastolic": 4.2,
         "glucose_mg_dl": 6.0,
-        "temperature_c": 0.20,
+        "temperature_c": 0.2,
         "spo2_pct": 0.7,
         "respiration_rpm": 1.4,
-        "sleep_hours": 0.50,
+        "sleep_hours": 0.5,
         "rem_sleep_pct": 2.0,
-        "mood_score": 0.40,
+        "mood_score": 0.4,
         "stress_index": 7.0,
         "radiation_msv_h": 0.015,
         "urinary_calcium_mg_d": 20.0,
@@ -252,27 +252,6 @@
       "severity": "NOMINAL",
       "description": "All core physiological, circadian, and radiation metrics operating within NASA-STD-3001 flight rules and the astronaut's phase-adapted personal baseline.",
       "mission_day": 142,
-      "vitals": {
-        "heart_rate_bpm": 66,
-        "hrv_ms": 59,
-        "bp_systolic": 114,
-        "bp_diastolic": 73,
-        "glucose_mg_dl": 93,
-        "temperature_c": 36.7,
-        "spo2_pct": 98.4,
-        "respiration_rpm": 14,
-        "sleep_hours": 7.4,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 21.5,
-        "mood_score": 5,
-        "stress_index": 22,
-        "radiation_msv_h": 0.04,
-        "cumulative_radiation_msv": 148.0,
-        "shoulder_pain_score": 0,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 185,
-        "intraocular_pressure_mmhg": 15.2
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -313,15 +292,8 @@
         "fiber_g": 26,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 65, "hrv": 61, "bp_sys": 113, "bp_dia": 72, "temp": 36.6, "spo2": 98.5, "rr": 14, "glucose": 91, "sleep": 7.5, "rem": 22, "radiation": 0.03, "mood": 5, "stress": 20 },
-        { "day": "D-5", "hr": 67, "hrv": 58, "bp_sys": 115, "bp_dia": 73, "temp": 36.7, "spo2": 98.3, "rr": 14, "glucose": 94, "sleep": 7.2, "rem": 21, "radiation": 0.04, "mood": 4, "stress": 23 },
-        { "day": "D-4", "hr": 65, "hrv": 60, "bp_sys": 114, "bp_dia": 72, "temp": 36.6, "spo2": 98.6, "rr": 13, "glucose": 92, "sleep": 7.6, "rem": 23, "radiation": 0.03, "mood": 5, "stress": 19 },
-        { "day": "D-3", "hr": 68, "hrv": 57, "bp_sys": 116, "bp_dia": 74, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 95, "sleep": 7.1, "rem": 20, "radiation": 0.04, "mood": 5, "stress": 22 },
-        { "day": "D-2", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 73, "temp": 36.6, "spo2": 98.5, "rr": 14, "glucose": 91, "sleep": 7.4, "rem": 22, "radiation": 0.04, "mood": 4, "stress": 21 },
-        { "day": "D-1", "hr": 65, "hrv": 60, "bp_sys": 113, "bp_dia": 72, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 94, "sleep": 7.5, "rem": 22, "radiation": 0.03, "mood": 5, "stress": 20 },
-        { "day": "Today", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 93, "sleep": 7.4, "rem": 21.5, "radiation": 0.04, "mood": 5, "stress": 22 }
-      ]
+      "crisis_profile": "nominal",
+      "reported_symptoms": []
     },
     {
       "id": "systemic_infection",
@@ -330,27 +302,6 @@
       "severity": "CRITICAL",
       "description": "High fever (38.5C) coupled with hypotension (80/50 mmHg) and resting tachycardia (112 bpm) away from exercise, signaling sepsis/dehydration risk in an immunocompromised space environment.",
       "mission_day": 145,
-      "vitals": {
-        "heart_rate_bpm": 112,
-        "hrv_ms": 24,
-        "bp_systolic": 80,
-        "bp_diastolic": 50,
-        "glucose_mg_dl": 118,
-        "temperature_c": 38.5,
-        "spo2_pct": 94.2,
-        "respiration_rpm": 23,
-        "sleep_hours": 5.2,
-        "sleep_streak_low_days": 1,
-        "rem_sleep_pct": 14.0,
-        "mood_score": 2,
-        "stress_index": 79,
-        "radiation_msv_h": 0.05,
-        "cumulative_radiation_msv": 152.0,
-        "shoulder_pain_score": 1,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 210,
-        "intraocular_pressure_mmhg": 15.8
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -391,15 +342,8 @@
         "fiber_g": 14,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 66, "hrv": 58, "bp_sys": 114, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 94, "sleep": 7.3, "rem": 21, "radiation": 0.04, "mood": 5, "stress": 22 },
-        { "day": "D-5", "hr": 72, "hrv": 52, "bp_sys": 110, "bp_dia": 70, "temp": 36.9, "spo2": 97.8, "rr": 15, "glucose": 98, "sleep": 7.0, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 31 },
-        { "day": "D-4", "hr": 78, "hrv": 45, "bp_sys": 104, "bp_dia": 66, "temp": 37.2, "spo2": 97.1, "rr": 17, "glucose": 102, "sleep": 6.6, "rem": 19, "radiation": 0.05, "mood": 4, "stress": 44 },
-        { "day": "D-3", "hr": 86, "hrv": 38, "bp_sys": 98, "bp_dia": 62, "temp": 37.6, "spo2": 96.3, "rr": 19, "glucose": 107, "sleep": 6.1, "rem": 17, "radiation": 0.05, "mood": 3, "stress": 56 },
-        { "day": "D-2", "hr": 96, "hrv": 31, "bp_sys": 91, "bp_dia": 58, "temp": 38.0, "spo2": 95.4, "rr": 21, "glucose": 112, "sleep": 5.6, "rem": 16, "radiation": 0.05, "mood": 3, "stress": 68 },
-        { "day": "D-1", "hr": 104, "hrv": 27, "bp_sys": 85, "bp_dia": 54, "temp": 38.3, "spo2": 94.8, "rr": 22, "glucose": 115, "sleep": 5.3, "rem": 15, "radiation": 0.05, "mood": 2, "stress": 74 },
-        { "day": "Today", "hr": 112, "hrv": 24, "bp_sys": 80, "bp_dia": 50, "temp": 38.5, "spo2": 94.2, "rr": 23, "glucose": 118, "sleep": 5.2, "rem": 14, "radiation": 0.05, "mood": 2, "stress": 79 }
-      ]
+      "crisis_profile": "systemic_infection",
+      "reported_symptoms": []
     },
     {
       "id": "orthostatic_intolerance",
@@ -408,27 +352,6 @@
       "severity": "WARNING",
       "description": "Post-EVA or gravity-transition hypotension (85/55 mmHg) and compensatory tachycardia (108 bpm) with normal temperature (36.6C) and elevated PFO/DCS monitoring flag.",
       "mission_day": 148,
-      "vitals": {
-        "heart_rate_bpm": 108,
-        "hrv_ms": 34,
-        "bp_systolic": 85,
-        "bp_diastolic": 55,
-        "glucose_mg_dl": 88,
-        "temperature_c": 36.6,
-        "spo2_pct": 97.1,
-        "respiration_rpm": 19,
-        "sleep_hours": 6.4,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 19.0,
-        "mood_score": 3,
-        "stress_index": 58,
-        "radiation_msv_h": 0.04,
-        "cumulative_radiation_msv": 154.0,
-        "shoulder_pain_score": 2,
-        "pfo_decompression_risk": "MODERATE",
-        "urinary_calcium_mg_d": 235,
-        "intraocular_pressure_mmhg": 18.4
-      },
       "mission_context": {
         "mission_phase": "lunar_partial_g_016",
         "gravitational_g": 0.16,
@@ -469,15 +392,8 @@
         "fiber_g": 22,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 67, "hrv": 58, "bp_sys": 114, "bp_dia": 73, "temp": 36.6, "spo2": 98.3, "rr": 14, "glucose": 93, "sleep": 7.2, "rem": 21, "radiation": 0.04, "mood": 5, "stress": 22 },
-        { "day": "D-5", "hr": 71, "hrv": 54, "bp_sys": 110, "bp_dia": 70, "temp": 36.6, "spo2": 98.1, "rr": 15, "glucose": 92, "sleep": 7.0, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 28 },
-        { "day": "D-4", "hr": 74, "hrv": 50, "bp_sys": 106, "bp_dia": 68, "temp": 36.6, "spo2": 97.9, "rr": 15, "glucose": 90, "sleep": 6.9, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 34 },
-        { "day": "D-3", "hr": 79, "hrv": 46, "bp_sys": 101, "bp_dia": 65, "temp": 36.6, "spo2": 97.6, "rr": 16, "glucose": 89, "sleep": 6.8, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 41 },
-        { "day": "D-2", "hr": 88, "hrv": 41, "bp_sys": 95, "bp_dia": 61, "temp": 36.6, "spo2": 97.4, "rr": 17, "glucose": 87, "sleep": 6.5, "rem": 19, "radiation": 0.04, "mood": 3, "stress": 49 },
-        { "day": "D-1", "hr": 98, "hrv": 37, "bp_sys": 89, "bp_dia": 58, "temp": 36.6, "spo2": 97.2, "rr": 18, "glucose": 89, "sleep": 6.4, "rem": 19, "radiation": 0.04, "mood": 3, "stress": 54 },
-        { "day": "Today", "hr": 108, "hrv": 34, "bp_sys": 85, "bp_dia": 55, "temp": 36.6, "spo2": 97.1, "rr": 19, "glucose": 88, "sleep": 6.4, "rem": 19, "radiation": 0.04, "mood": 3, "stress": 58 }
-      ]
+      "crisis_profile": "orthostatic_intolerance",
+      "reported_symptoms": []
     },
     {
       "id": "behavioral_fatigue",
@@ -486,27 +402,6 @@
       "severity": "CRITICAL",
       "description": "Multi-day sleep restriction (<4.5h for 4 days), suppressed HRV (21 ms), low REM (11%), and severe mood/cognitive drop (2/5), requiring immediate suspension of EVA/robotics per OCHMO-MTB-009.",
       "mission_day": 156,
-      "vitals": {
-        "heart_rate_bpm": 86,
-        "hrv_ms": 21,
-        "bp_systolic": 128,
-        "bp_diastolic": 82,
-        "glucose_mg_dl": 104,
-        "temperature_c": 36.8,
-        "spo2_pct": 97.8,
-        "respiration_rpm": 17,
-        "sleep_hours": 3.8,
-        "sleep_streak_low_days": 4,
-        "rem_sleep_pct": 11.0,
-        "mood_score": 2,
-        "stress_index": 88,
-        "radiation_msv_h": 0.04,
-        "cumulative_radiation_msv": 164.0,
-        "shoulder_pain_score": 2,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 205,
-        "intraocular_pressure_mmhg": 16.0
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -547,14 +442,10 @@
         "fiber_g": 19,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 71, "hrv": 49, "bp_sys": 116, "bp_dia": 75, "temp": 36.7, "spo2": 98.2, "rr": 14, "glucose": 95, "sleep": 6.2, "rem": 18, "radiation": 0.04, "mood": 4, "stress": 38 },
-        { "day": "D-5", "hr": 74, "hrv": 42, "bp_sys": 119, "bp_dia": 77, "temp": 36.7, "spo2": 98.1, "rr": 15, "glucose": 97, "sleep": 5.4, "rem": 16, "radiation": 0.04, "mood": 3, "stress": 52 },
-        { "day": "D-4", "hr": 78, "hrv": 36, "bp_sys": 122, "bp_dia": 79, "temp": 36.7, "spo2": 98.0, "rr": 15, "glucose": 99, "sleep": 4.4, "rem": 14, "radiation": 0.04, "mood": 3, "stress": 64 },
-        { "day": "D-3", "hr": 80, "hrv": 31, "bp_sys": 124, "bp_dia": 80, "temp": 36.8, "spo2": 97.9, "rr": 16, "glucose": 101, "sleep": 4.2, "rem": 13, "radiation": 0.04, "mood": 2, "stress": 73 },
-        { "day": "D-2", "hr": 83, "hrv": 26, "bp_sys": 126, "bp_dia": 81, "temp": 36.8, "spo2": 97.8, "rr": 16, "glucose": 102, "sleep": 4.0, "rem": 12, "radiation": 0.04, "mood": 2, "stress": 80 },
-        { "day": "D-1", "hr": 85, "hrv": 23, "bp_sys": 127, "bp_dia": 81, "temp": 36.8, "spo2": 97.8, "rr": 17, "glucose": 103, "sleep": 3.9, "rem": 11, "radiation": 0.04, "mood": 2, "stress": 85 },
-        { "day": "Today", "hr": 86, "hrv": 21, "bp_sys": 128, "bp_dia": 82, "temp": 36.8, "spo2": 97.8, "rr": 17, "glucose": 104, "sleep": 3.8, "rem": 11, "radiation": 0.04, "mood": 2, "stress": 88 }
+      "crisis_profile": "behavioral_fatigue",
+      "reported_symptoms": [
+        "irritability with crewmates",
+        "unusual burning smell no one else notices"
       ]
     },
     {
@@ -564,27 +455,6 @@
       "severity": "WARNING",
       "description": "Blood glucose drop (62 mg/dL) with <50% daily nutritional intake and sympathetic tachycardia (102 bpm) during high-workload EVA, combined with EMU HUT rotator-cuff strain.",
       "mission_day": 161,
-      "vitals": {
-        "heart_rate_bpm": 102,
-        "hrv_ms": 38,
-        "bp_systolic": 104,
-        "bp_diastolic": 68,
-        "glucose_mg_dl": 62,
-        "temperature_c": 36.4,
-        "spo2_pct": 97.9,
-        "respiration_rpm": 18,
-        "sleep_hours": 6.6,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 19.5,
-        "mood_score": 3,
-        "stress_index": 62,
-        "radiation_msv_h": 0.05,
-        "cumulative_radiation_msv": 169.0,
-        "shoulder_pain_score": 6,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 220,
-        "intraocular_pressure_mmhg": 15.5
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -625,15 +495,8 @@
         "fiber_g": 11,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 66, "hrv": 58, "bp_sys": 114, "bp_dia": 73, "temp": 36.6, "spo2": 98.4, "rr": 14, "glucose": 92, "sleep": 7.2, "rem": 21, "radiation": 0.04, "mood": 5, "stress": 22 },
-        { "day": "D-5", "hr": 70, "hrv": 55, "bp_sys": 112, "bp_dia": 72, "temp": 36.6, "spo2": 98.3, "rr": 14, "glucose": 89, "sleep": 7.0, "rem": 21, "radiation": 0.04, "mood": 4, "stress": 29 },
-        { "day": "D-4", "hr": 75, "hrv": 51, "bp_sys": 110, "bp_dia": 71, "temp": 36.5, "spo2": 98.2, "rr": 15, "glucose": 84, "sleep": 6.9, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 37 },
-        { "day": "D-3", "hr": 82, "hrv": 47, "bp_sys": 108, "bp_dia": 70, "temp": 36.5, "spo2": 98.1, "rr": 16, "glucose": 78, "sleep": 6.8, "rem": 20, "radiation": 0.05, "mood": 4, "stress": 45 },
-        { "day": "D-2", "hr": 89, "hrv": 43, "bp_sys": 106, "bp_dia": 69, "temp": 36.5, "spo2": 98.0, "rr": 17, "glucose": 72, "sleep": 6.7, "rem": 20, "radiation": 0.05, "mood": 3, "stress": 52 },
-        { "day": "D-1", "hr": 96, "hrv": 40, "bp_sys": 105, "bp_dia": 68, "temp": 36.4, "spo2": 97.9, "rr": 17, "glucose": 67, "sleep": 6.6, "rem": 19, "radiation": 0.05, "mood": 3, "stress": 58 },
-        { "day": "Today", "hr": 102, "hrv": 38, "bp_sys": 104, "bp_dia": 68, "temp": 36.4, "spo2": 97.9, "rr": 18, "glucose": 62, "sleep": 6.6, "rem": 19, "radiation": 0.05, "mood": 3, "stress": 62 }
-      ]
+      "crisis_profile": "hypoglycemia",
+      "reported_symptoms": []
     },
     {
       "id": "solar_storm",
@@ -642,27 +505,6 @@
       "severity": "CRITICAL",
       "description": "Sudden proton flux escalation exceeding 0.50 mSv/h (0.68 mSv/h) correlated with NASA DONKI X-class flare / SEP event. Immediate radiation storm-shelter relocation required.",
       "mission_day": 164,
-      "vitals": {
-        "heart_rate_bpm": 96,
-        "hrv_ms": 42,
-        "bp_systolic": 124,
-        "bp_diastolic": 78,
-        "glucose_mg_dl": 97,
-        "temperature_c": 36.8,
-        "spo2_pct": 98.2,
-        "respiration_rpm": 17,
-        "sleep_hours": 7.1,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 21.0,
-        "mood_score": 3,
-        "stress_index": 72,
-        "radiation_msv_h": 0.68,
-        "cumulative_radiation_msv": 198.4,
-        "shoulder_pain_score": 0,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 192,
-        "intraocular_pressure_mmhg": 15.4
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -703,15 +545,40 @@
         "fiber_g": 25,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 94, "sleep": 7.4, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 21 },
-        { "day": "D-5", "hr": 68, "hrv": 57, "bp_sys": 115, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 93, "sleep": 7.3, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 23 },
-        { "day": "D-4", "hr": 70, "hrv": 56, "bp_sys": 116, "bp_dia": 74, "temp": 36.7, "spo2": 98.3, "rr": 14, "glucose": 95, "sleep": 7.2, "rem": 21, "radiation": 0.05, "mood": 4, "stress": 28 },
-        { "day": "D-3", "hr": 72, "hrv": 54, "bp_sys": 117, "bp_dia": 75, "temp": 36.7, "spo2": 98.3, "rr": 15, "glucose": 94, "sleep": 7.2, "rem": 21, "radiation": 0.07, "mood": 4, "stress": 34 },
-        { "day": "D-2", "hr": 76, "hrv": 51, "bp_sys": 119, "bp_dia": 76, "temp": 36.7, "spo2": 98.3, "rr": 15, "glucose": 96, "sleep": 7.1, "rem": 21, "radiation": 0.14, "mood": 4, "stress": 45 },
-        { "day": "D-1", "hr": 84, "hrv": 47, "bp_sys": 121, "bp_dia": 77, "temp": 36.8, "spo2": 98.2, "rr": 16, "glucose": 95, "sleep": 7.1, "rem": 21, "radiation": 0.31, "mood": 3, "stress": 58 },
-        { "day": "Today", "hr": 96, "hrv": 42, "bp_sys": 124, "bp_dia": 78, "temp": 36.8, "spo2": 98.2, "rr": 17, "glucose": 97, "sleep": 7.1, "rem": 21, "radiation": 0.68, "mood": 3, "stress": 72 }
-      ]
+      "crisis_profile": "solar_storm",
+      "reported_symptoms": [
+        "light flashes in the visual field (phosphenes)",
+        "mild nausea"
+      ],
+      "donki_simulation": {
+        "_note": "Scenario-only events in DONKI schema; times are hours before 'now' so the event is active.",
+        "SEP": [
+          {
+            "sepID": "SIM-SEP-001",
+            "hours_ago": 2,
+            "instruments": [
+              {
+                "displayName": "GOES-P: SEISS >10 MeV"
+              }
+            ],
+            "link": null
+          }
+        ],
+        "FLR": [
+          {
+            "flrID": "SIM-FLR-001",
+            "hours_ago": 3,
+            "classType": "X1.9",
+            "sourceLocation": "N12W42",
+            "instruments": [
+              {
+                "displayName": "GOES-P: EXIS 1.0-8.0"
+              }
+            ],
+            "link": null
+          }
+        ]
+      }
     },
     {
       "id": "post_exercise_physiological",
@@ -720,27 +587,6 @@
       "severity": "NOMINAL",
       "description": "Elevated HR (106 bpm), skin temperature (37.6C), and systolic BP (134 mmHg) measured 15 minutes after intense 90-min ARED/T2 countermeasure workout. Contextual AI recognizes non-pathological exercise kinetics.",
       "mission_day": 149,
-      "vitals": {
-        "heart_rate_bpm": 106,
-        "hrv_ms": 36,
-        "bp_systolic": 134,
-        "bp_diastolic": 78,
-        "glucose_mg_dl": 89,
-        "temperature_c": 37.6,
-        "spo2_pct": 98.1,
-        "respiration_rpm": 20,
-        "sleep_hours": 7.5,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 22.0,
-        "mood_score": 5,
-        "stress_index": 34,
-        "radiation_msv_h": 0.04,
-        "cumulative_radiation_msv": 155.0,
-        "shoulder_pain_score": 1,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 188,
-        "intraocular_pressure_mmhg": 15.3
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -781,15 +627,8 @@
         "fiber_g": 27,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 65, "hrv": 60, "bp_sys": 113, "bp_dia": 72, "temp": 36.6, "spo2": 98.5, "rr": 14, "glucose": 92, "sleep": 7.5, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 20 },
-        { "day": "D-5", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 93, "sleep": 7.4, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 21 },
-        { "day": "D-4", "hr": 65, "hrv": 61, "bp_sys": 113, "bp_dia": 72, "temp": 36.6, "spo2": 98.5, "rr": 13, "glucose": 91, "sleep": 7.6, "rem": 23, "radiation": 0.04, "mood": 5, "stress": 19 },
-        { "day": "D-3", "hr": 67, "hrv": 58, "bp_sys": 115, "bp_dia": 73, "temp": 36.7, "spo2": 98.4, "rr": 14, "glucose": 94, "sleep": 7.3, "rem": 21, "radiation": 0.04, "mood": 5, "stress": 22 },
-        { "day": "D-2", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 72, "temp": 36.6, "spo2": 98.5, "rr": 14, "glucose": 92, "sleep": 7.5, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 20 },
-        { "day": "D-1", "hr": 65, "hrv": 60, "bp_sys": 113, "bp_dia": 72, "temp": 36.6, "spo2": 98.4, "rr": 14, "glucose": 93, "sleep": 7.5, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 20 },
-        { "day": "Today", "hr": 106, "hrv": 36, "bp_sys": 134, "bp_dia": 78, "temp": 37.6, "spo2": 98.1, "rr": 20, "glucose": 89, "sleep": 7.5, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 34 }
-      ]
+      "crisis_profile": "post_exercise_physiological",
+      "reported_symptoms": []
     },
     {
       "id": "cabin_co2_pocket",
@@ -798,27 +637,6 @@
       "severity": "WARNING",
       "description": "Mild tachypnea (21 rpm), borderline SpO2 (95.2%), elevated BP (132/84 mmHg), and fragmented sleep associated with a microgravity CO2 stagnation pocket (4.6 mmHg) when ventilation fan speed dropped.",
       "mission_day": 152,
-      "vitals": {
-        "heart_rate_bpm": 88,
-        "hrv_ms": 39,
-        "bp_systolic": 132,
-        "bp_diastolic": 84,
-        "glucose_mg_dl": 96,
-        "temperature_c": 36.8,
-        "spo2_pct": 95.2,
-        "respiration_rpm": 21,
-        "sleep_hours": 5.8,
-        "sleep_streak_low_days": 0,
-        "rem_sleep_pct": 16.5,
-        "mood_score": 3,
-        "stress_index": 56,
-        "radiation_msv_h": 0.04,
-        "cumulative_radiation_msv": 159.0,
-        "shoulder_pain_score": 0,
-        "pfo_decompression_risk": "LOW",
-        "urinary_calcium_mg_d": 195,
-        "intraocular_pressure_mmhg": 17.8
-      },
       "mission_context": {
         "mission_phase": "chronic_microgravity_cruise",
         "gravitational_g": 0.0,
@@ -859,15 +677,8 @@
         "fiber_g": 24,
         "goal_fiber_g": 30
       },
-      "longitudinal_series": [
-        { "day": "D-6", "hr": 66, "hrv": 59, "bp_sys": 114, "bp_dia": 73, "temp": 36.6, "spo2": 98.4, "rr": 14, "glucose": 93, "sleep": 7.4, "rem": 22, "radiation": 0.04, "mood": 5, "stress": 21 },
-        { "day": "D-5", "hr": 68, "hrv": 57, "bp_sys": 116, "bp_dia": 74, "temp": 36.6, "spo2": 98.1, "rr": 15, "glucose": 94, "sleep": 7.2, "rem": 21, "radiation": 0.04, "mood": 4, "stress": 25 },
-        { "day": "D-4", "hr": 72, "hrv": 53, "bp_sys": 119, "bp_dia": 76, "temp": 36.7, "spo2": 97.6, "rr": 16, "glucose": 94, "sleep": 6.9, "rem": 20, "radiation": 0.04, "mood": 4, "stress": 32 },
-        { "day": "D-3", "hr": 76, "hrv": 49, "bp_sys": 123, "bp_dia": 78, "temp": 36.7, "spo2": 97.0, "rr": 17, "glucose": 95, "sleep": 6.5, "rem": 19, "radiation": 0.04, "mood": 4, "stress": 39 },
-        { "day": "D-2", "hr": 81, "hrv": 45, "bp_sys": 127, "bp_dia": 80, "temp": 36.7, "spo2": 96.3, "rr": 19, "glucose": 95, "sleep": 6.2, "rem": 18, "radiation": 0.04, "mood": 3, "stress": 46 },
-        { "day": "D-1", "hr": 85, "hrv": 42, "bp_sys": 130, "bp_dia": 82, "temp": 36.8, "spo2": 95.7, "rr": 20, "glucose": 96, "sleep": 6.0, "rem": 17, "radiation": 0.04, "mood": 3, "stress": 51 },
-        { "day": "Today", "hr": 88, "hrv": 39, "bp_sys": 132, "bp_dia": 84, "temp": 36.8, "spo2": 95.2, "rr": 21, "glucose": 96, "sleep": 5.8, "rem": 16.5, "radiation": 0.04, "mood": 3, "stress": 56 }
-      ]
+      "crisis_profile": "cabin_co2_pocket",
+      "reported_symptoms": []
     }
   ],
   "environments": [
@@ -881,7 +692,13 @@
       "one_way_latency_seconds": 720,
       "latency_label": "~12–20 min Mars/Deep Space Delay",
       "protocol_focus": "Wireless BLE wearables (no loose cables), cephalic fluid-shift BP compensation, autonomous edge triage.",
-      "checs_devices": ["CSA Astroskin Bio-Monitor", "Biometric Smartwatch", "Portable i-STAT", "CMRS Restraint", "Personal BLE Dosimeter"],
+      "checs_devices": [
+        "CSA Astroskin Bio-Monitor",
+        "Biometric Smartwatch",
+        "Portable i-STAT",
+        "CMRS Restraint",
+        "Personal BLE Dosimeter"
+      ],
       "decontamination_required": false,
       "decontamination_checklist": []
     },
@@ -895,7 +712,13 @@
       "one_way_latency_seconds": 2,
       "latency_label": "~2s Low-Latency Relay",
       "protocol_focus": "Automated circadian LED lighting sync (16 orbital sunrises/day), full CHeCS rack integration (Ultrasound 2, MELFI, ARED).",
-      "checs_devices": ["Tempus Pro Console", "Ultrasound 2 / 3", "MELFI -80C Freezer", "Urolux Urine Analyzer", "ARED & T2 COLBERT"],
+      "checs_devices": [
+        "Tempus Pro Console",
+        "Ultrasound 2 / 3",
+        "MELFI -80C Freezer",
+        "Urolux Urine Analyzer",
+        "ARED & T2 COLBERT"
+      ],
       "decontamination_required": false,
       "decontamination_checklist": []
     },
@@ -909,7 +732,12 @@
       "one_way_latency_seconds": 380,
       "latency_label": "~6–20 min Asynchronous Link",
       "protocol_focus": "Mandatory lunar regolith / Martian perchlorate dust decontamination & airlock seal verification prior to active blood or cuff exams.",
-      "checs_devices": ["Airlock Dust HEPA Purge", "Portable Ultrasound", "Capillary Glucose Strip (Shielded)", "Surface Rover Dosimeter"],
+      "checs_devices": [
+        "Airlock Dust HEPA Purge",
+        "Portable Ultrasound",
+        "Capillary Glucose Strip (Shielded)",
+        "Surface Rover Dosimeter"
+      ],
       "decontamination_required": true,
       "decontamination_checklist": [
         "Verify EVA suit dust-lock seal and execute 90-second electrostatic/HEPA regolith purge before opening medical bay.",
@@ -1052,5 +880,6 @@
       "how_to_measure": "Monitor real-time mSv/h dose rate, cumulative mSv budget, and live NASA DONKI solar proton/flare storm alerts.",
       "why_it_matters": "Enables immediate transition to polyethylene/water-shielded storm shelter during Solar Particle Events (SPEs)."
     }
-  }
+  },
+  "telemetry_source": "Generated at runtime by app/engine/telemetry_generator.py (NASA-calibrated stochastic model); no static vitals."
 }

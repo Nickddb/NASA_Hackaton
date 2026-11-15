@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
+import numpy as np
+
 from app.engine.clinical_rules import evaluate_clinical_and_explainable_rules, load_scenarios_catalog
+from app.engine.cross_diagnosis import SEVERE_PSYCH, evaluate_cross_diagnosis
 from app.engine.earth_sync import FOLLOWUP_STORE_PATH, EarthSyncManager
 from app.engine.followup_loop import FollowUpCaseManager
+from app.engine.telemetry_generator import CRISIS_PROFILES, TelemetryGenerator
 from app.engine.nasa_feeds import (
     fetch_nasa_space_weather,
     load_sample_donki,
@@ -73,7 +77,6 @@ class MissionStateManager:
         self.scenario_id: str = "nominal"
         self.environment_id: str = "transit"
         self.mission_day: int = 142
-        self.vitals: VitalSigns = VitalSigns(**self.scenarios_by_id["nominal"]["vitals"])
         self.mission_context: MissionContext = MissionContext(
             **self.scenarios_by_id["nominal"].get("mission_context", {})
         )
@@ -83,12 +86,87 @@ class MissionStateManager:
         self.nutrition: NutritionHydrationState = NutritionHydrationState(
             **self.scenarios_by_id["nominal"]["nutrition"]
         )
-        self.longitudinal_series: list[dict[str, Any]] = list(
-            self.scenarios_by_id["nominal"].get("longitudinal_series", [])
-        )
-        self.space_weather: SpaceWeatherSummary = load_sample_donki()
+        self.telemetry_rng = np.random.default_rng()
+        self.vitals: VitalSigns
+        self.longitudinal_series: list[dict[str, Any]] = []
+        self._generate_telemetry()
+        self.space_weather: SpaceWeatherSummary = load_sample_donki(simulated=self._scenario_donki())
         self.horizons_link: HorizonsLinkStatus = load_sample_horizons(self.environment_id)
         self.last_updated: str = datetime.now(timezone.utc).isoformat()
+
+    # ---------- Stochastic telemetry (replaces static scenario vitals) ----------
+    def record_reported_symptom(self, text: str) -> None:
+        """Keep crew-reported symptoms (from chat) so the cross-diagnosis tree and the dashboard see them."""
+        text = text.strip()
+        if text and text not in self.vitals.reported_symptoms:
+            self.vitals.reported_symptoms = (self.vitals.reported_symptoms + [text])[-8:]
+            self.earth_sync.record_audit_event(
+                event_type="CREW_SYMPTOM_REPORTED", astronaut_id=self.astronaut_id, summary=f"Crew report: {text[:160]}"
+            )
+            self._touch()
+
+    def escalate_psych_priority(self, reason: str) -> EarthSyncPackage:
+        """Immediate Earth alert for severe psychological risk: audit entry + a store-and-forward package
+        that goes first in the next communication window."""
+        self.earth_sync.record_audit_event(
+            event_type="PSYCH_CRITICAL_ESCALATION",
+            astronaut_id=self.astronaut_id,
+            summary=f"IMMEDIATE behavioral-health alert to Earth Flight Surgeon: {reason}",
+            metadata={"priority": "IMMEDIATE"},
+        )
+        pkg = self.create_earth_sync_package()
+        if self.horizons_link.comms_available:
+            self.earth_sync.synchronize_queued_packages(comms_available=True)
+        return pkg
+
+    def _scenario_donki(self) -> dict[str, list[dict[str, Any]]]:
+        """Scenario-only DONKI events (e.g. the solar-storm drill), stamped relative to now so they are active.
+        Kept separate from real NASA data and labelled origin='scenario_simulation' downstream."""
+        sim = self.scenarios_by_id.get(self.scenario_id, {}).get("donki_simulation") or {}
+        now = datetime.now(timezone.utc)
+        out: dict[str, list[dict[str, Any]]] = {}
+        for kind, items in sim.items():
+            if kind.startswith("_"):
+                continue
+            stamped = []
+            for item in items:
+                t = (now - timedelta(hours=float(item.get("hours_ago", 1)))).strftime("%Y-%m-%dT%H:%MZ")
+                rec = {k: v for k, v in item.items() if k != "hours_ago"}
+                rec["beginTime" if kind == "FLR" else "eventTime"] = t
+                stamped.append(rec)
+            out[kind] = stamped
+        return out
+
+    def _generator(self) -> TelemetryGenerator:
+        return TelemetryGenerator(self.astronauts_by_id[self.astronaut_id], self.mission_context.mission_phase)
+
+    def _generate_telemetry(self) -> None:
+        sc = self.scenarios_by_id[self.scenario_id]
+        vitals, series = self._generator().generate(sc.get("crisis_profile", self.scenario_id), self.mission_day)
+        vitals["reported_symptoms"] = list(sc.get("reported_symptoms", []))
+        self.vitals = VitalSigns(**vitals)
+        self.longitudinal_series = series
+
+    def next_telemetry_reading(self, crisis_probability: float = 0.0) -> MissionState:
+        """New noisy reading from the generator. With crisis_probability > 0 a nominal mission can
+        stochastically enter one of the crisis profiles (demo of unplanned events)."""
+        if self.scenario_id == "nominal" and crisis_probability > 0 and self.telemetry_rng.random() < crisis_probability:
+            crises = [k for k in CRISIS_PROFILES if k != "nominal" and k in self.scenarios_by_id]
+            return self.switch_scenario(str(self.telemetry_rng.choice(crises)))
+
+        sc = self.scenarios_by_id[self.scenario_id]
+        reading = self._generator().next_reading(
+            sc.get("crisis_profile", self.scenario_id), self.vitals.model_dump(), self.telemetry_rng
+        )
+        self.vitals = VitalSigns(**reading)
+        today = self.longitudinal_series[-1] if self.longitudinal_series else None
+        if today is not None:
+            for metric, key in (("heart_rate_bpm", "hr"), ("hrv_ms", "hrv"), ("temperature_c", "temp"),
+                                ("bp_systolic", "bp_sys"), ("bp_diastolic", "bp_dia"), ("radiation_msv_h", "radiation"),
+                                ("glucose_mg_dl", "glucose"), ("spo2_pct", "spo2"), ("respiration_rpm", "rr")):
+                today[key] = reading[metric]
+        self._touch()
+        return self.get_state()
 
     def _touch(self) -> None:
         self.last_updated = datetime.now(timezone.utc).isoformat()
@@ -97,6 +175,7 @@ class MissionStateManager:
         if astronaut_id not in self.astronauts_by_id:
             raise KeyError(f"Unknown astronaut_id: {astronaut_id}")
         self.astronaut_id = astronaut_id
+        self._generate_telemetry()  # vitals are drawn around this astronaut's own baseline
         self.earth_sync.record_audit_event(
             event_type="ASTRONAUT_PROFILE_SWITCHED",
             astronaut_id=astronaut_id,
@@ -111,11 +190,11 @@ class MissionStateManager:
         sc = self.scenarios_by_id[scenario_id]
         self.scenario_id = scenario_id
         self.mission_day = int(sc.get("mission_day", 142))
-        self.vitals = VitalSigns(**sc["vitals"])
         self.mission_context = MissionContext(**sc.get("mission_context", {}))
         self.measurement_quality = MeasurementQualityProfile(**sc.get("measurement_quality", {}))
         self.nutrition = NutritionHydrationState(**sc["nutrition"])
-        self.longitudinal_series = [dict(row) for row in sc.get("longitudinal_series", [])]
+        self._generate_telemetry()
+        self.space_weather = load_sample_donki(simulated=self._scenario_donki())
         self.earth_sync.record_audit_event(
             event_type="SCENARIO_LOADED",
             astronaut_id=self.astronaut_id,
@@ -134,6 +213,7 @@ class MissionStateManager:
         if "mission_phase" in env_info:
             self.mission_context.mission_phase = env_info["mission_phase"]
         self.horizons_link = load_sample_horizons(env_id)
+        self._generate_telemetry()  # gravity phase shifts the nominal centre
         self.earth_sync.record_audit_event(
             event_type="ENVIRONMENT_CALIBRATION_CHANGED",
             astronaut_id=self.astronaut_id,
@@ -409,8 +489,8 @@ class MissionStateManager:
             comms_available=self.horizons_link.comms_available
         )
 
-    async def refresh_space_weather(self) -> SpaceWeatherSummary:
-        self.space_weather = await fetch_nasa_space_weather()
+    async def refresh_space_weather(self, force: bool = False) -> SpaceWeatherSummary:
+        self.space_weather = await fetch_nasa_space_weather(simulated=self._scenario_donki(), force=force)
         self._touch()
         return self.space_weather
 
@@ -647,6 +727,15 @@ class MissionStateManager:
             catalog=self.catalog,
         )
 
+        # 5b. Cross diagnosis: physical vs. NASA DONKI space weather vs. psychological
+        cross = evaluate_cross_diagnosis(
+            vitals=self.vitals,
+            context=self.mission_context,
+            space_weather=self.space_weather,
+            contextual_report=contextual_report,
+            clinical=clin_eval,
+        )
+
         # 6. Pillar 3: Sync Explainable Alerts into Closed-Loop Follow-Up Cases
         active_cases = self.followup_manager.sync_alerts(
             alerts=clin_eval.explainable_alerts,
@@ -681,6 +770,7 @@ class MissionStateManager:
             explainable_alerts=clin_eval.explainable_alerts,
             followup_cases=active_cases,
             space_weather=self.space_weather,
+            cross_diagnosis=cross,
             horizons_link=self.horizons_link,
             earth_sync_queue_count=self.earth_sync.pending_count(),
             earth_sync_last_package_id=last_pkg_id,

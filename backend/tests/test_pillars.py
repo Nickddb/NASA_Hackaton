@@ -51,7 +51,7 @@ def test_phase_prior_shifts_the_anchor():
     from app.main import state_manager as sm
 
     eng = AdaptiveBaselineEngine()
-    v = VitalSigns(**sm.scenarios_by_id["nominal"]["vitals"])
+    v = sm.vitals
     earth = eng.evaluate(astro, v, MissionContext(mission_phase="pre_flight_1g"), [], 1)
     cruise = eng.evaluate(astro, v, MissionContext(mission_phase="chronic_microgravity_cruise"), [], 1)
     assert (

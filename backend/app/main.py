@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -38,7 +39,10 @@ orchestrator = AstraCareOrchestrator(state_manager)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Pull NASA DONKI once at start-up without blocking it; offline -> cache/sample is already loaded.
+    task = asyncio.create_task(state_manager.refresh_space_weather())
     yield
+    task.cancel()
 
 
 app = FastAPI(
@@ -241,8 +245,18 @@ def trigger_measurement(system_id: str) -> MeasurementResponse:
 
 
 @app.get("/api/nasa/space-weather", response_model=SpaceWeatherSummary)
-async def get_space_weather() -> SpaceWeatherSummary:
-    return await state_manager.refresh_space_weather()
+async def get_space_weather(force: bool = False) -> SpaceWeatherSummary:
+    """NASA DONKI SEP/FLR/RBE summary. Uses a 30-min cache to respect the DEMO_KEY quota; force=true bypasses it."""
+    return await state_manager.refresh_space_weather(force=force)
+
+
+@app.post("/api/telemetry/next", response_model=MissionState)
+def next_telemetry_reading(crisis_probability: float = 0.0) -> MissionState:
+    """New reading from the NASA-calibrated stochastic generator. crisis_probability (0-1) lets a nominal
+    mission randomly enter a crisis profile."""
+    if not 0.0 <= crisis_probability <= 1.0:
+        raise HTTPException(status_code=422, detail="crisis_probability must be between 0 and 1")
+    return state_manager.next_telemetry_reading(crisis_probability)
 
 
 @app.post("/api/telemedicine/dossier", response_model=TelemedicineDossier)
