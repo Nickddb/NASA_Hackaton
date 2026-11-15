@@ -81,6 +81,9 @@ def _physical_findings(vitals: VitalSigns, context: MissionContext, ctx: Context
         add("Dosimeter", f"{vitals.radiation_msv_h:.2f} mSv/h", f">= {cal.RADIATION_WARN_RATE_MSV_H} mSv/h (nominal 0.025-0.038)")
     if vitals.shoulder_pain_score >= 7:
         add("Shoulder pain", f"{vitals.shoulder_pain_score}/10", ">= 7/10 VAS")
+    for r in vitals.pain_reports:
+        if r.intensity >= 4 and r.region not in ("left_shoulder", "right_shoulder"):
+            add(f"{r.region_label} pain", f"{r.intensity}/10 {r.quality}", "crew report on the body model, >= 4/10")
     return found
 
 
@@ -238,6 +241,31 @@ def _evaluate(
     ruled_out = [CrossEvidence(signal="NASA DONKI", value=donki_note, rule="no radiation-compatible signs" if donki else "no active SEP/FLR M-X/RBE", supports=False)]
 
     # ---------------- Layer 2: internal / onboard / contextual ----------------
+    pain = {r.region: r for r in vitals.pain_reports}
+    chest = next((r for r in vitals.pain_reports if r.category == "chest"), None)
+    if chest is not None and (
+        chest.intensity >= 4 or vitals.heart_rate_bpm > cal.HR_WARN_HIGH or vitals.spo2_pct < 94.0
+    ):
+        return CrossDiagnosisResult(
+            layer=2,
+            root_cause="INTERNAL_PHYSIOLOGICAL",
+            title="Chest pain: rule out an acute cardiac or pulmonary event",
+            summary=(
+                f"The crew member marked chest pain {chest.intensity}/10 ({chest.quality}) with heart rate "
+                f"{vitals.heart_rate_bpm:.0f} bpm and SpO2 {vitals.spo2_pct:.0f}%. Chest pain is treated as cardiac "
+                "until an ECG says otherwise."
+            ),
+            evidence=physical + ruled_out,
+            recommended_actions=[
+                "Stop activity; seat and restrain the crew member.",
+                "Acquire a 12-lead ECG, SpO2 and blood pressure now.",
+                "Send the trace to the Flight Surgeon immediately; prepare the CHeCS cardiac kit.",
+            ],
+            notify_earth=True,
+            earth_priority="IMMEDIATE",
+            references=refs,
+        )
+
     if dose_up and not donki:
         return CrossDiagnosisResult(
             layer=2,
@@ -323,6 +351,112 @@ def _evaluate(
             recommended_actions=["Increase module ventilation and inspect the CO2 scrubber.", "Re-check SpO2 and respiration in 30 min."],
             notify_earth=True,
             earth_priority="ROUTINE",
+            references=refs,
+        )
+
+    abdomen = pain.get("abdomen")
+    if abdomen is not None and abdomen.intensity >= 4:
+        stone = vitals.urinary_calcium_mg_d > 230.0 or abdomen.quality in ("sharp", "cramping")
+        return CrossDiagnosisResult(
+            layer=2,
+            root_cause="INTERNAL_PHYSIOLOGICAL",
+            title="Suspected renal stone (bone demineralisation)" if stone else "Abdominal pain",
+            summary=(
+                f"Abdominal pain {abdomen.intensity}/10 ({abdomen.quality}); urinary calcium "
+                f"{vitals.urinary_calcium_mg_d:.0f} mg/day. Microgravity bone loss raises urinary calcium and the "
+                "risk of kidney stones."
+                if stone
+                else f"Abdominal pain {abdomen.intensity}/10 ({abdomen.quality}) without signs pointing to a renal stone."
+            ),
+            evidence=physical + ruled_out,
+            recommended_actions=[
+                "Point-of-care ultrasound of kidneys and bladder.",
+                "Urinalysis for blood; increase fluid intake to >= 2.5 L/day.",
+                "Report to the Flight Surgeon; analgesia per CHeCS protocol.",
+            ],
+            notify_earth=True,
+            earth_priority="PRIORITY" if abdomen.intensity >= 7 or stone else "ROUTINE",
+            references=refs,
+        )
+
+    head = pain.get("head")
+    if head is not None and head.intensity >= 4:
+        return CrossDiagnosisResult(
+            layer=2,
+            root_cause="INTERNAL_PHYSIOLOGICAL",
+            title="Headache: check cabin CO2, hydration and intracranial pressure (SANS)",
+            summary=(
+                f"Headache {head.intensity}/10 ({head.quality}). Cabin CO2 is {context.cabin_co2_mmhg:.1f} mmHg and "
+                f"intraocular pressure {vitals.intraocular_pressure_mmhg:.1f} mmHg."
+            ),
+            evidence=physical + ruled_out,
+            recommended_actions=[
+                "Verify local CO2 with a portable monitor; ventilate the module.",
+                "Hydrate and re-assess in 30 min.",
+                "If visual changes appear, run fundoscopy / OCT (SANS screening).",
+            ],
+            notify_earth=head.intensity >= 7,
+            earth_priority="PRIORITY" if head.intensity >= 7 else "ROUTINE",
+            references=refs,
+        )
+
+    back = pain.get("lower_back")
+    if back is not None and back.intensity >= 4 and context.mission_phase == "acute_microgravity_adaptation":
+        return CrossDiagnosisResult(
+            layer=2,
+            root_cause="CONTEXTUAL_BENIGN",
+            title="Space adaptation back pain (spinal unloading)",
+            summary=(
+                f"Lower back pain {back.intensity}/10 in the first weeks of microgravity: the spine lengthens without "
+                "gravity load. Common and usually self-limited."
+            ),
+            evidence=physical + ruled_out,
+            recommended_actions=[
+                "Fetal-position stretching and resistive exercise (ARED).",
+                "Analgesia per CHeCS protocol if it disturbs sleep.",
+                "Escalate if there is numbness, weakness or loss of bladder control.",
+            ],
+            earth_priority="ROUTINE",
+            references=refs,
+        )
+
+    msk = max(
+        (r for r in vitals.pain_reports if r.category == "musculoskeletal" and r.intensity >= 4),
+        key=lambda r: r.intensity,
+        default=None,
+    )
+    if msk is not None and not contextual_report.context_explains_deviation:
+        shoulder = msk.region in ("left_shoulder", "right_shoulder")
+        return CrossDiagnosisResult(
+            layer=2,
+            root_cause="INTERNAL_PHYSIOLOGICAL",
+            title=(
+                "Shoulder pain: EVA suit load on the rotator cuff" if shoulder else f"Musculoskeletal pain: {msk.region_label.lower()}"
+            ),
+            summary=(
+                f"{msk.region_label} pain {msk.intensity}/10 ({msk.quality}). "
+                + (
+                    "The rigid suit torso compresses the shoulder during EVA; rotator-cuff injury is a known EVA risk."
+                    if shoulder
+                    else "No vital-sign change explains it; treat as a local musculoskeletal problem."
+                )
+            ),
+            evidence=physical + ruled_out,
+            recommended_actions=(
+                [
+                    "Suspend overhead and EVA tasks until assessed.",
+                    "Portable ultrasound of the shoulder; range-of-motion tests.",
+                    "Ice and analgesia per CHeCS protocol; inform the Flight Surgeon.",
+                ]
+                if shoulder
+                else [
+                    "Rest the region and adapt the exercise prescription.",
+                    "Analgesia per CHeCS protocol; re-assess in 24 h.",
+                    "Escalate if there is swelling, numbness or weakness.",
+                ]
+            ),
+            notify_earth=msk.intensity >= 7,
+            earth_priority="PRIORITY" if msk.intensity >= 7 else "ROUTINE",
             references=refs,
         )
 
