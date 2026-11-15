@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   Brain,
+  CheckCircle2,
   Droplet,
   Footprints,
   HeartPulse,
@@ -10,7 +12,9 @@ import {
   Moon,
   PersonStanding,
   Scan,
+  ShieldCheck,
   Shirt,
+  Sparkles,
   Stethoscope,
   Thermometer,
   Wind,
@@ -22,16 +26,43 @@ import {
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./BodyModel3D";
-import { bpStatus, glucoseStatus, hrStatus, radiationStatus, sleepStatus, tempStatus } from "../services/thresholds";
+import { getVitalStatuses } from "../services/api";
 
 /* ---------- status helpers ---------- */
 
 const STATUS_STYLE = {
   NORMAL: { dot: "bg-[#22C55E]", text: "text-[#4ADE80]", label: "Normal" },
   EXCELLENT: { dot: "bg-[#22C55E]", text: "text-[#4ADE80]", label: "Excellent" },
-  WARNING: { dot: "bg-[#F59E0B]", text: "text-[#FBBF24]", label: "Attention" },
+  WARNING: { dot: "bg-[#F59E0B] animate-pulse", text: "text-[#FBBF24]", label: "Attention" },
   CRITICAL: { dot: "bg-[#EF4444] animate-pulse", text: "text-[#F87171]", label: "Critical" },
 };
+
+const CARD_LIGHT_SURFACE = {
+  CRITICAL: {
+    card: "!border-red-500/85 !from-red-950/75 !via-[#2B0B14]/75 !to-[#1A0810]/70 !shadow-[0_0_20px_rgba(239,68,68,0.42)] hover:!border-red-400",
+    led: "bg-red-500 shadow-[0_0_10px_3px_rgba(239,68,68,0.95)]",
+    ping: true,
+    icon: "text-red-400",
+    value: "text-red-200",
+    chartStroke: "#EF4444",
+    badge: "border-red-400/70 bg-red-950/85 text-red-200",
+  },
+  WARNING: {
+    card: "!border-amber-400/85 !from-amber-950/65 !via-[#2B1D0A]/75 !to-[#1A1208]/70 !shadow-[0_0_18px_rgba(245,158,11,0.34)] hover:!border-amber-300",
+    led: "bg-amber-400 shadow-[0_0_10px_2px_rgba(245,158,11,0.9)] animate-pulse",
+    ping: false,
+    icon: "text-amber-300",
+    value: "text-amber-200",
+    chartStroke: "#F59E0B",
+    badge: "border-amber-400/70 bg-amber-950/85 text-amber-200",
+  },
+};
+
+function toDashStatus(status) {
+  if (status === "CRITICAL") return "CRITICAL";
+  if (status === "WARNING") return "WARNING";
+  return "NORMAL";
+}
 
 function sleepQuality(v) {
   const hoursScore = Math.min(1, v.sleep_hours / 7.5);
@@ -39,8 +70,11 @@ function sleepQuality(v) {
   return Math.round((hoursScore * 0.75 + remScore * 0.25) * 100);
 }
 
-function buildVitals(v) {
+function buildVitals(v, pb) {
   const sq = sleepQuality(v);
+  const ms = getVitalStatuses(v, pb);
+  const sleepStatus =
+    ms.sleep !== "NOMINAL" ? ms.sleep : sq >= 90 ? "EXCELLENT" : sq >= 70 ? "NORMAL" : sq >= 55 ? "WARNING" : "CRITICAL";
   return [
     {
       id: "hr",
@@ -48,7 +82,7 @@ function buildVitals(v) {
       icon: HeartPulse,
       value: Math.round(v.heart_rate_bpm),
       unit: "bpm",
-      status: hrStatus(v.heart_rate_bpm),
+      status: toDashStatus(ms.hr),
       system: "cardiovascular",
     },
     {
@@ -57,7 +91,7 @@ function buildVitals(v) {
       icon: Droplet,
       value: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)}`,
       unit: "mmHg",
-      status: bpStatus(v.bp_systolic),
+      status: toDashStatus(ms.bp),
       system: "cardiovascular",
     },
     {
@@ -66,7 +100,7 @@ function buildVitals(v) {
       icon: Thermometer,
       value: v.temperature_c.toFixed(1),
       unit: "°C",
-      status: tempStatus(v.temperature_c),
+      status: toDashStatus(ms.temp),
       system: "respiratory",
     },
     {
@@ -75,7 +109,7 @@ function buildVitals(v) {
       icon: Activity,
       value: Math.round(v.spo2_pct ?? 98),
       unit: "%",
-      status: (v.spo2_pct ?? 98) < 90 ? "CRITICAL" : (v.spo2_pct ?? 98) < 95 ? "WARNING" : "NORMAL",
+      status: toDashStatus(ms.spo2),
       system: "respiratory",
     },
     {
@@ -84,7 +118,7 @@ function buildVitals(v) {
       icon: Wind,
       value: Math.round(v.respiration_rpm ?? 14),
       unit: "rpm",
-      status: (v.respiration_rpm ?? 14) >= 24 ? "CRITICAL" : (v.respiration_rpm ?? 14) >= 20 || (v.respiration_rpm ?? 14) < 10 ? "WARNING" : "NORMAL",
+      status: toDashStatus(ms.rr),
       system: "respiratory",
     },
     {
@@ -93,7 +127,7 @@ function buildVitals(v) {
       icon: Moon,
       value: sq,
       unit: "%",
-      status: sq >= 90 ? "EXCELLENT" : sq >= 70 ? "NORMAL" : sq >= 55 ? "WARNING" : "CRITICAL",
+      status: sleepStatus,
       system: "nervous_sleep",
     },
   ];
@@ -101,7 +135,8 @@ function buildVitals(v) {
 
 /* ---------- body regions (right column) ---------- */
 
-export function buildRegions(v) {
+export function buildRegions(v, pb) {
+  const ms = getVitalStatuses(v, pb);
   return [
     {
       id: "head",
@@ -111,7 +146,7 @@ export function buildRegions(v) {
       exam: "Sleep & Cognition",
       location: "Head (EEG headband)",
       reading: `${v.sleep_hours.toFixed(1)} h sleep`,
-      status: sleepStatus(v.sleep_hours, v.sleep_streak_low_days),
+      status: toDashStatus(ms.sleep),
     },
     {
       id: "chest",
@@ -121,7 +156,7 @@ export function buildRegions(v) {
       exam: "Heart Rate",
       location: "Chest (ECG patch)",
       reading: `${Math.round(v.heart_rate_bpm)} bpm`,
-      status: hrStatus(v.heart_rate_bpm),
+      status: toDashStatus(ms.hr),
     },
     {
       id: "arm",
@@ -131,7 +166,7 @@ export function buildRegions(v) {
       exam: "Blood Pressure",
       location: "Left Arm",
       reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`,
-      status: bpStatus(v.bp_systolic),
+      status: toDashStatus(ms.bp),
     },
     {
       id: "leg",
@@ -151,7 +186,7 @@ export function buildRegions(v) {
       exam: "Radiation Dose",
       location: "Full Body (dosimeter)",
       reading: `${v.radiation_msv_h.toFixed(2)} mSv/h`,
-      status: radiationStatus(v.radiation_msv_h),
+      status: toDashStatus(ms.radiation),
     },
   ];
 }
@@ -180,12 +215,25 @@ function StatusLine({ status }) {
 
 function VitalCard({ item, onClick }) {
   const Icon = item.icon;
+  const alertSurface = CARD_LIGHT_SURFACE[item.status];
   return (
     <button type="button" onClick={onClick} className="text-left">
-      <GlassCard className="h-full p-4 transition hover:border-[#60A5FA]/70 hover:bg-[#0F1D40]/80">
-        <Icon className="h-7 w-7 text-[#BFDBFE]" strokeWidth={1.4} />
+      <GlassCard
+        className={`relative h-full p-4 transition ${
+          alertSurface ? alertSurface.card : "hover:border-[#60A5FA]/70 hover:bg-[#0F1D40]/80"
+        }`}
+      >
+        {alertSurface && (
+          <span className="absolute right-3 top-3 flex h-2.5 w-2.5 items-center justify-center">
+            {alertSurface.ping && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-85" />
+            )}
+            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${alertSurface.led}`} />
+          </span>
+        )}
+        <Icon className={`h-7 w-7 ${alertSurface ? alertSurface.icon : "text-[#BFDBFE]"}`} strokeWidth={1.4} />
         <div className="mt-3 text-[11px] text-[#CBD5E1]">{item.label}</div>
-        <div className="mt-1 font-sans text-2xl font-semibold text-white">
+        <div className={`mt-1 font-sans text-2xl font-semibold ${alertSurface ? alertSurface.value : "text-white"}`}>
           {item.value}
           <span className="ml-1 text-sm font-normal text-[#CBD5E1]">{item.unit}</span>
         </div>
@@ -199,18 +247,42 @@ const RANGES = ["Live", "7 days"];
 
 // Real data only: "Live" = readings received from the backend generator this session,
 // "7 days" = the generator's daily longitudinal series (state.longitudinal_series).
-function TrendChart({ title, icon: Icon, unit, live, daily, domain, ticks, color = "#60A5FA", label }) {
+function TrendChart({
+  title,
+  icon: Icon,
+  unit,
+  live = [],
+  daily = [],
+  domain,
+  ticks,
+  color = "#60A5FA",
+  label,
+  status = "NORMAL",
+}) {
   const [range, setRange] = useState("7 days");
   const data = range === "Live" ? live : daily;
   const last = data[data.length - 1];
   const gid = `grad-${title.replace(/\s/g, "")}`;
+  const alertSurface = CARD_LIGHT_SURFACE[status];
+  const strokeColor = alertSurface ? alertSurface.chartStroke : color;
 
   return (
-    <GlassCard className="p-4">
+    <GlassCard className={`p-4 transition ${alertSurface ? alertSurface.card : ""}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Icon className="h-5 w-5 text-[#BFDBFE]" strokeWidth={1.6} />
+          <Icon className={`h-5 w-5 ${alertSurface ? alertSurface.icon : "text-[#BFDBFE]"}`} strokeWidth={1.6} />
           <h3 className="text-base font-medium text-white">{title}</h3>
+          {alertSurface && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+              <span className="relative flex h-2 w-2 items-center justify-center">
+                {alertSurface.ping && (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-85" />
+                )}
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${alertSurface.led}`} />
+              </span>
+              {status === "CRITICAL" ? "Critical" : "Alert"}
+            </span>
+          )}
         </div>
         <div className="flex gap-1" role="group" aria-label={`${title} range`}>
           {RANGES.map((r) => (
@@ -238,15 +310,19 @@ function TrendChart({ title, icon: Icon, unit, live, daily, domain, ticks, color
           </p>
         ) : (
           <>
-            <span className="absolute right-2 top-1 z-10 rounded-lg border border-[#3B82F6]/40 bg-[#0B1530]/90 px-2 py-0.5 text-[11px] text-white">
+            <span
+              className={`absolute right-2 top-1 z-10 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${
+                alertSurface ? alertSurface.badge : "border-[#3B82F6]/40 bg-[#0B1530]/90 text-white"
+              }`}
+            >
               {label ?? `${last.value} ${unit}`}
             </span>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                    <stop offset="0%" stopColor={strokeColor} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#1E3A8A" strokeOpacity={0.45} />
@@ -257,8 +333,8 @@ function TrendChart({ title, icon: Icon, unit, live, daily, domain, ticks, color
                   formatter={(val) => [`${val} ${unit}`, title]}
                   labelStyle={{ color: "#94A3B8" }}
                 />
-                <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#${gid})`} isAnimationActive={false} />
-                <ReferenceDot x={last.t} y={last.value} r={4} fill="#fff" stroke={color} strokeWidth={2} />
+                <Area type="monotone" dataKey="value" stroke={strokeColor} strokeWidth={2.2} fill={`url(#${gid})`} isAnimationActive={false} />
+                <ReferenceDot x={last.t} y={last.value} r={4} fill="#fff" stroke={strokeColor} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </>
@@ -331,14 +407,15 @@ function MissionTelemetryBar({ sw, refreshing, onRefresh, streaming, onToggleStr
 
 /* ---------- main home dashboard ---------- */
 
-function buildPartDetails(v) {
-  const bpSt = bpStatus(v.bp_systolic);
-  const hrSt = hrStatus(v.heart_rate_bpm);
-  const sleepSt = sleepStatus(v.sleep_hours, v.sleep_streak_low_days);
+function buildPartDetails(v, pb) {
+  const ms = getVitalStatuses(v, pb);
+  const bpSt = toDashStatus(ms.bp);
+  const hrSt = toDashStatus(ms.hr);
+  const sleepSt = toDashStatus(ms.sleep);
   const shStatus = (v.shoulder_pain_score ?? 0) >= 4 ? "WARNING" : "NORMAL";
   const caStatus = (v.urinary_calcium_mg_d ?? 185) > 250 ? "WARNING" : "NORMAL";
-  const gluStatus = glucoseStatus(v.glucose_mg_dl);
-  const spo2Status = (v.spo2_pct ?? 98) < 90 ? "CRITICAL" : (v.spo2_pct ?? 98) < 95 ? "WARNING" : "NORMAL";
+  const gluStatus = toDashStatus(ms.glucose);
+  const spo2Status = toDashStatus(ms.spo2);
 
   return {
     head: { exam: "Neuro & Intraocular Pressure (SANS)", location: "Cabeça & Crânio (EEG / Tonometria)", reading: `${v.sleep_hours.toFixed(1)}h sono | PIO ${(v.intraocular_pressure_mmhg ?? 15.2).toFixed(1)} mmHg`, status: sleepSt },
@@ -367,6 +444,7 @@ export default function HomeDashboard({
   state,
   onTriggerMeasurement,
   onSelectSystem,
+  onStabilizeCrew,
   liveReadings = [],
   streaming = false,
   onToggleStream,
@@ -378,15 +456,18 @@ export default function HomeDashboard({
   const [regionId, setRegionId] = useState("arm");
   const [selectedPartId, setSelectedPartId] = useState("left_upper_arm");
   const [measuring, setMeasuring] = useState(false);
+  const [stabilizing, setStabilizing] = useState(false);
   const [lastReading, setLastReading] = useState(null);
 
   const v = state?.vitals;
   if (!v) return null;
 
-  const vitals = buildVitals(v);
-  const regions = buildRegions(v);
+  const pb = state?.personal_baseline;
+  const metricStatuses = getVitalStatuses(v, pb);
+  const vitals = buildVitals(v, pb);
+  const regions = buildRegions(v, pb);
   const region = regions.find((r) => r.id === regionId) || regions[2];
-  const partDetailsMap = buildPartDetails(v);
+  const partDetailsMap = buildPartDetails(v, pb);
   const activePartDetail = selectedPartId ? partDetailsMap[selectedPartId] : null;
   const activePartMeta = selectedPartId ? ANATOMICAL_PARTS_META[selectedPartId] : null;
 
@@ -410,10 +491,11 @@ export default function HomeDashboard({
     if (meta?.systemId) onSelectSystem?.(meta.systemId);
   };
 
-  const runScan = async () => {
+  const runScan = async (overrideSystemId = null) => {
+    const targetSystem = typeof overrideSystemId === "string" ? overrideSystemId : activeSystemId;
     setMeasuring(true);
     try {
-      const res = await onTriggerMeasurement(activeSystemId);
+      const res = await onTriggerMeasurement(targetSystem);
       setLastReading(res);
     } finally {
       setMeasuring(false);
@@ -425,8 +507,22 @@ export default function HomeDashboard({
       .filter((r) => typeof r[key] === "number")
       .map((r) => ({ t: r.day, value: Math.round(r[key] * 10) / 10 }));
 
+  const runStabilization = async () => {
+    if (!onStabilizeCrew) return;
+    setStabilizing(true);
+    try {
+      await onStabilizeCrew(state.crew_id || state.astronaut_id);
+      setLastReading({
+        reading_summary: "Stabilization protocol applied. Run a confirmatory scan to verify vitals within personal baseline.",
+      });
+    } finally {
+      setStabilizing(false);
+    }
+  };
+
   const sys = Math.round(v.bp_systolic);
   const dia = Math.round(v.bp_diastolic);
+  const hasAlert = Boolean(state?.active_alert) || state?.within_personal_baseline === false || state?.pending_verification_measurement;
 
   return (
     <div className="flex flex-col gap-6">
@@ -439,6 +535,83 @@ export default function HomeDashboard({
         onNextReading={onNextReading}
         live={live}
       />
+
+      {/* Personal Baseline & Alert Verification Bar */}
+      {pb && (
+        <GlassCard
+          className={`p-4 ${
+            state?.active_alert?.severity === "CRITICAL"
+              ? "border-red-400/60 bg-gradient-to-r from-red-950/55 via-[#0A2540]/80 to-[#062E2B]/75"
+              : hasAlert
+              ? "border-amber-400/55 bg-gradient-to-r from-amber-950/45 via-[#0A2540]/80 to-[#062E2B]/75"
+              : "border-emerald-400/35"
+          }`}
+        >
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {state?.within_personal_baseline && !state?.active_alert ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/45 bg-emerald-500/15 px-3 py-0.5 text-[11px] font-bold text-emerald-200">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Personal Normality Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/55 bg-amber-500/20 px-3 py-0.5 text-[11px] font-bold text-amber-200">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    {state?.pending_verification_measurement
+                      ? "Stabilized — Confirmatory Measurement Required"
+                      : "Alert Active — Personal Baseline Deviation"}
+                  </span>
+                )}
+                <span className="font-mono text-[11px] text-sky-200/90">
+                  Personal Normal: HR {pb.hr_min}-{pb.hr_max} bpm • BP {pb.bp_sys_min}-{pb.bp_sys_max} mmHg • Temp {pb.temp_min}-{pb.temp_max}°C • SpO₂ ≥{pb.spo2_min}%
+                </span>
+              </div>
+
+              {state?.baseline_deviations?.length > 0 && (
+                <p className="text-xs text-amber-100">
+                  Out-of-baseline indicators: <span className="font-semibold">{state.baseline_deviations.join(" • ")}</span>
+                </p>
+              )}
+              {state?.active_alert?.message && (
+                <p className="text-xs text-[#DBEAFE]">
+                  Active Alert (
+                  {state.active_alert.origin_type === "MISSION_CONTROL_DISPATCH" ||
+                  state.active_alert.source === "MISSION_CONTROL"
+                    ? "Mission Control"
+                    : "Auto-Triage"}
+                  ):{" "}
+                  <span className="font-semibold text-white">{state.active_alert.message}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {state?.within_personal_baseline === false && onStabilizeCrew && (
+                <button
+                  type="button"
+                  disabled={stabilizing}
+                  onClick={runStabilization}
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-500/20 px-4 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/30 disabled:opacity-60 cursor-pointer"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {stabilizing ? "Stabilizing..." : "Apply Stabilization Protocol"}
+                </button>
+              )}
+              {hasAlert && (
+                <button
+                  type="button"
+                  disabled={measuring}
+                  onClick={() => runScan("full_body")}
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#10B981] px-4 text-xs font-semibold text-white shadow-[0_0_16px_rgba(16,185,129,0.45)] transition hover:brightness-110 disabled:opacity-60 cursor-pointer"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {measuring ? "Verifying..." : "Run Confirmatory Scan"}
+                </button>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       {/* Vital cards row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
@@ -458,6 +631,7 @@ export default function HomeDashboard({
             daily={dailySeries("bp_sys")}
             domain={[Math.min(90, sys - 20), Math.max(150, sys + 20)]}
             label={`${sys} / ${dia} mmHg`}
+            status={toDashStatus(metricStatuses.bp)}
           />
           <TrendChart
             title="Heart Rate"
@@ -466,6 +640,7 @@ export default function HomeDashboard({
             live={liveReadings.map((r) => ({ t: r.t, value: r.hr }))}
             daily={dailySeries("hr")}
             domain={[Math.min(45, Math.round(v.heart_rate_bpm) - 15), Math.max(110, Math.round(v.heart_rate_bpm) + 15)]}
+            status={toDashStatus(metricStatuses.hr)}
           />
 
           {/* Selected exam */}
@@ -486,7 +661,7 @@ export default function HomeDashboard({
             </div>
             <button
               type="button"
-              onClick={runScan}
+              onClick={() => runScan()}
               disabled={measuring}
               className="ml-auto flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#10B981] px-4 text-xs font-semibold text-white shadow-[0_0_16px_rgba(16,185,129,0.45)] transition hover:brightness-110 disabled:opacity-60"
             >
