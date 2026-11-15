@@ -15,6 +15,7 @@ from app.models.schemas import (
     MissionContext,
     MLPredictionResult,
     NutritionHydrationState,
+    PersonalBaseline,
     SeverityStatus,
     SystemEvaluation,
     VitalSigns,
@@ -72,8 +73,123 @@ SCIENTIFIC_CITATIONS: dict[str, dict[str, str]] = {
 }
 
 
-def _max_status(a: SeverityStatus, b: SeverityStatus) -> SeverityStatus:
+def max_severity(a: SeverityStatus, b: SeverityStatus) -> SeverityStatus:
     return a if SEVERITY_RANK[a] >= SEVERITY_RANK[b] else b
+
+
+def _max_status(a: SeverityStatus, b: SeverityStatus) -> SeverityStatus:
+    return max_severity(a, b)
+
+
+def build_personal_baseline_from_profile(astro_profile: dict[str, Any]) -> PersonalBaseline:
+    pre = astro_profile.get("pre_flight_baseline", {})
+    std = astro_profile.get("natural_std", {})
+
+    hr = float(pre.get("heart_rate_bpm", 68.0))
+    hr_std = float(std.get("heart_rate_bpm", 4.5))
+    bp_sys = float(pre.get("bp_systolic", 116.0))
+    bp_dia = float(pre.get("bp_diastolic", 74.0))
+    bp_std = float(std.get("bp_systolic", 5.2))
+    temp = float(pre.get("temperature_c", 36.7))
+    spo2 = float(pre.get("spo2_pct", 98.4))
+    glucose = float(pre.get("glucose_mg_dl", 92.0))
+    sleep = float(pre.get("sleep_hours", 7.4))
+    hrv = float(pre.get("hrv_ms", 56.0))
+
+    return PersonalBaseline(
+        resting_hr_bpm=round(hr, 1),
+        hr_min=round(max(46.0, hr - max(13.0, 2.8 * hr_std)), 1),
+        hr_max=round(hr + max(14.0, 3.0 * hr_std), 1),
+        resting_bp_systolic=round(bp_sys, 1),
+        resting_bp_diastolic=round(bp_dia, 1),
+        bp_sys_min=round(max(92.0, bp_sys - max(16.0, 3.0 * bp_std)), 1),
+        bp_sys_max=round(min(138.0, bp_sys + max(16.0, 3.0 * bp_std)), 1),
+        resting_temp_c=round(temp, 2),
+        temp_min=round(temp - 0.6, 2),
+        temp_max=round(max(temp + 0.6, 37.3), 2),
+        resting_spo2_pct=round(spo2, 1),
+        spo2_min=95.0,
+        resting_glucose_mg_dl=round(glucose, 1),
+        glucose_min=round(max(70.0, glucose - 18.0), 1),
+        glucose_max=round(glucose + 32.0, 1),
+        resting_sleep_hours=round(sleep, 1),
+        sleep_min=round(max(6.0, sleep - 1.1), 1),
+        resting_hrv_ms=round(hrv, 1),
+        hrv_min=round(max(30.0, hrv - 18.0), 1),
+        radiation_max=0.14,
+    )
+
+
+def evaluate_personal_baseline(
+    vitals: VitalSigns, baseline: PersonalBaseline
+) -> tuple[bool, list[str], SeverityStatus]:
+    """Compare live vitals against the astronaut's individual personal baseline bounds."""
+    deviations: list[str] = []
+    sev: SeverityStatus = "NOMINAL"
+
+    if vitals.heart_rate_bpm < baseline.hr_min or vitals.heart_rate_bpm > baseline.hr_max:
+        deviations.append(
+            f"HR {vitals.heart_rate_bpm:.0f} bpm (personal {baseline.hr_min:.0f}-{baseline.hr_max:.0f})"
+        )
+        sev = max_severity(
+            sev,
+            "CRITICAL"
+            if (vitals.heart_rate_bpm >= baseline.hr_max + 24 or vitals.heart_rate_bpm <= baseline.hr_min - 18)
+            else "WARNING",
+        )
+
+    if vitals.bp_systolic < baseline.bp_sys_min or vitals.bp_systolic > baseline.bp_sys_max:
+        deviations.append(
+            f"BP {vitals.bp_systolic:.0f}/{vitals.bp_diastolic:.0f} mmHg (personal {baseline.bp_sys_min:.0f}-{baseline.bp_sys_max:.0f})"
+        )
+        sev = max_severity(
+            sev,
+            "CRITICAL"
+            if (vitals.bp_systolic <= baseline.bp_sys_min - 12 or vitals.bp_systolic >= baseline.bp_sys_max + 25)
+            else "WARNING",
+        )
+
+    if vitals.temperature_c < baseline.temp_min or vitals.temperature_c > baseline.temp_max:
+        deviations.append(
+            f"Temp {vitals.temperature_c:.1f} C (personal <={baseline.temp_max:.1f} C)"
+        )
+        sev = max_severity(
+            sev,
+            "CRITICAL" if vitals.temperature_c >= baseline.temp_max + 0.7 else "WARNING",
+        )
+
+    if vitals.spo2_pct < baseline.spo2_min:
+        deviations.append(f"SpO2 {vitals.spo2_pct:.1f}% (personal >={baseline.spo2_min:.1f}%)")
+        sev = max_severity(sev, "CRITICAL" if vitals.spo2_pct < 93.0 else "WARNING")
+
+    if vitals.glucose_mg_dl < baseline.glucose_min or vitals.glucose_mg_dl > baseline.glucose_max:
+        deviations.append(
+            f"Glucose {vitals.glucose_mg_dl:.0f} mg/dL (personal {baseline.glucose_min:.0f}-{baseline.glucose_max:.0f})"
+        )
+        sev = max_severity(
+            sev,
+            "CRITICAL"
+            if (vitals.glucose_mg_dl < baseline.glucose_min - 18 or vitals.glucose_mg_dl >= baseline.glucose_max + 50)
+            else "WARNING",
+        )
+
+    if vitals.sleep_hours < baseline.sleep_min:
+        deviations.append(
+            f"Sleep {vitals.sleep_hours:.1f}h (personal >={baseline.sleep_min:.1f}h)"
+        )
+        sev = max_severity(sev, "CRITICAL" if vitals.sleep_hours < 4.5 else "WARNING")
+
+    if vitals.hrv_ms < baseline.hrv_min:
+        deviations.append(f"HRV {vitals.hrv_ms:.0f} ms (personal >={baseline.hrv_min:.0f} ms)")
+        sev = max_severity(sev, "CRITICAL" if vitals.hrv_ms <= 24 else "WARNING")
+
+    if vitals.radiation_msv_h > baseline.radiation_max:
+        deviations.append(
+            f"Radiation {vitals.radiation_msv_h:.2f} mSv/h (ALARA <={baseline.radiation_max:.2f})"
+        )
+        sev = max_severity(sev, "CRITICAL" if vitals.radiation_msv_h >= 0.50 else "WARNING")
+
+    return (len(deviations) == 0, deviations, sev)
 
 
 def load_scenarios_catalog() -> dict[str, Any]:

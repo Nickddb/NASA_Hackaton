@@ -481,6 +481,91 @@ class ToolTraceItem(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
+    crew_id: str | None = None
+
+
+class PersonalBaseline(BaseModel):
+    resting_hr_bpm: float
+    hr_min: float
+    hr_max: float
+    resting_bp_systolic: float
+    resting_bp_diastolic: float
+    bp_sys_min: float
+    bp_sys_max: float
+    resting_temp_c: float
+    temp_min: float
+    temp_max: float
+    resting_spo2_pct: float
+    spo2_min: float
+    resting_glucose_mg_dl: float
+    glucose_min: float
+    glucose_max: float
+    resting_sleep_hours: float
+    sleep_min: float
+    resting_hrv_ms: float = 55.0
+    hrv_min: float = 35.0
+    radiation_max: float = 0.14
+
+
+class CrewAlertRecord(BaseModel):
+    alert_id: str
+    severity: Literal["WARNING", "CRITICAL"]
+    message: str
+    issued_by: str
+    issued_at: str
+    acknowledged_by_crew: bool = False
+    acknowledged_at: str | None = None
+    stabilization_applied: bool = False
+    stabilization_note: str | None = None
+    stabilized_at: str | None = None
+    requires_confirmatory_measurement: bool = True
+    confirmatory_measurement_at: str | None = None
+    origin_type: Literal["CLINICAL_TELEMETRY", "MISSION_CONTROL_DISPATCH"] = "CLINICAL_TELEMETRY"
+
+
+class DispatchAlertRequest(BaseModel):
+    severity: Literal["WARNING", "CRITICAL"]
+    message: str = Field(..., min_length=3, max_length=500)
+    issued_by: str = "Mission Control (Flight Surgeon)"
+    simulate_vitals_drift: bool = True
+
+
+class StabilizeRequest(BaseModel):
+    note: str = "Standard stabilization countermeasures administered by crew / CMO."
+
+
+class CrewMemberSummary(BaseModel):
+    crew_id: str
+    name: str
+    callsign: str
+    role: str
+    mission_group: Literal["ISS", "DEEP_SPACE", "EVA"]
+    location_module: str
+    environment_id: str
+    scenario_id: str
+    suit_variant: str
+    suit_accent: str
+    status: SeverityStatus
+    clinical_status: SeverityStatus
+    within_personal_baseline: bool
+    baseline_deviations: list[str] = Field(default_factory=list)
+    active_alert: CrewAlertRecord | None = None
+    pending_verification_measurement: bool = False
+    vitals: VitalSigns
+    mission_context: MissionContext | None = None
+    personal_baseline: PersonalBaseline
+    primary_diagnosis: str
+    anomaly_score: float
+    last_measured_at: str
+
+
+class CrewRosterResponse(BaseModel):
+    mission_day: int
+    active_crew_id: str
+    summary_counts: dict[str, int]
+    space_weather: SpaceWeatherSummary | None = None
+    crew: list[CrewMemberSummary]
+    last_updated: str
 
 
 class ChatResponse(BaseModel):
@@ -618,6 +703,17 @@ class MissionState(BaseModel):
     environments_catalog: list[dict[str, Any]] = Field(default_factory=list)
     indicators_guide: list[dict[str, Any]] = Field(default_factory=list)
     systems_guide: dict[str, Any] = Field(default_factory=dict)
+    crew_id: str = "elena_vance"
+    crew_role: str = "Mission Commander & Lead EVA Specialist"
+    mission_group: str = "EVA"
+    location_module: str = "ISS Quest Airlock (EVA)"
+    suit_variant: str = "MERCURY_EVA_SILVER"
+    personal_baseline: PersonalBaseline | None = None
+    within_personal_baseline: bool = True
+    baseline_deviations: list[str] = Field(default_factory=list)
+    active_alert: CrewAlertRecord | None = None
+    pending_verification_measurement: bool = False
+    last_measured_at: str = ""
     last_updated: str
 
 
