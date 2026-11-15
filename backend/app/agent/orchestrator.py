@@ -31,6 +31,17 @@ run_monitoring_cycle, then analyze_telemetry_and_diagnose. Read its status/categ
 trigger_central_alert when it lists it (CRITICAL or escalated WARNING) and activate_psychological_stimuli only when the
 category is PSYCHOLOGICAL (never for a physical or space-weather cause). Each tool returns JSON; base the next call on it."""
 
+# Same rules in ~1/3 of the tokens, for providers with small per-minute token budgets (Groq free tier).
+SYSTEM_PROMPT_COMPACT = """You are AstraCare Medical Officer, an auditable decision-support AI aboard a space mission.
+Rules: compare vitals with the astronaut's personal baseline, not only population ranges; context (sleep, exercise, EVA,
+cabin, NASA DONKI space weather) is correlation, not proof of cause; cite the signals, confidence and uncertainty the
+tools return; never invent treatments or decide alone: actions are NASA-STD-3001/OCHMO checklists the Crew Medical
+Officer or Earth Flight Surgeon confirms.
+Tool chaining: to check someone call run_monitoring_cycle (or schedule_smartwatch_exam then
+analyze_telemetry_and_diagnose). Follow next_tools: trigger_central_alert for CRITICAL or escalated WARNING;
+activate_psychological_stimuli only when category is PSYCHOLOGICAL. Base each call on the previous JSON.
+Answer briefly in the user's language (Portuguese if they write in Portuguese)."""
+
 # chat intents for the multi-tool chain when no LLM is configured
 EXAM_INTENT = re.compile(
     r"\b(agend\w*|schedul\w*|exame|exam|smartwatch|rel[oó]gio|ciclo de monitoramento|monitoring cycle|"
@@ -96,6 +107,20 @@ class AstraCareOrchestrator:
             ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
         return str(ai_msg.content or ""), rounds > 0
 
+    @staticmethod
+    def _trace_reply(trace_log: list[ToolTraceItem], message: str) -> str:
+        pt = bool(re.search(r"[ãçõáéíóúê]|\b(o|a|de|que|agora|se)\b", message.lower()))
+        head = (
+            "**Resultado das ferramentas** (o modelo atingiu o limite gratuito de tokens; resposta montada direto das ferramentas):"
+            if pt
+            else "**Tool results** (the model hit its free token limit; answer built directly from the tools):"
+        )
+        lines = [
+            f"- `{t.status}` **{t.tool_name}**: {t.summary}" + (f" ({t.rule_or_score})" if t.rule_or_score else "")
+            for t in trace_log
+        ]
+        return head + "\n" + "\n".join(lines)
+
     async def handle_chat(self, message: str, crew_id: str | None = None) -> ChatResponse:
         if crew_id and crew_id in self.state_manager.crew_records:
             self.state_manager.select_crew_member(crew_id)
@@ -105,19 +130,21 @@ class AstraCareOrchestrator:
 
         if config.LLM_PROVIDER in ("groq", "gemini"):
             try:
-                system_prompt = f"{SYSTEM_PROMPT}\n{self._context_line()}"
+                base_prompt = SYSTEM_PROMPT_COMPACT if config.LLM_PROVIDER == "groq" else SYSTEM_PROMPT
+                system_prompt = f"{base_prompt}\n{self._context_line()}"
+                llm_tools = tools if "all" in config.LLM_TOOLS else [t for t in tools if t.name in config.LLM_TOOLS]
                 if config.LLM_PROVIDER == "groq":
-                    reply_text, used_tools = await run_groq_chat(system_prompt, message, tools)
+                    reply_text, used_tools = await run_groq_chat(system_prompt, message, llm_tools)
                     mode = "groq"
                 else:
-                    reply_text, used_tools = await self._run_gemini(system_prompt, message, tools, tools_by_name)
+                    reply_text, used_tools = await self._run_gemini(system_prompt, message, llm_tools, tools_by_name)
                     mode = "langchain_gemini"
                 if not used_tools:  # keep the explainability trace even for a plain answer
                     tools_by_name["inspect_adaptive_baseline_tool"].invoke({"astronaut_query": "current"})
                     tools_by_name["predict_calibrated_ml_and_uncertainty_tool"].invoke({"horizon": "72h"})
                     tools_by_name["audit_explainable_alerts_and_rules_tool"].invoke({"note": "sync"})
-                if not reply_text:
-                    reply_text = "\n".join(f"- {t.tool_name}: {t.summary}" for t in trace_log)
+                if not reply_text:  # e.g. provider rate limit after the tools ran
+                    reply_text = self._trace_reply(trace_log, message)
                 return ChatResponse(
                     reply=reply_text,
                     mode=mode,
@@ -125,7 +152,7 @@ class AstraCareOrchestrator:
                     state=self.state_manager.get_state(),
                 )
             except Exception as exc:  # network, quota, invalid model... -> deterministic offline pipeline
-                log.warning("LLM provider %s failed, using offline pipeline: %s", config.LLM_PROVIDER, exc)
+                log.warning("LLM provider %s failed, using offline pipeline: %s %s", config.LLM_PROVIDER, type(exc).__name__, exc)
                 trace_log.clear()
 
         # --- Deterministic Offline-First Hybrid Edge Pipeline (Bilingual EN/PT, Zero Network Required) ---
