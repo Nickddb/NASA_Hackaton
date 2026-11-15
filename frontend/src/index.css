@@ -72,6 +72,127 @@
   animation: ecgSweep 2.2s linear infinite;
 }
 
+/* ---------- Arctic & Orbital Aurora Borealis Dynamic Header ---------- */
+@keyframes auroraRibbonDrift {
+  0% {
+    transform: translate3d(-8%, -6%, 0) scale(1, 1) rotate(-2deg);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate3d(8%, 6%, 0) scale(1.12, 1.22) rotate(2deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(-8%, -6%, 0) scale(1, 1) rotate(-2deg);
+    opacity: 0.65;
+  }
+}
+
+@keyframes auroraCurtainWave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes auroraHorizonShimmer {
+  0%, 100% {
+    opacity: 0.55;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    filter: hue-rotate(18deg);
+  }
+}
+
+@keyframes orbitalRingSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.aurora-header-shell {
+  background: linear-gradient(180deg, #030712 0%, #061024 55%, #07192E 100%);
+  box-shadow:
+    0 14px 38px -10px rgba(2, 12, 27, 0.75),
+    inset 0 1px 0 0 rgba(167, 243, 208, 0.14);
+}
+
+.aurora-curtain-primary {
+  background: radial-gradient(
+      ellipse 55% 90% at 22% 15%,
+      rgba(16, 185, 129, 0.42) 0%,
+      rgba(52, 211, 153, 0.16) 45%,
+      transparent 75%
+    ),
+    radial-gradient(
+      ellipse 50% 85% at 76% 25%,
+      rgba(56, 189, 248, 0.38) 0%,
+      rgba(14, 165, 233, 0.14) 50%,
+      transparent 75%
+    ),
+    radial-gradient(
+      ellipse 42% 80% at 52% 0%,
+      rgba(168, 85, 247, 0.30) 0%,
+      rgba(236, 72, 153, 0.10) 55%,
+      transparent 75%
+    );
+  filter: blur(18px);
+  animation: auroraRibbonDrift 11s ease-in-out infinite;
+}
+
+.aurora-curtain-secondary {
+  background: linear-gradient(
+    115deg,
+    transparent 10%,
+    rgba(52, 211, 153, 0.22) 28%,
+    rgba(56, 189, 248, 0.28) 46%,
+    rgba(192, 132, 252, 0.22) 64%,
+    rgba(163, 230, 53, 0.20) 80%,
+    transparent 94%
+  );
+  background-size: 240% 240%;
+  filter: blur(12px);
+  animation: auroraCurtainWave 14s ease infinite;
+}
+
+.aurora-starfield {
+  background-image:
+    radial-gradient(1px 1px at 8% 28%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1.5px 1.5px at 19% 68%, rgba(167, 243, 208, 0.8), transparent),
+    radial-gradient(1px 1px at 34% 22%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1.5px 1.5px at 51% 74%, rgba(125, 211, 252, 0.85), transparent),
+    radial-gradient(1px 1px at 67% 30%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 82% 62%, rgba(216, 180, 254, 0.75), transparent),
+    radial-gradient(1px 1px at 93% 24%, rgba(255, 255, 255, 0.6), transparent);
+}
+
+.aurora-horizon-beam {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(16, 185, 129, 0.45) 18%,
+    rgba(56, 189, 248, 0.85) 45%,
+    rgba(168, 85, 247, 0.7) 68%,
+    rgba(200, 238, 144, 0.8) 85%,
+    transparent 100%
+  );
+  animation: auroraHorizonShimmer 6s ease-in-out infinite;
+}
+
+.animate-orbital-slow {
+  animation: orbitalRingSpin 16s linear infinite;
+}
+
 /* ---------- Vertical Continuum Theme: Deep Cosmos -> Aurora -> Stratosphere -> Emerald Biosphere ---------- */
 .space-bg {
   background-color: #050B1A;
@@ -115,4 +236,46 @@
     0 0 65px 12px rgba(56, 189, 248, 0.35),
     inset -40px 40px 90px rgba(167, 243, 208, 0.28);
   opacity: 0.72;
+}
+
+/* ---------- Crew Hub Spacesuit Alert Blink & Zoom Animations ---------- */
+@keyframes suitAlertCritical {
+  0%, 100% {
+    box-shadow: 0 0 22px 2px rgba(239, 68, 68, 0.55), inset 0 0 26px rgba(239, 68, 68, 0.22);
+    border-color: rgba(248, 113, 113, 0.95);
+  }
+  50% {
+    box-shadow: 0 0 42px 8px rgba(239, 68, 68, 0.22), inset 0 0 10px rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+}
+
+@keyframes suitAlertWarning {
+  0%, 100% {
+    box-shadow: 0 0 20px 2px rgba(245, 158, 11, 0.48), inset 0 0 22px rgba(245, 158, 11, 0.18);
+    border-color: rgba(251, 191, 36, 0.92);
+  }
+  50% {
+    box-shadow: 0 0 34px 6px rgba(245, 158, 11, 0.16), inset 0 0 8px rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.32);
+  }
+}
+
+@keyframes suitBlinkCore {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.28;
+    transform: scale(0.94);
+  }
+}
+
+.suit-blink-critical {
+  animation: suitBlinkCore 0.78s ease-in-out infinite;
+}
+
+.suit-blink-warning {
+  animation: suitBlinkCore 1.2s ease-in-out infinite;
 }
