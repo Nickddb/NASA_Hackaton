@@ -1,11 +1,121 @@
-// AstraCare AI Frontend API Client with Automatic Offline Static Fallback
-// Calls FastAPI backend (/api/*) when live; falls back seamlessly to in-browser NASA-STD-3001 + heuristic ML/NLP simulation using /data/scenarios.json if deployed statically.
+// AstraCare AI Frontend API Client with Automatic Offline Multi-Crew Fallback
+// Calls FastAPI backend (/api/*) when live; falls back seamlessly to in-browser NASA-STD-3001 + personal baseline evaluation using /data/scenarios.json if offline.
 
 let localCatalog = null;
 let localDonki = null;
+let localCrewStore = null;
+let localActiveCrewId = "elena_vance";
 let localState = null;
 
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+const API_BASE = import.meta.env?.VITE_API_BASE || "";
+
+const LOCAL_CREW_SPECS = [
+  {
+    crew_id: "elena_vance",
+    name: "CDR Elena Vance (EVA-1)",
+    callsign: "EVA-1",
+    role: "Mission Commander & Lead EVA Specialist",
+    mission_group: "EVA",
+    location_module: "ISS Quest Airlock (EVA)",
+    environment_id: "orbital_station",
+    initial_scenario_id: "nominal",
+    suit_variant: "MERCURY_EVA_SILVER",
+    suit_accent: "#38BDF8",
+    baseline: {
+      resting_hr_bpm: 61, hr_min: 48, hr_max: 76,
+      resting_bp_systolic: 112, resting_bp_diastolic: 71, bp_sys_min: 96, bp_sys_max: 128,
+      resting_temp_c: 36.6, temp_min: 36.0, temp_max: 37.3,
+      resting_spo2_pct: 98.8, spo2_min: 95.0,
+      resting_glucose_mg_dl: 90, glucose_min: 72, glucose_max: 122,
+      resting_sleep_hours: 7.6, sleep_min: 6.5,
+      resting_hrv_ms: 64, hrv_min: 46, radiation_max: 0.14,
+    },
+  },
+  {
+    crew_id: "lucas_ferreira",
+    name: "MS-1 Lucas Ferreira (AEB/Payload)",
+    callsign: "PYL-1",
+    role: "Mission Specialist & Biomedical Payload Officer",
+    mission_group: "ISS",
+    location_module: "ISS Columbus Bio-Lab",
+    environment_id: "orbital_station",
+    initial_scenario_id: "hypoglycemia",
+    suit_variant: "MERCURY_EVA_GOLD",
+    suit_accent: "#F59E0B",
+    baseline: {
+      resting_hr_bpm: 74, hr_min: 59, hr_max: 89,
+      resting_bp_systolic: 121, resting_bp_diastolic: 78, bp_sys_min: 104.5, bp_sys_max: 137.5,
+      resting_temp_c: 36.8, temp_min: 36.2, temp_max: 37.4,
+      resting_spo2_pct: 98.2, spo2_min: 95.0,
+      resting_glucose_mg_dl: 96, glucose_min: 78, glucose_max: 128,
+      resting_sleep_hours: 7.1, sleep_min: 6.0,
+      resting_hrv_ms: 49, hrv_min: 31, radiation_max: 0.14,
+    },
+  },
+  {
+    crew_id: "kenji_sato",
+    name: "PLT Kenji Sato (Flight Eng)",
+    callsign: "PLT-1",
+    role: "Spacecraft Pilot & Systems Engineer",
+    mission_group: "DEEP_SPACE",
+    location_module: "Orion Flight Deck",
+    environment_id: "transit",
+    initial_scenario_id: "nominal",
+    suit_variant: "MERCURY_IVA_SLATE",
+    suit_accent: "#34D399",
+    baseline: {
+      resting_hr_bpm: 66, hr_min: 52.5, hr_max: 80,
+      resting_bp_systolic: 117, resting_bp_diastolic: 75, bp_sys_min: 101.4, bp_sys_max: 132.6,
+      resting_temp_c: 36.6, temp_min: 36.0, temp_max: 37.3,
+      resting_spo2_pct: 98.5, spo2_min: 95.0,
+      resting_glucose_mg_dl: 92, glucose_min: 74, glucose_max: 124,
+      resting_sleep_hours: 7.3, sleep_min: 6.2,
+      resting_hrv_ms: 56, hrv_min: 38, radiation_max: 0.14,
+    },
+  },
+  {
+    crew_id: "amara_okafor",
+    name: "CMO Amara Okafor",
+    callsign: "MED-2",
+    role: "Crew Medical Officer",
+    mission_group: "ISS",
+    location_module: "ISS Harmony Medical Bay",
+    environment_id: "orbital_station",
+    initial_scenario_id: "nominal",
+    suit_variant: "MERCURY_EVA_CYAN",
+    suit_accent: "#22D3EE",
+    baseline: {
+      resting_hr_bpm: 64, hr_min: 51, hr_max: 78,
+      resting_bp_systolic: 114, resting_bp_diastolic: 72, bp_sys_min: 98, bp_sys_max: 130,
+      resting_temp_c: 36.6, temp_min: 36.0, temp_max: 37.3,
+      resting_spo2_pct: 98.7, spo2_min: 95.0,
+      resting_glucose_mg_dl: 91, glucose_min: 73, glucose_max: 123,
+      resting_sleep_hours: 7.4, sleep_min: 6.3,
+      resting_hrv_ms: 61, hrv_min: 43, radiation_max: 0.14,
+    },
+  },
+  {
+    crew_id: "liam_soren",
+    name: "EXP-2 Liam Soren",
+    callsign: "ORB-4",
+    role: "Deep Space Habitat Specialist",
+    mission_group: "DEEP_SPACE",
+    location_module: "Orion Habitation Ring",
+    environment_id: "transit",
+    initial_scenario_id: "systemic_infection",
+    suit_variant: "MERCURY_TRANSIT_COBALT",
+    suit_accent: "#EF4444",
+    baseline: {
+      resting_hr_bpm: 69, hr_min: 54.6, hr_max: 83.4,
+      resting_bp_systolic: 118, resting_bp_diastolic: 76, bp_sys_min: 102, bp_sys_max: 134,
+      resting_temp_c: 36.7, temp_min: 36.1, temp_max: 37.3,
+      resting_spo2_pct: 98.3, spo2_min: 95.0,
+      resting_glucose_mg_dl: 95, glucose_min: 77, glucose_max: 127,
+      resting_sleep_hours: 7.5, sleep_min: 6.4,
+      resting_hrv_ms: 54, hrv_min: 36, radiation_max: 0.14,
+    },
+  },
+];
 
 async function loadLocalData() {
   if (!localCatalog) {
@@ -21,6 +131,136 @@ async function loadLocalData() {
 function maxStatus(a, b) {
   const rank = { NOMINAL: 0, WARNING: 1, CRITICAL: 2 };
   return (rank[a] || 0) >= (rank[b] || 0) ? a : b;
+}
+
+const DEFAULT_PERSONAL_BASELINE = {
+  hr_min: 52,
+  hr_max: 88,
+  bp_sys_min: 98,
+  bp_sys_max: 132,
+  temp_min: 36.1,
+  temp_max: 37.3,
+  spo2_min: 95.0,
+  glucose_min: 72,
+  glucose_max: 140,
+  sleep_min: 6.5,
+  hrv_min: 35,
+  radiation_max: 0.25,
+};
+
+function evaluateBaselineAndMetricStatuses(vitals, baseline) {
+  const pb = baseline || DEFAULT_PERSONAL_BASELINE;
+  const statuses = {
+    hr: "NOMINAL",
+    bp: "NOMINAL",
+    temp: "NOMINAL",
+    spo2: "NOMINAL",
+    rr: "NOMINAL",
+    glucose: "NOMINAL",
+    sleep: "NOMINAL",
+    hrv: "NOMINAL",
+    radiation: "NOMINAL",
+  };
+  let status = "NOMINAL";
+  const deviations = [];
+  if (!vitals) {
+    return { status, deviations, statuses };
+  }
+
+  const bump = (key, sev) => {
+    statuses[key] = maxStatus(statuses[key], sev);
+    status = maxStatus(status, sev);
+  };
+
+  if (vitals.heart_rate_bpm < pb.hr_min || vitals.heart_rate_bpm > pb.hr_max) {
+    const severe = vitals.heart_rate_bpm >= pb.hr_max + 24 || vitals.heart_rate_bpm <= pb.hr_min - 12;
+    bump("hr", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`HR ${Math.round(vitals.heart_rate_bpm)} bpm (personal normal ${pb.hr_min}-${pb.hr_max})`);
+  }
+  if (vitals.heart_rate_bpm >= 110 || vitals.heart_rate_bpm <= 44) {
+    statuses.hr = maxStatus(statuses.hr, "CRITICAL");
+  } else if (vitals.heart_rate_bpm >= 95 || vitals.heart_rate_bpm <= 50) {
+    statuses.hr = maxStatus(statuses.hr, "WARNING");
+  }
+
+  const dia = vitals.bp_diastolic ?? 75;
+  if (vitals.bp_systolic < pb.bp_sys_min || vitals.bp_systolic > pb.bp_sys_max || dia >= 92 || dia <= 55) {
+    const severe =
+      vitals.bp_systolic <= pb.bp_sys_min - 14 ||
+      vitals.bp_systolic >= pb.bp_sys_max + 20 ||
+      dia >= 102 ||
+      dia <= 52;
+    bump("bp", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`BP ${Math.round(vitals.bp_systolic)}/${Math.round(dia)} mmHg (personal sys ${pb.bp_sys_min}-${pb.bp_sys_max})`);
+  }
+  if (vitals.bp_systolic <= 82 || vitals.bp_systolic >= 160 || dia >= 105) {
+    statuses.bp = maxStatus(statuses.bp, "CRITICAL");
+  } else if (vitals.bp_systolic <= 88 || vitals.bp_systolic >= 140 || dia >= 90) {
+    statuses.bp = maxStatus(statuses.bp, "WARNING");
+  }
+
+  if (vitals.temperature_c < pb.temp_min || vitals.temperature_c > pb.temp_max) {
+    const severe = vitals.temperature_c >= pb.temp_max + 0.8 || vitals.temperature_c <= pb.temp_min - 0.8;
+    bump("temp", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`Temp ${vitals.temperature_c.toFixed(1)}°C (personal ${pb.temp_min.toFixed(1)}-${pb.temp_max.toFixed(1)}°C)`);
+  }
+  if (vitals.temperature_c >= 38.0 || vitals.temperature_c <= 35.4) {
+    statuses.temp = maxStatus(statuses.temp, "CRITICAL");
+  } else if (vitals.temperature_c >= 37.5 || vitals.temperature_c <= 35.8) {
+    statuses.temp = maxStatus(statuses.temp, "WARNING");
+  }
+
+  if (vitals.spo2_pct < pb.spo2_min) {
+    const severe = vitals.spo2_pct < pb.spo2_min - 2.0;
+    bump("spo2", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`SpO2 ${vitals.spo2_pct.toFixed(1)}% (personal >= ${pb.spo2_min.toFixed(1)}%)`);
+  }
+  if (vitals.spo2_pct < 93.0) {
+    statuses.spo2 = maxStatus(statuses.spo2, "CRITICAL");
+  } else if (vitals.spo2_pct < 95.0) {
+    statuses.spo2 = maxStatus(statuses.spo2, "WARNING");
+  }
+
+  const rr = vitals.respiration_rpm ?? 15;
+  if (rr >= 24 || rr <= 8) {
+    statuses.rr = "CRITICAL";
+  } else if (rr >= 20 || rr <= 10) {
+    statuses.rr = "WARNING";
+  }
+
+  if (vitals.glucose_mg_dl < pb.glucose_min || vitals.glucose_mg_dl > pb.glucose_max) {
+    const severe = vitals.glucose_mg_dl < pb.glucose_min - 18 || vitals.glucose_mg_dl > pb.glucose_max + 45;
+    bump("glucose", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`Glucose ${Math.round(vitals.glucose_mg_dl)} mg/dL (personal ${pb.glucose_min}-${pb.glucose_max})`);
+  }
+  if (vitals.sleep_hours < pb.sleep_min) {
+    const severe = vitals.sleep_hours < pb.sleep_min - 1.8 || (vitals.sleep_streak_low_days || 0) >= 3;
+    bump("sleep", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`Sleep ${vitals.sleep_hours.toFixed(1)}h (personal >= ${pb.sleep_min.toFixed(1)}h)`);
+  } else if (vitals.sleep_hours < 5.5 || (vitals.sleep_streak_low_days || 0) >= 3) {
+    statuses.sleep = maxStatus(statuses.sleep, (vitals.sleep_streak_low_days || 0) >= 3 ? "CRITICAL" : "WARNING");
+  }
+  if (vitals.hrv_ms < pb.hrv_min) {
+    const severe = vitals.hrv_ms <= pb.hrv_min - 15 || vitals.hrv_ms <= 24;
+    bump("hrv", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`HRV ${Math.round(vitals.hrv_ms)} ms (personal >= ${pb.hrv_min} ms)`);
+  }
+  if (vitals.radiation_msv_h > pb.radiation_max) {
+    const severe = vitals.radiation_msv_h >= 0.5;
+    bump("radiation", severe ? "CRITICAL" : "WARNING");
+    deviations.push(`Radiation ${vitals.radiation_msv_h.toFixed(2)} mSv/h (personal <= ${pb.radiation_max.toFixed(2)})`);
+  }
+
+  return { status, deviations, statuses };
+}
+
+export function getVitalStatuses(vitals, baseline) {
+  return evaluateBaselineAndMetricStatuses(vitals, baseline).statuses;
+}
+
+function evaluateLocalPersonalBaseline(vitals, baseline) {
+  const { status, deviations } = evaluateBaselineAndMetricStatuses(vitals, baseline);
+  return { status, deviations };
 }
 
 function evaluateLocalClinicalRules(vitals, nutrition, environmentId) {
@@ -90,7 +330,7 @@ function evaluateLocalClinicalRules(vitals, nutrition, environmentId) {
     matchedRules.push("NASA-STD-3001-TEMP-FEVER");
   }
   if (vitals.spo2_pct < 95.0) {
-    sysStatus.respiratory = maxStatus(sysStatus.respiratory, "WARNING");
+    sysStatus.respiratory = maxStatus(sysStatus.respiratory, vitals.spo2_pct < 94.0 ? "CRITICAL" : "WARNING");
     sysAlerts.respiratory.push(`Lowered SpO2: ${vitals.spo2_pct.toFixed(1)}%`);
   }
 
@@ -305,34 +545,211 @@ function buildLocalDonkiSummary() {
   };
 }
 
-function recomputeLocalState(scenarioId = null, envId = null) {
-  const targetScId = scenarioId || localState?.scenario_id || "nominal";
-  const targetEnvId = envId || localState?.environment_id || "transit";
-  const sc = localCatalog.scenarios.find((s) => s.id === targetScId) || localCatalog.scenarios[0];
-  const env = localCatalog.environments.find((e) => e.id === targetEnvId) || localCatalog.environments[0];
+function applyBaselineToVitals(vitals, baseline) {
+  return {
+    ...vitals,
+    heart_rate_bpm: baseline.resting_hr_bpm,
+    hrv_ms: baseline.resting_hrv_ms,
+    bp_systolic: baseline.resting_bp_systolic,
+    bp_diastolic: baseline.resting_bp_diastolic,
+    temperature_c: baseline.resting_temp_c,
+    spo2_pct: baseline.resting_spo2_pct,
+    glucose_mg_dl: baseline.resting_glucose_mg_dl,
+    sleep_hours: baseline.resting_sleep_hours,
+  };
+}
 
-  const vitals = scenarioId || !localState ? { ...sc.vitals } : { ...localState.vitals };
-  const nutrition = scenarioId || !localState ? { ...sc.nutrition, logged_items: [] } : { ...localState.nutrition };
-  const series = scenarioId || !localState ? sc.longitudinal_series.map((p) => ({ ...p })) : localState.longitudinal_series;
+function syncLocalAlertFromTelemetry(rec) {
+  const clinical = evaluateLocalClinicalRules(rec.vitals, rec.nutrition, rec.environment_id);
+  const base = evaluateLocalPersonalBaseline(rec.vitals, rec.baseline);
+  const computed = maxStatus(clinical.overall_status, base.status);
+  if (computed === "NOMINAL") return;
 
-  const clinical_evaluation = evaluateLocalClinicalRules(vitals, nutrition, targetEnvId);
-  const ml_prediction = buildLocalMLPrediction(clinical_evaluation, vitals);
+  const msg =
+    clinical.overall_status !== "NOMINAL"
+      ? clinical.primary_diagnosis
+      : `Personal baseline deviation: ${base.deviations.slice(0, 2).join("; ")}`;
+
+  if (!rec.active_alert) {
+    rec.active_alert = {
+      alert_id: `ALT-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+      severity: computed,
+      source: "CLINICAL_TELEMETRY",
+      message: msg,
+      issued_at: new Date().toISOString(),
+      issued_by: "AstraCare Auto-Triage",
+      acknowledged_by_crew: false,
+      requires_recheck: true,
+    };
+  } else {
+    rec.active_alert.severity = maxStatus(rec.active_alert.severity, computed);
+    if (rec.active_alert.source === "CLINICAL_TELEMETRY") {
+      rec.active_alert.message = msg;
+    }
+  }
+}
+
+function ensureLocalCrewStore() {
+  if (localCrewStore) return;
+  localCrewStore = {};
+  const now = new Date().toISOString();
+  for (const spec of LOCAL_CREW_SPECS) {
+    const sc = localCatalog.scenarios.find((s) => s.id === spec.initial_scenario_id) || localCatalog.scenarios[0];
+    let vitals = { ...sc.vitals };
+    if (spec.initial_scenario_id === "nominal") {
+      vitals = applyBaselineToVitals(vitals, spec.baseline);
+    }
+    const rec = {
+      ...spec,
+      scenario_id: sc.id,
+      mission_day: sc.mission_day,
+      vitals,
+      nutrition: { ...sc.nutrition, logged_items: [] },
+      longitudinal_series: sc.longitudinal_series.map((p) => ({ ...p })),
+      active_alert: null,
+      pending_verification_measurement: false,
+      last_measured_at: now,
+      measure_tick: 0,
+    };
+    syncLocalAlertFromTelemetry(rec);
+    localCrewStore[spec.crew_id] = rec;
+  }
+}
+
+function buildLocalCrewRoster() {
+  ensureLocalCrewStore();
+  const counts = { total: 0, nominal: 0, warning: 0, critical: 0, iss: 0, deep_space: 0, eva: 0 };
+  const crew = LOCAL_CREW_SPECS.map((spec) => {
+    const rec = localCrewStore[spec.crew_id];
+    const clinical = evaluateLocalClinicalRules(rec.vitals, rec.nutrition, rec.environment_id);
+    const base = evaluateLocalPersonalBaseline(rec.vitals, rec.baseline);
+    const ml = buildLocalMLPrediction(clinical, rec.vitals);
+    const computed = maxStatus(clinical.overall_status, base.status);
+    const effective = rec.active_alert ? maxStatus(computed, rec.active_alert.severity) : computed;
+
+    counts.total += 1;
+    counts[effective.toLowerCase()] += 1;
+    if (rec.mission_group === "ISS") counts.iss += 1;
+    else if (rec.mission_group === "DEEP_SPACE") counts.deep_space += 1;
+    else counts.eva += 1;
+
+    return {
+      crew_id: rec.crew_id,
+      name: rec.name,
+      callsign: rec.callsign,
+      role: rec.role,
+      mission_group: rec.mission_group,
+      location_module: rec.location_module,
+      environment_id: rec.environment_id,
+      scenario_id: rec.scenario_id,
+      suit_variant: rec.suit_variant,
+      suit_accent: rec.suit_accent,
+      status: effective,
+      clinical_status: clinical.overall_status,
+      within_personal_baseline: base.deviations.length === 0,
+      baseline_deviations: base.deviations,
+      active_alert: rec.active_alert ? { ...rec.active_alert } : null,
+      pending_verification_measurement: rec.pending_verification_measurement,
+      vitals: { ...rec.vitals },
+      personal_baseline: { ...rec.baseline },
+      primary_diagnosis: clinical.primary_diagnosis,
+      anomaly_score: ml.anomaly_score,
+      last_measured_at: rec.last_measured_at,
+    };
+  });
+
+  return {
+    mission_day: localCrewStore[localActiveCrewId]?.mission_day || 142,
+    active_crew_id: localActiveCrewId,
+    summary_counts: counts,
+    space_weather: buildLocalDonkiSummary(),
+    crew,
+    last_updated: new Date().toISOString(),
+  };
+}
+
+function recomputeLocalState(scenarioId = null, envId = null, crewId = null) {
+  ensureLocalCrewStore();
+  if (crewId && localCrewStore[crewId]) {
+    localActiveCrewId = crewId;
+  }
+  const rec = localCrewStore[localActiveCrewId];
+
+  if (scenarioId) {
+    const sc = localCatalog.scenarios.find((s) => s.id === scenarioId) || localCatalog.scenarios[0];
+    rec.scenario_id = sc.id;
+    rec.mission_day = sc.mission_day;
+    rec.vitals = sc.id === "nominal" ? applyBaselineToVitals({ ...sc.vitals }, rec.baseline) : { ...sc.vitals };
+    rec.nutrition = { ...sc.nutrition, logged_items: [] };
+    rec.longitudinal_series = sc.longitudinal_series.map((p) => ({ ...p }));
+    if (sc.id === "nominal") {
+      if (rec.active_alert) {
+        rec.pending_verification_measurement = true;
+        rec.active_alert.requires_recheck = true;
+      }
+    } else {
+      rec.pending_verification_measurement = false;
+      rec.active_alert = null;
+      syncLocalAlertFromTelemetry(rec);
+    }
+  }
+  if (envId) {
+    rec.environment_id = envId;
+  }
+
+  const sc = localCatalog.scenarios.find((s) => s.id === rec.scenario_id) || localCatalog.scenarios[0];
+  const env = localCatalog.environments.find((e) => e.id === rec.environment_id) || localCatalog.environments[0];
+  const clinical_evaluation = evaluateLocalClinicalRules(rec.vitals, rec.nutrition, rec.environment_id);
+  const base = evaluateLocalPersonalBaseline(rec.vitals, rec.baseline);
+  const computed = maxStatus(clinical_evaluation.overall_status, base.status);
+  const effective = rec.active_alert ? maxStatus(computed, rec.active_alert.severity) : computed;
+
+  if (effective !== clinical_evaluation.overall_status) {
+    clinical_evaluation.overall_status = effective;
+    clinical_evaluation.notify_earth_flight_surgeon = effective === "CRITICAL";
+    clinical_evaluation.notify_crew_onboard = true;
+    if (rec.active_alert && clinical_evaluation.syndrome_code === "nominal") {
+      clinical_evaluation.primary_diagnosis = rec.active_alert.message;
+      clinical_evaluation.matched_rules.unshift(`ALERT-${rec.active_alert.source}`);
+      if (rec.pending_verification_measurement) {
+        clinical_evaluation.stabilization_checklist.unshift(
+          "Stabilization protocol completed. Run a confirmatory sensor measurement to verify all vitals are within personal baseline."
+        );
+      }
+    } else if (base.status !== "NOMINAL" && clinical_evaluation.syndrome_code === "nominal") {
+      clinical_evaluation.primary_diagnosis = `Personal Baseline Deviation (${base.deviations.slice(0, 2).join("; ")})`;
+      clinical_evaluation.matched_rules.unshift("PERSONAL-BASELINE-DRIFT");
+    }
+  }
+
+  const ml_prediction = buildLocalMLPrediction(clinical_evaluation, rec.vitals);
 
   localState = {
-    mission_day: sc.mission_day,
-    crew_member: "CDR Elena Vance (EVA-1)",
+    mission_day: rec.mission_day,
+    crew_id: rec.crew_id,
+    crew_member: `${rec.name} (${rec.callsign})`,
+    crew_role: rec.role,
+    mission_group: rec.mission_group,
+    location_module: rec.location_module,
+    suit_variant: rec.suit_variant,
     scenario_id: sc.id,
     scenario_name: sc.name,
     scenario_description: sc.description,
     environment_id: env.id,
     environment_name: env.name,
     one_way_latency_seconds: env.one_way_latency_seconds,
-    vitals,
-    nutrition,
+    vitals: { ...rec.vitals },
+    personal_baseline: { ...rec.baseline },
+    within_personal_baseline: base.deviations.length === 0,
+    baseline_deviations: base.deviations,
+    active_alert: rec.active_alert ? { ...rec.active_alert } : null,
+    pending_verification_measurement: rec.pending_verification_measurement,
+    last_measured_at: rec.last_measured_at,
+    nutrition: { ...rec.nutrition },
     clinical_evaluation,
     ml_prediction,
     space_weather: buildLocalDonkiSummary(),
-    longitudinal_series: series,
+    longitudinal_series: rec.longitudinal_series,
     scenarios_catalog: localCatalog.scenarios.map((s) => ({
       id: s.id,
       name: s.name,
@@ -375,78 +792,236 @@ async function tryFetch(url, options = {}) {
   }
 }
 
-export async function getMissionState() {
+export async function getCrewRoster() {
   try {
-    return await tryFetch("/api/state");
+    return await tryFetch("/api/crew");
   } catch {
     await loadLocalData();
-    return localState ? recomputeLocalState() : recomputeLocalState("nominal", "transit");
+    return buildLocalCrewRoster();
   }
 }
 
-export async function switchScenario(scenarioId) {
+export async function selectCrewMember(crewId) {
   try {
-    return await tryFetch(`/api/scenario/${scenarioId}`, { method: "POST" });
+    return await tryFetch(`/api/crew/${crewId}/select`, { method: "POST" });
   } catch {
     await loadLocalData();
-    return recomputeLocalState(scenarioId, localState?.environment_id || "transit");
+    return recomputeLocalState(null, null, crewId);
   }
 }
 
-export async function switchEnvironment(envId) {
+export async function dispatchCrewAlert(crewId, payload) {
   try {
-    return await tryFetch(`/api/environment/${envId}`, { method: "POST" });
+    return await tryFetch(`/api/crew/${crewId}/alert`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   } catch {
     await loadLocalData();
-    return recomputeLocalState(null, envId);
+    ensureLocalCrewStore();
+    const rec = localCrewStore[crewId];
+    if (rec) {
+      const b = rec.baseline;
+      if (payload.simulate_vitals_drift !== false) {
+        if (payload.severity === "WARNING") {
+          rec.vitals.heart_rate_bpm = Math.round(Math.max(rec.vitals.heart_rate_bpm, b.hr_max + 10) * 10) / 10;
+          rec.vitals.bp_systolic = Math.round(Math.min(rec.vitals.bp_systolic, b.bp_sys_min - 7) * 10) / 10;
+          rec.vitals.stress_index = Math.max(rec.vitals.stress_index, 64);
+          rec.vitals.hrv_ms = Math.min(rec.vitals.hrv_ms, b.hrv_min - 6);
+        } else {
+          rec.vitals.heart_rate_bpm = Math.round(Math.max(rec.vitals.heart_rate_bpm, b.hr_max + 26) * 10) / 10;
+          rec.vitals.temperature_c = Math.round(Math.max(rec.vitals.temperature_c, b.temp_max + 1.0) * 10) / 10;
+          rec.vitals.bp_systolic = Math.round(Math.min(rec.vitals.bp_systolic, Math.max(80, b.bp_sys_min - 18)) * 10) / 10;
+          rec.vitals.spo2_pct = Math.round(Math.min(rec.vitals.spo2_pct, Math.max(89.5, b.spo2_min - 3.2)) * 10) / 10;
+          rec.vitals.stress_index = Math.max(rec.vitals.stress_index, 85);
+          rec.vitals.hrv_ms = Math.min(rec.vitals.hrv_ms, Math.max(18, b.hrv_min - 18));
+        }
+      }
+      rec.active_alert = {
+        alert_id: `MC-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+        severity: payload.severity,
+        source: "MISSION_CONTROL",
+        message: payload.message,
+        issued_at: new Date().toISOString(),
+        issued_by: payload.issued_by || "Mission Control (Houston)",
+        acknowledged_by_crew: false,
+        requires_recheck: true,
+      };
+      rec.pending_verification_measurement = false;
+    }
+    return buildLocalCrewRoster();
   }
 }
 
-export async function triggerMeasurement(systemId) {
+export async function acknowledgeCrewAlert(crewId) {
   try {
-    return await tryFetch(`/api/measure/${systemId}`, { method: "POST" });
+    return await tryFetch(`/api/crew/${crewId}/acknowledge`, { method: "POST" });
   } catch {
     await loadLocalData();
-    const state = recomputeLocalState();
-    const sys = state.clinical_evaluation.systems[systemId];
+    ensureLocalCrewStore();
+    const rec = localCrewStore[crewId];
+    if (rec?.active_alert) {
+      rec.active_alert.acknowledged_by_crew = true;
+    }
+    return buildLocalCrewRoster();
+  }
+}
+
+export async function stabilizeCrewMember(crewId, note = "CHeCS countermeasure & stabilization protocol applied") {
+  try {
+    return await tryFetch(`/api/crew/${crewId}/stabilize`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    });
+  } catch {
+    await loadLocalData();
+    ensureLocalCrewStore();
+    const rec = localCrewStore[crewId];
+    if (rec) {
+      const b = rec.baseline;
+      rec.scenario_id = "nominal";
+      rec.vitals = {
+        ...rec.vitals,
+        heart_rate_bpm: b.resting_hr_bpm,
+        hrv_ms: b.resting_hrv_ms,
+        bp_systolic: b.resting_bp_systolic,
+        bp_diastolic: b.resting_bp_diastolic,
+        temperature_c: b.resting_temp_c,
+        spo2_pct: b.resting_spo2_pct,
+        respiration_rpm: 14,
+        glucose_mg_dl: b.resting_glucose_mg_dl,
+        sleep_hours: b.resting_sleep_hours,
+        sleep_streak_low_days: 0,
+        rem_sleep_pct: 22.0,
+        mood_score: 5,
+        stress_index: 22,
+        radiation_msv_h: 0.04,
+        shoulder_pain_score: 0,
+        pfo_decompression_risk: "LOW",
+        urinary_calcium_mg_d: 185,
+        intraocular_pressure_mmhg: 15.2,
+      };
+      rec.nutrition.calories_kcal = Math.max(rec.nutrition.calories_kcal, 2400);
+      rec.nutrition.water_ml = Math.max(rec.nutrition.water_ml, 2250);
+      if (rec.active_alert) {
+        rec.pending_verification_measurement = true;
+        rec.active_alert.requires_recheck = true;
+        if (note) rec.active_alert.message = `${note} — Awaiting confirmatory sensor measurement.`;
+      }
+    }
+    return recomputeLocalState(null, null, crewId);
+  }
+}
+
+export async function measureCrewMember(crewId, systemId = "full_body") {
+  try {
+    return await tryFetch(`/api/crew/${crewId}/measure?system_id=${encodeURIComponent(systemId)}`, { method: "POST" });
+  } catch {
+    return triggerMeasurement(systemId, crewId);
+  }
+}
+
+export async function getMissionState(crewId = null) {
+  const qs = crewId ? `?crew_id=${encodeURIComponent(crewId)}` : "";
+  try {
+    return await tryFetch(`/api/state${qs}`);
+  } catch {
+    await loadLocalData();
+    return recomputeLocalState(null, null, crewId);
+  }
+}
+
+export async function switchScenario(scenarioId, crewId = null) {
+  const qs = crewId ? `?crew_id=${encodeURIComponent(crewId)}` : "";
+  try {
+    return await tryFetch(`/api/scenario/${scenarioId}${qs}`, { method: "POST" });
+  } catch {
+    await loadLocalData();
+    return recomputeLocalState(scenarioId, null, crewId);
+  }
+}
+
+export async function switchEnvironment(envId, crewId = null) {
+  const qs = crewId ? `?crew_id=${encodeURIComponent(crewId)}` : "";
+  try {
+    return await tryFetch(`/api/environment/${envId}${qs}`, { method: "POST" });
+  } catch {
+    await loadLocalData();
+    return recomputeLocalState(null, envId, crewId);
+  }
+}
+
+export async function triggerMeasurement(systemId, crewId = null) {
+  const qs = crewId ? `?crew_id=${encodeURIComponent(crewId)}` : "";
+  try {
+    return await tryFetch(`/api/measure/${systemId}${qs}`, { method: "POST" });
+  } catch {
+    await loadLocalData();
+    ensureLocalCrewStore();
+    if (crewId && localCrewStore[crewId]) localActiveCrewId = crewId;
+    const rec = localCrewStore[localActiveCrewId];
+
+    rec.measure_tick += 1;
+    const delta = rec.measure_tick % 2 === 1 ? 0.4 : -0.4;
+    if (systemId === "cardiovascular" || systemId === "full_body") {
+      rec.vitals.heart_rate_bpm = Math.round((rec.vitals.heart_rate_bpm + delta) * 10) / 10;
+    }
+    rec.last_measured_at = new Date().toISOString();
+
+    const clinical = evaluateLocalClinicalRules(rec.vitals, rec.nutrition, rec.environment_id);
+    const base = evaluateLocalPersonalBaseline(rec.vitals, rec.baseline);
+    let note;
+    if (clinical.overall_status === "NOMINAL" && base.status === "NOMINAL") {
+      rec.active_alert = null;
+      rec.pending_verification_measurement = false;
+      note = "VERIFIED WITHIN PERSONAL BASELINE (Alert Normalized)";
+    } else {
+      syncLocalAlertFromTelemetry(rec);
+      note = `OUTSIDE PERSONAL BASELINE (${base.deviations.slice(0, 2).join("; ") || clinical.primary_diagnosis}) — Alert Active`;
+    }
+
+    const state = recomputeLocalState(null, null, rec.crew_id);
+    const isFull = systemId === "full_body";
+    const sys = state.clinical_evaluation.systems[isFull ? "cardiovascular" : systemId];
     return {
-      system_id: systemId,
-      system_name: sys.name,
+      system_id: isFull ? "cardiovascular" : systemId,
+      system_name: isFull ? "Full-Body Personal Baseline Scan" : sys.name,
       device_used: sys.checs_device,
       decontamination_required: state.clinical_evaluation.decontamination_required,
       decontamination_checklist: state.clinical_evaluation.decontamination_checklist,
-      reading_summary: `${sys.name} local edge telemetry verified nominal sync.`,
-      status: sys.status,
+      reading_summary: `${isFull ? "Full-Body Sync" : sys.name}: HR ${Math.round(rec.vitals.heart_rate_bpm)} bpm | ${note}`,
+      status: isFull ? state.clinical_evaluation.overall_status : sys.status,
       guidance: sys.recommended_action,
       state,
     };
   }
 }
 
-export async function sendAgentChat(message) {
+export async function sendAgentChat(message, crewId = null) {
   try {
     return await tryFetch("/api/agent/chat", {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, crew_id: crewId }),
     });
   } catch {
     await loadLocalData();
-    if (!localState) recomputeLocalState("nominal", "transit");
+    ensureLocalCrewStore();
+    if (crewId && localCrewStore[crewId]) localActiveCrewId = crewId;
+    const rec = localCrewStore[localActiveCrewId];
     const lower = message.toLowerCase();
     const trace = [];
 
-    // Local NLP food/water fallback
     const waterMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(ml|l|liter)/);
     const appleMatch = lower.match(/(\d+)\s*apple/);
     if (waterMatch || appleMatch || lower.includes("ate") || lower.includes("drank") || lower.includes("bar") || lower.includes("meal")) {
       const wMl = waterMatch ? parseFloat(waterMatch[1]) * (waterMatch[2].startsWith("l") ? 1000 : 1) : 250;
       const kcal = appleMatch ? parseInt(appleMatch[1], 10) * 95 : 220;
       const carbs = appleMatch ? parseInt(appleMatch[1], 10) * 25 : 32;
-      localState.nutrition.calories_kcal += kcal;
-      localState.nutrition.water_ml += wMl;
-      localState.nutrition.carbs_g += carbs;
-      if (localState.vitals.glucose_mg_dl < 85) localState.vitals.glucose_mg_dl += Math.round(carbs * 0.6);
-      localState.nutrition.logged_items.unshift({
+      rec.nutrition.calories_kcal += kcal;
+      rec.nutrition.water_ml += wMl;
+      rec.nutrition.carbs_g += carbs;
+      if (rec.vitals.glucose_mg_dl < 85) rec.vitals.glucose_mg_dl += Math.round(carbs * 0.6);
+      rec.nutrition.logged_items.unshift({
         timestamp: new Date().toISOString().slice(11, 16) + " UTC",
         item: message.slice(0, 48),
         calories_kcal: kcal,
@@ -457,14 +1032,16 @@ export async function sendAgentChat(message) {
         sodium_mg: 40,
         iron_mg: 0.4,
       });
+      if (rec.active_alert) rec.pending_verification_measurement = true;
       trace.push({ tool_name: "log_nutrition_hydration", status: "OK", summary: `+${kcal} kcal, +${wMl} ml H2O`, rule_or_score: "Na/Fe Checked" });
     }
 
     const sleepMatch = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hr|hrs|hours)/);
     if (sleepMatch || lower.includes("shoulder") || lower.includes("dizzy") || lower.includes("tired")) {
-      if (sleepMatch) localState.vitals.sleep_hours = parseFloat(sleepMatch[1]);
-      if (lower.includes("shoulder")) localState.vitals.shoulder_pain_score = 6;
-      if (lower.includes("dizzy") || lower.includes("exhausted")) localState.vitals.mood_score = 2;
+      if (sleepMatch) rec.vitals.sleep_hours = parseFloat(sleepMatch[1]);
+      if (lower.includes("shoulder")) rec.vitals.shoulder_pain_score = 6;
+      if (lower.includes("dizzy") || lower.includes("exhausted")) rec.vitals.mood_score = 2;
+      if (rec.active_alert) rec.pending_verification_measurement = true;
       trace.push({ tool_name: "log_sleep_mood_checkin", status: "WARNING", summary: "Updated Sleep/EVA check-in", rule_or_score: "OCHMO-MTB-009/006" });
     }
 
@@ -500,12 +1077,13 @@ export async function getSpaceWeather() {
   }
 }
 
-export async function generateTelemedicineDossier() {
+export async function generateTelemedicineDossier(crewId = null) {
+  const qs = crewId ? `?crew_id=${encodeURIComponent(crewId)}` : "";
   try {
-    return await tryFetch("/api/telemedicine/dossier", { method: "POST" });
+    return await tryFetch(`/api/telemedicine/dossier${qs}`, { method: "POST" });
   } catch {
     await loadLocalData();
-    const state = recomputeLocalState();
+    const state = recomputeLocalState(null, null, crewId);
     return {
       dossier_id: "ASTRA-MORD-OFFLINE",
       generated_at: new Date().toISOString(),
