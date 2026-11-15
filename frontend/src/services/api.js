@@ -409,6 +409,20 @@ async function tryFetch(url, options = {}) {
   }
 }
 
+// ---------- Live-only pillar endpoints ----------
+// No in-browser fallback on purpose: confirming, escalating or "syncing" a clinical case against a simulation
+// would fabricate an audit trail. When the backend is offline these reject and the UI says so.
+const postJson = (url, body) =>
+  tryFetch(url, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body), timeoutMs: 15000 });
+
+export const confirmFollowupMeasurement = (caseId, payload) => postJson(`/api/followup/${caseId}/confirm`, payload);
+export const recordFollowupAction = (caseId, payload) => postJson(`/api/followup/${caseId}/action`, payload);
+export const completeFollowupReassessment = (caseId, payload) => postJson(`/api/followup/${caseId}/reassess`, payload);
+export const escalateFollowupCase = (caseId, payload) => postJson(`/api/followup/${caseId}/escalate`, payload);
+export const createEarthSyncPackage = () => postJson("/api/earth-sync/package");
+export const synchronizeWithEarth = () => postJson("/api/earth-sync/synchronize");
+export const getEarthSyncLedger = () => tryFetch("/api/earth-sync/ledger");
+export const verifyEarthSyncLedger = () => tryFetch("/api/earth-sync/verify");
 
 export async function getMissionState() {
   try {
