@@ -308,6 +308,8 @@ class ScheduledReassessmentRecord(BaseModel):
     target_metrics: list[str]
     protocol_reason: str
     status: Literal["PENDING", "COMPLETED", "OVERDUE"] = "PENDING"
+    scheduled_at: str | None = None
+    due_at: str | None = None
     completed_at: str | None = None
     post_reassessment_summary: str | None = None
 
@@ -331,6 +333,11 @@ class ClinicalFollowUpCase(BaseModel):
     actions_executed: list[ExecutedActionRecord] = Field(default_factory=list)
     reassessments_scheduled: list[ScheduledReassessmentRecord] = Field(default_factory=list)
     resolution_notes: str | None = None
+    # Derived on every read so the crew/ground can see at a glance what is still owed on this case
+    next_due_at: str | None = None
+    overdue_reassessments: int = 0
+    pending_items: list[str] = Field(default_factory=list)
+    escalation_reason: str | None = None
 
 
 class RecordConfirmationRequest(BaseModel):
@@ -354,6 +361,11 @@ class CompleteReassessmentRequest(BaseModel):
     reassessment_id: str
     resolve_case: bool = False
     summary: str = "Reassessment completed; trend stabilizing toward personal baseline."
+
+
+class EscalateCaseRequest(BaseModel):
+    requested_by: str = "Crew Medical Officer (CMO)"
+    reason: str = "Crew requests Flight Surgeon review."
 
 
 # --- Clinical Evaluation & Legacy Compatibility ---
