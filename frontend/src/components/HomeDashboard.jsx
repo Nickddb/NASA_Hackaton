@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./BodyModel3D";
+import { bpStatus, glucoseStatus, hrStatus, radiationStatus, sleepStatus, tempStatus } from "../services/thresholds";
 
 /* ---------- status helpers ---------- */
 
@@ -43,7 +44,7 @@ function buildVitals(v) {
       icon: HeartPulse,
       value: Math.round(v.heart_rate_bpm),
       unit: "bpm",
-      status: v.heart_rate_bpm >= 110 ? "CRITICAL" : v.heart_rate_bpm >= 95 || v.heart_rate_bpm < 50 ? "WARNING" : "NORMAL",
+      status: hrStatus(v.heart_rate_bpm),
       system: "cardiovascular",
     },
     {
@@ -52,7 +53,7 @@ function buildVitals(v) {
       icon: Droplet,
       value: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)}`,
       unit: "mmHg",
-      status: v.bp_systolic <= 82 ? "CRITICAL" : v.bp_systolic <= 92 || v.bp_systolic >= 135 ? "WARNING" : "NORMAL",
+      status: bpStatus(v.bp_systolic),
       system: "cardiovascular",
     },
     {
@@ -61,7 +62,7 @@ function buildVitals(v) {
       icon: Thermometer,
       value: v.temperature_c.toFixed(1),
       unit: "°C",
-      status: v.temperature_c >= 38 ? "CRITICAL" : v.temperature_c >= 37.5 || v.temperature_c < 35.8 ? "WARNING" : "NORMAL",
+      status: tempStatus(v.temperature_c),
       system: "respiratory",
     },
     {
@@ -106,7 +107,7 @@ export function buildRegions(v) {
       exam: "Sleep & Cognition",
       location: "Head (EEG headband)",
       reading: `${v.sleep_hours.toFixed(1)} h sleep`,
-      status: v.sleep_hours < 4.5 ? "CRITICAL" : v.sleep_hours < 6.5 ? "WARNING" : "NORMAL",
+      status: sleepStatus(v.sleep_hours, v.sleep_streak_low_days),
     },
     {
       id: "chest",
@@ -116,7 +117,7 @@ export function buildRegions(v) {
       exam: "Heart Rate",
       location: "Chest (ECG patch)",
       reading: `${Math.round(v.heart_rate_bpm)} bpm`,
-      status: v.heart_rate_bpm >= 110 ? "CRITICAL" : v.heart_rate_bpm >= 95 ? "WARNING" : "NORMAL",
+      status: hrStatus(v.heart_rate_bpm),
     },
     {
       id: "arm",
@@ -126,7 +127,7 @@ export function buildRegions(v) {
       exam: "Blood Pressure",
       location: "Left Arm",
       reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`,
-      status: v.bp_systolic <= 82 ? "CRITICAL" : v.bp_systolic <= 92 ? "WARNING" : "NORMAL",
+      status: bpStatus(v.bp_systolic),
     },
     {
       id: "leg",
@@ -146,7 +147,7 @@ export function buildRegions(v) {
       exam: "Radiation Dose",
       location: "Full Body (dosimeter)",
       reading: `${v.radiation_msv_h.toFixed(2)} mSv/h`,
-      status: v.radiation_msv_h >= 0.5 ? "CRITICAL" : v.radiation_msv_h >= 0.15 ? "WARNING" : "NORMAL",
+      status: radiationStatus(v.radiation_msv_h),
     },
   ];
 }
@@ -274,32 +275,32 @@ function TrendChart({ title, icon: Icon, current, unit, amplitude, seed, domain,
 /* ---------- main home dashboard ---------- */
 
 function buildPartDetails(v) {
-  const bpStatus = v.bp_systolic <= 82 ? "CRITICAL" : v.bp_systolic <= 92 ? "WARNING" : "NORMAL";
-  const hrStatus = v.heart_rate_bpm >= 110 ? "CRITICAL" : v.heart_rate_bpm >= 95 ? "WARNING" : "NORMAL";
-  const sleepStatus = v.sleep_hours < 4.5 ? "CRITICAL" : v.sleep_hours < 6.5 ? "WARNING" : "NORMAL";
+  const bpSt = bpStatus(v.bp_systolic);
+  const hrSt = hrStatus(v.heart_rate_bpm);
+  const sleepSt = sleepStatus(v.sleep_hours, v.sleep_streak_low_days);
   const shStatus = (v.shoulder_pain_score ?? 0) >= 4 ? "WARNING" : "NORMAL";
   const caStatus = (v.urinary_calcium_mg_d ?? 185) > 250 ? "WARNING" : "NORMAL";
-  const gluStatus = v.glucose_mg_dl < 60 || v.glucose_mg_dl >= 180 ? "CRITICAL" : v.glucose_mg_dl <= 70 || v.glucose_mg_dl >= 140 ? "WARNING" : "NORMAL";
+  const gluStatus = glucoseStatus(v.glucose_mg_dl);
   const spo2Status = (v.spo2_pct ?? 98) < 90 ? "CRITICAL" : (v.spo2_pct ?? 98) < 95 ? "WARNING" : "NORMAL";
 
   return {
-    head: { exam: "Neuro & Intraocular Pressure (SANS)", location: "Cabeça & Crânio (EEG / Tonometria)", reading: `${v.sleep_hours.toFixed(1)}h sono | PIO ${(v.intraocular_pressure_mmhg ?? 15.2).toFixed(1)} mmHg`, status: sleepStatus },
+    head: { exam: "Neuro & Intraocular Pressure (SANS)", location: "Cabeça & Crânio (EEG / Tonometria)", reading: `${v.sleep_hours.toFixed(1)}h sono | PIO ${(v.intraocular_pressure_mmhg ?? 15.2).toFixed(1)} mmHg`, status: sleepSt },
     neck: { exam: "Fluxo Carotídeo & Termografia", location: "Pescoço & Cervical", reading: `${v.temperature_c.toFixed(1)} °C | ${Math.round(v.respiration_rpm ?? 14)} rpm`, status: "NORMAL" },
-    chest: { exam: "Cardiopulmonar (ECG & Respiração)", location: "Tórax & Peitoral", reading: `${Math.round(v.heart_rate_bpm)} bpm | HRV ${Math.round(v.hrv_ms)} ms`, status: hrStatus },
+    chest: { exam: "Cardiopulmonar (ECG & Respiração)", location: "Tórax & Peitoral", reading: `${Math.round(v.heart_rate_bpm)} bpm | HRV ${Math.round(v.hrv_ms)} ms`, status: hrSt },
     abdomen: { exam: "Metabólico & Glicemia Capilar", location: "Abdômen & Core", reading: `${Math.round(v.glucose_mg_dl)} mg/dL`, status: gluStatus },
     pelvis: { exam: "Densidade Óssea & Cálcio Renal", location: "Pelve & Quadril", reading: `${Math.round(v.urinary_calcium_mg_d ?? 185)} mg/d Ca`, status: caStatus },
     left_shoulder: { exam: "Biomecânica EVA (OCHMO-MTB-006)", location: "Ombro / Deltoide Esquerdo", reading: `Dor EVA ${v.shoulder_pain_score ?? 0}/10`, status: shStatus },
     right_shoulder: { exam: "Biomecânica EVA (OCHMO-MTB-006)", location: "Ombro / Deltoide Direito", reading: `Dor EVA ${v.shoulder_pain_score ?? 0}/10`, status: shStatus },
-    left_upper_arm: { exam: "Pressão Arterial (Manguito NIBP)", location: "Braço Esquerdo (Bíceps)", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpStatus },
-    right_upper_arm: { exam: "Pressão Arterial (Manguito NIBP)", location: "Braço Direito (Bíceps)", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpStatus },
-    left_forearm: { exam: "Pulso Radial & Smartwatch PPG", location: "Antebraço Esquerdo", reading: `${Math.round(v.heart_rate_bpm)} bpm | ${Math.round(v.hrv_ms)} ms`, status: hrStatus },
-    right_forearm: { exam: "Pulso Radial & Periférico", location: "Antebraço Direito", reading: `${Math.round(v.heart_rate_bpm)} bpm`, status: hrStatus },
+    left_upper_arm: { exam: "Pressão Arterial (Manguito NIBP)", location: "Braço Esquerdo (Bíceps)", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpSt },
+    right_upper_arm: { exam: "Pressão Arterial (Manguito NIBP)", location: "Braço Direito (Bíceps)", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpSt },
+    left_forearm: { exam: "Pulso Radial & Smartwatch PPG", location: "Antebraço Esquerdo", reading: `${Math.round(v.heart_rate_bpm)} bpm | ${Math.round(v.hrv_ms)} ms`, status: hrSt },
+    right_forearm: { exam: "Pulso Radial & Periférico", location: "Antebraço Direito", reading: `${Math.round(v.heart_rate_bpm)} bpm`, status: hrSt },
     left_hand: { exam: "Oximetria de Pulso Capilar (SpO₂)", location: "Mão Esquerda", reading: `${Math.round(v.spo2_pct ?? 98)}% SpO₂`, status: spo2Status },
     right_hand: { exam: "Oximetria de Pulso Capilar (SpO₂)", location: "Mão Direita", reading: `${Math.round(v.spo2_pct ?? 98)}% SpO₂`, status: spo2Status },
     left_thigh: { exam: "Carga Muscular (ARED Quadríceps)", location: "Coxa Esquerda", reading: `${Math.round(v.urinary_calcium_mg_d ?? 185)} mg/d Ca`, status: caStatus },
     right_thigh: { exam: "Carga Muscular (ARED Quadríceps)", location: "Coxa Direita", reading: `${Math.round(v.urinary_calcium_mg_d ?? 185)} mg/d Ca`, status: caStatus },
-    left_calf: { exam: "Retorno Venoso & Fluid Shift", location: "Panturrilha Esquerda", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpStatus },
-    right_calf: { exam: "Retorno Venoso & Fluid Shift", location: "Panturrilha Direita", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpStatus },
+    left_calf: { exam: "Retorno Venoso & Fluid Shift", location: "Panturrilha Esquerda", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpSt },
+    right_calf: { exam: "Retorno Venoso & Fluid Shift", location: "Panturrilha Direita", reading: `${Math.round(v.bp_systolic)} / ${Math.round(v.bp_diastolic)} mmHg`, status: bpSt },
     left_foot: { exam: "Perfusão Distal & Sensibilidade", location: "Pé Esquerdo", reading: `${v.temperature_c.toFixed(1)} °C | ${Math.round(v.spo2_pct ?? 98)}%`, status: spo2Status },
     right_foot: { exam: "Perfusão Distal & Sensibilidade", location: "Pé Direito", reading: `${v.temperature_c.toFixed(1)} °C | ${Math.round(v.spo2_pct ?? 98)}%`, status: spo2Status },
   };

@@ -23,6 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { T, bpStatus, glucoseStatus, hrStatus, radiationStatus, sleepStatus, tempStatus } from "../services/thresholds";
 
 const STATUS_BADGE = {
   NOMINAL: "bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]",
@@ -36,37 +37,30 @@ const BORDER_LEFT = {
   CRITICAL: "border-l-[#EF4444]",
 };
 
+const asNominal = (st) => (st === "NORMAL" ? "NOMINAL" : st);
+
 function getIndicatorStatus(id, vitals, nutrition) {
   if (!vitals) return "NOMINAL";
   switch (id) {
     case "heart_rate_hrv":
-      if (vitals.heart_rate_bpm >= 110 || vitals.hrv_ms <= 24) return "CRITICAL";
-      if (vitals.heart_rate_bpm >= 95 || vitals.hrv_ms < 35) return "WARNING";
+      if (hrStatus(vitals.heart_rate_bpm) === "CRITICAL" || vitals.hrv_ms <= 24) return "CRITICAL";
+      if (hrStatus(vitals.heart_rate_bpm) === "WARNING" || vitals.hrv_ms < 35) return "WARNING";
       return "NOMINAL";
     case "blood_pressure":
-      if (vitals.bp_systolic <= 82) return "CRITICAL";
-      if (vitals.bp_systolic <= 92) return "WARNING";
-      return "NOMINAL";
+      return asNominal(bpStatus(vitals.bp_systolic));
     case "blood_glucose":
-      if (vitals.glucose_mg_dl < 60 || vitals.glucose_mg_dl >= 180) return "CRITICAL";
-      if (vitals.glucose_mg_dl <= 70 || vitals.glucose_mg_dl >= 140) return "WARNING";
-      return "NOMINAL";
+      return asNominal(glucoseStatus(vitals.glucose_mg_dl));
     case "body_temperature":
-      if (vitals.temperature_c >= 38.0) return "CRITICAL";
-      if (vitals.temperature_c >= 37.5 || vitals.temperature_c < 35.8) return "WARNING";
-      return "NOMINAL";
+      return asNominal(tempStatus(vitals.temperature_c));
     case "sleep_circadian":
-      if (vitals.sleep_streak_low_days >= 3 || vitals.sleep_hours < 4.5) return "CRITICAL";
-      if (vitals.sleep_hours < 6.5) return "WARNING";
-      return "NOMINAL";
+      return asNominal(sleepStatus(vitals.sleep_hours, vitals.sleep_streak_low_days));
     case "mood_cognitive":
-      if (vitals.mood_score <= 2 && vitals.sleep_streak_low_days >= 3) return "CRITICAL";
-      if (vitals.mood_score <= 2 || vitals.stress_index >= 75) return "WARNING";
+      // Spec: CTB reaction time > 390 ms together with mood <= 2/5 is critical
+      if (vitals.mood_score <= 2 && (vitals.ctb_reaction_time_ms ?? 275) > T.CTB_CRIT_MS) return "CRITICAL";
+      if (vitals.mood_score <= 2 || vitals.stress_index >= 75 || (vitals.ctb_reaction_time_ms ?? 275) > T.CTB_WARN_MS) return "WARNING";
       return "NOMINAL";
     case "radiation_dose":
-      if (vitals.radiation_msv_h >= 0.5) return "CRITICAL";
-      if (vitals.radiation_msv_h >= 0.15) return "WARNING";
-      return "NOMINAL";
+      return asNominal(radiationStatus(vitals.radiation_msv_h));
     case "nutrition_hydration": {
       const calPct = (nutrition.calories_kcal / Math.max(nutrition.goal_calories_kcal, 1)) * 100;
       const waterPct = (nutrition.water_ml / Math.max(nutrition.goal_water_ml, 1)) * 100;
