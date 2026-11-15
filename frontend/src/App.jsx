@@ -1,8 +1,9 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
-import { BarChart3, Home, LogOut, Orbit, Settings } from "lucide-react";
+import { BarChart3, ClipboardCheck, Home, LogOut, Orbit, Settings } from "lucide-react";
 import AgentChatPanel from "./components/AgentChatPanel";
 import BodyModel3D from "./components/BodyModel3D";
 import ChatBar from "./components/ChatBar";
+import ClinicalContinuity from "./components/ClinicalContinuity";
 import EmergencyProtocol from "./components/EmergencyProtocol";
 import HomeDashboard from "./components/HomeDashboard";
 import SmartwatchSim from "./components/SmartwatchSim";
@@ -254,6 +255,16 @@ export default function App() {
               <BarChart3 className="h-6 w-6" strokeWidth={1.7} />
               {tab === "analytics" && <span className="absolute -bottom-1.5 left-1 right-1 h-0.5 rounded bg-[#60A5FA]" />}
             </button>
+            <button
+              type="button"
+              title="Clinical continuity"
+              aria-label="Clinical continuity"
+              onClick={() => setTab("care")}
+              className={navBtn(tab === "care")}
+            >
+              <ClipboardCheck className="h-6 w-6" strokeWidth={1.7} />
+              {tab === "care" && <span className="absolute -bottom-1.5 left-1 right-1 h-0.5 rounded bg-[#60A5FA]" />}
+            </button>
             <div className="relative" ref={settingsRef}>
               <button type="button" title="Settings" onClick={() => setSettingsOpen((o) => !o)} className={navBtn(settingsOpen)}>
                 <Settings className="h-6 w-6" strokeWidth={1.7} />
@@ -358,7 +369,9 @@ export default function App() {
           <>
             <EmergencyProtocol state={state} onOpenDossier={handleOpenDossier} />
 
-            {tab === "home" ? (
+            {tab === "care" ? (
+              <ClinicalContinuity state={state} connection={connection} onRefresh={loadState} />
+            ) : tab === "home" ? (
               <HomeDashboard
                 state={state}
                 onTriggerMeasurement={handleTriggerMeasurement}
