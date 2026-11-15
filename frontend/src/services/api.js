@@ -357,9 +357,27 @@ function recomputeLocalState(scenarioId = null, envId = null) {
   return localState;
 }
 
+// ---------- Connection mode ----------
+// "live" = last call reached the FastAPI backend; "simulated" = it failed and the UI is running the in-browser fallback.
+// The fallback used to be silent, which made an offline backend look connected.
+let connectionMode = "unknown";
+const connectionListeners = new Set();
+
+function setConnectionMode(mode) {
+  if (mode === connectionMode) return;
+  connectionMode = mode;
+  connectionListeners.forEach((fn) => fn(mode));
+}
+
+export function subscribeConnectionMode(fn) {
+  connectionListeners.add(fn);
+  fn(connectionMode);
+  return () => connectionListeners.delete(fn);
+}
+
 async function tryFetch(url, options = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3500);
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 3500);
   try {
     const res = await fetch(`${API_BASE}${url}`, {
       ...options,
@@ -367,13 +385,30 @@ async function tryFetch(url, options = {}) {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     });
     clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // 4xx = backend answered and rejected the request (e.g. 409 on a resolved case): still live.
+    // 5xx = includes the Vite dev proxy's 500 when the backend is down, and every caller falls back to
+    // simulation on it, so the badge must say "simulated".
+    setConnectionMode(res.status >= 500 ? "simulated" : "live");
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try {
+        const body = await res.json();
+        if (body?.detail) detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
+      } catch {
+        /* non-JSON error body */
+      }
+      const err = new Error(detail);
+      err.status = res.status;
+      throw err;
+    }
     return await res.json();
   } catch (err) {
     clearTimeout(timer);
+    if (err?.status === undefined) setConnectionMode("simulated"); // network error / timeout
     throw err;
   }
 }
+
 
 export async function getMissionState() {
   try {

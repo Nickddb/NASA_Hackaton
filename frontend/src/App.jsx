@@ -13,6 +13,7 @@ import {
   getMissionState,
   getSpaceWeather,
   sendAgentChat,
+  subscribeConnectionMode,
   switchEnvironment,
   switchScenario,
   triggerMeasurement,
@@ -59,7 +60,10 @@ export default function App() {
   const [spaceWeather, setSpaceWeather] = useState(null);
   const [tab, setTab] = useState("home");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [connection, setConnection] = useState("unknown");
   const settingsRef = useRef(null);
+
+  useEffect(() => subscribeConnectionMode(setConnection), []);
 
   useEffect(() => {
     const close = (e) => {
@@ -222,6 +226,23 @@ export default function App() {
               <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
               {overallStatus}
             </span>
+            {connection !== "unknown" && (
+              <span
+                title={
+                  connection === "live"
+                    ? "Connected to the AstraCare backend"
+                    : "Backend unreachable: values are simulated in the browser"
+                }
+                className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                  connection === "live"
+                    ? "border-[#34D399]/40 text-[#A7F3D0]"
+                    : "border-[#FBBF24]/60 bg-[#78350F]/40 text-[#FDE68A]"
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${connection === "live" ? "bg-[#34D399]" : "bg-[#FBBF24]"}`} />
+                {connection === "live" ? "LIVE BACKEND" : "SIMULATED DATA"}
+              </span>
+            )}
           </button>
 
           <nav className="flex items-center gap-2">
