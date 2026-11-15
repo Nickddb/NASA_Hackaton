@@ -5,9 +5,11 @@ import BodyModel3D from "./components/BodyModel3D";
 import ChatBar from "./components/ChatBar";
 import ClinicalContinuity from "./components/ClinicalContinuity";
 import CrewHub from "./components/CrewHub";
+import CriticalAlertModal from "./components/CriticalAlertModal";
 import EmergencyProtocol from "./components/EmergencyProtocol";
 import HomeDashboard from "./components/HomeDashboard";
 import SmartwatchSim from "./components/SmartwatchSim";
+import SpaceBackdrop from "./components/SpaceBackdrop";
 import TelemedDossier from "./components/TelemedDossier";
 import VitalsDashboard from "./components/VitalsDashboard";
 import {
@@ -15,7 +17,9 @@ import {
   dispatchCrewAlert,
   generateTelemedicineDossier,
   getCrewRoster,
+  getEnvironmentStatuses,
   getMissionState,
+  getPsychologicalReadiness,
   getSpaceWeather,
   measureCrewMember,
   nextTelemetryReading,
@@ -71,6 +75,7 @@ export default function App() {
   const [showWeatherDrawer, setShowWeatherDrawer] = useState(false);
   const [spaceWeather, setSpaceWeather] = useState(null);
   const [tab, setTab] = useState("crew");
+  const [dismissedCriticalKeys, setDismissedCriticalKeys] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [connection, setConnection] = useState("unknown");
   const settingsRef = useRef(null);
@@ -220,7 +225,7 @@ export default function App() {
     try {
       const nextState = await stabilizeCrewMember(crewId, note);
       if (crewId === activeCrewId) setState(nextState);
-      const nextRoster = await getCrewRoster();
+      const nextRoster = await getCrewRoster(nextState?.astronaut_id ? nextState : undefined);
       setRoster(nextRoster);
       setError("");
       return nextState;
@@ -237,7 +242,7 @@ export default function App() {
     try {
       const reading = await measureCrewMember(crewId, systemId);
       if (crewId === activeCrewId && reading?.state) setState(reading.state);
-      const nextRoster = await getCrewRoster();
+      const nextRoster = await getCrewRoster(reading?.state?.astronaut_id ? reading.state : undefined);
       setRoster(nextRoster);
       setError("");
       return reading;
@@ -254,7 +259,7 @@ export default function App() {
     try {
       const next = await switchScenario(scenarioId, activeCrewId);
       setState(next);
-      const nextRoster = await getCrewRoster();
+      const nextRoster = await getCrewRoster(next?.astronaut_id ? next : undefined);
       setRoster(nextRoster);
       setError("");
     } catch (err) {
@@ -269,7 +274,7 @@ export default function App() {
     try {
       const next = await switchEnvironment(envId, activeCrewId);
       setState(next);
-      const nextRoster = await getCrewRoster();
+      const nextRoster = await getCrewRoster(next?.astronaut_id ? next : undefined);
       setRoster(nextRoster);
       setError("");
     } catch (err) {
@@ -284,7 +289,7 @@ export default function App() {
     try {
       const reading = await triggerMeasurement(systemId, activeCrewId);
       if (reading?.state) setState(reading.state);
-      const nextRoster = await getCrewRoster();
+      const nextRoster = await getCrewRoster(reading?.state?.astronaut_id ? reading.state : undefined);
       setRoster(nextRoster);
       setError("");
       return reading;
@@ -344,50 +349,51 @@ export default function App() {
         : "border border-transparent text-[#CBD5E1] hover:border-white/15 hover:bg-white/5 hover:text-white"
     }`;
 
+  const criticalAlertEntries = (roster?.crew || [])
+    .map((m) => {
+      const psych = getPsychologicalReadiness(m.vitals, m.personal_baseline, {
+        environmentId: m.environment_id,
+      });
+      const envEval = getEnvironmentStatuses(m.mission_context, m.vitals, m.personal_baseline);
+      const isCrit = m.status === "CRITICAL" || psych.status === "CRITICAL" || envEval.overall === "CRITICAL";
+      if (!isCrit) return null;
+      const alertToken = m.active_alert?.alert_id || m.scenario_id || "CRITICAL";
+      return {
+        key: `${m.crew_id}:${alertToken}:${psych.status === "CRITICAL" ? "P" : ""}:${envEval.overall === "CRITICAL" ? "E" : ""}`,
+        member: m,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.member.crew_id === activeCrewId ? -1 : b.member.crew_id === activeCrewId ? 1 : 0));
+
+  const visibleCriticalAlerts = criticalAlertEntries.filter((entry) => !dismissedCriticalKeys.includes(entry.key));
+  const activeCriticalKeySignature = criticalAlertEntries.map((e) => e.key).join("|");
+
+  useEffect(() => {
+    const validKeys = new Set(activeCriticalKeySignature ? activeCriticalKeySignature.split("|") : []);
+    setDismissedCriticalKeys((prev) => {
+      const next = prev.filter((k) => validKeys.has(k));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [activeCriticalKeySignature]);
+
+  const dismissCriticalKey = (key) => {
+    setDismissedCriticalKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  };
+
+  const handleInspectCriticalCrew = async (crewId, key) => {
+    dismissCriticalKey(key);
+    await handleSelectAstronaut(crewId);
+  };
+
+  const handleAcknowledgeFromPopup = async (crewId, key) => {
+    await handleAcknowledgeAlert(crewId);
+    dismissCriticalKey(key);
+  };
+
   return (
-    <div className="space-bg relative flex min-h-screen flex-col overflow-x-hidden text-white">
-      {/* Vertical Continuum Backdrop Layers: Cosmos -> Aurora -> Stratosphere Clouds -> Emerald Biosphere */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Layer 1 (Top): Deep Cosmos Nebula & Orbiting Planet */}
-        <div className="earth absolute -right-40 -top-24 h-[520px] w-[520px] rounded-full" />
-        <div className="absolute left-[8%] top-[4%] h-44 w-96 rounded-full bg-[#A855F7]/20 blur-3xl" />
-
-        {/* Layer 2 (Upper-Mid): Aurora Borealis Shimmering Curtain */}
-        <div className="absolute -left-20 top-[18%] h-40 w-[120%] -rotate-2 bg-gradient-to-r from-transparent via-[#10B981]/25 to-[#38BDF8]/25 blur-3xl" />
-
-        {/* Layer 3 (Middle): Stratosphere Soft Cloud Wisps */}
-        <div className="absolute left-[5%] top-[48%] h-48 w-[55%] rounded-full bg-white/[0.04] blur-3xl" />
-        <div className="absolute right-[6%] top-[54%] h-44 w-[48%] rounded-full bg-[#BAE6FD]/[0.06] blur-3xl" />
-
-        {/* Layer 4 (Bottom): Emerald Biosphere Canopy & Waterfall Mist Horizon */}
-        <svg
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-          className="absolute bottom-0 left-0 h-[280px] w-full opacity-45"
-        >
-          <defs>
-            <linearGradient id="biosphereHills" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10B981" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="#042F2E" stopOpacity="0.85" />
-            </linearGradient>
-            <linearGradient id="biosphereFore" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#059669" stopOpacity="0.45" />
-              <stop offset="50%" stopColor="#0D9488" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#022C22" stopOpacity="0.92" />
-            </linearGradient>
-          </defs>
-          {/* Distant Emerald Mountains */}
-          <path
-            fill="url(#biosphereHills)"
-            d="M0,160 C240,90 420,210 720,140 C1020,70 1220,170 1440,110 L1440,320 L0,320 Z"
-          />
-          {/* Foreground Forest Valley & River Curve */}
-          <path
-            fill="url(#biosphereFore)"
-            d="M0,215 C310,165 540,265 890,195 C1140,145 1310,210 1440,185 L1440,320 L0,320 Z"
-          />
-        </svg>
-      </div>
+    <div className="space-bg relative flex min-h-screen flex-col overflow-x-hidden text-[#F8FAFC]">
+      <SpaceBackdrop />
 
       {/* Top Navigation — Arctic Aurora Borealis & Orbital Telemetry Header */}
       <header className="aurora-header-shell sticky top-0 z-30 relative border-b border-emerald-400/20 backdrop-blur-xl">
@@ -672,29 +678,29 @@ export default function App() {
             <button
               type="button"
               onClick={() => setTab("crew")}
-              className="mb-4 inline-flex items-center gap-2 rounded-full border border-sky-300/40 bg-[#04142B]/85 px-4 py-1.5 text-xs font-semibold text-sky-100 shadow-[0_0_16px_rgba(56,189,248,0.2)] transition hover:border-emerald-300/70 hover:text-white cursor-pointer"
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#12161E] px-4 py-1.5 text-xs font-semibold text-slate-100 shadow-sm transition hover:border-white/40 hover:bg-[#191F2B] hover:text-white cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               All Crew (ISS &amp; Mission)
             </button>
           )}
 
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#34D399]/35 bg-[#064E3B]/40 px-3.5 py-1 text-[11px] font-semibold tracking-wide text-[#A7F3D0] backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-[#34D399]" />
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#11151D] px-3.5 py-1 text-[11px] font-semibold tracking-wide text-slate-200">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34D399]" />
             {tab === "crew"
               ? "ISS ORBITAL & DEEP SPACE MISSION CREW COMMAND"
-              : "COSMOS → AURORA → STRATOSPHERE → EARTH BIOSPHERE TELEMETRY"}
+              : "ORBITAL TO DEEP SPACE BIOMEDICAL TELEMETRY"}
           </div>
 
           {tab === "crew" ? (
             <>
               <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
                 Crew Health &amp;{" "}
-                <span className="bg-gradient-to-r from-[#C084FC] via-[#38BDF8] to-[#34D399] bg-clip-text text-transparent">
+                <span className="text-sky-400">
                   Spacesuit Monitor
                 </span>
               </h1>
-              <p className="mt-2 text-base text-[#E2E8F0]">
+              <p className="mt-2 text-base text-slate-300">
                 Unified status across ISS Orbital stations and Deep Space vehicles — click any astronaut to zoom into their individual medical cockpit.
               </p>
             </>
@@ -702,13 +708,13 @@ export default function App() {
             <>
               <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
                 Welcome,{" "}
-                <span className="bg-gradient-to-r from-[#C084FC] via-[#38BDF8] to-[#34D399] bg-clip-text text-transparent">
+                <span className="text-sky-400">
                   {state?.crew_member || "Astronaut!"}
                 </span>
               </h1>
-              <p className="mt-2 text-base text-[#E2E8F0]">
+              <p className="mt-2 text-base text-slate-300">
                 Track your exams and monitor your health in real time — from deep-space orbit down to Earth biosphere vitals.
-                <span className="ml-2 text-xs text-[#A7F3D0]/80">
+                <span className="ml-2 text-xs text-slate-400">
                   {state?.crew_role || "Crew"} • {state?.location_module || "ISS"} • Mission Day {state?.mission_day ?? 142} • Latency{" "}
                   {state?.one_way_latency_seconds ?? 0}s
                 </span>
@@ -718,15 +724,15 @@ export default function App() {
         </section>
 
         {error && (
-          <div className="mb-4 rounded-2xl border border-[#F87171]/50 bg-[#7F1D1D]/40 px-4 py-3 text-sm font-medium text-[#FECACA]">
+          <div className="mb-4 rounded-2xl border border-red-500/60 bg-red-950/60 px-4 py-3 text-sm font-medium text-red-200">
             {error}
           </div>
         )}
 
         {loading && !state && !roster ? (
-          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-[#3B82F6]/30 bg-[#0B1530]/60 p-8">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#1E3A8A] border-t-[#60A5FA]" />
-            <p className="mt-4 text-sm font-semibold text-[#BFDBFE]">Initializing AstraCare telemetry...</p>
+          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-white/15 bg-[#0E1218] p-8">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/15 border-t-sky-400" />
+            <p className="mt-4 text-sm font-semibold text-slate-200">Initializing AstraCare telemetry...</p>
           </div>
         ) : (
           <>
@@ -749,6 +755,7 @@ export default function App() {
               <HomeDashboard
                 key={state?.crew_id || state?.astronaut_id || "active"}
                 state={state}
+                busyAction={busyAction}
                 live={live}
                 liveReadings={liveReadings}
                 streaming={streaming}
@@ -759,6 +766,7 @@ export default function App() {
                 onTriggerMeasurement={handleTriggerMeasurement}
                 onSelectSystem={setSelectedSystem}
                 onStabilizeCrew={handleStabilizeCrew}
+                onSwitchEnvironment={handleSwitchEnvironment}
               />
             ) : (
               /* Detailed clinical workspace (original panels) */
@@ -794,34 +802,34 @@ export default function App() {
 
       {/* Bottom assistant bar */}
       {tab === "home" && (
-        <div className="sticky bottom-0 z-20 bg-gradient-to-t from-[#04231F] via-[#062C28]/85 to-transparent pb-4 pt-6">
+        <div className="sticky bottom-0 z-20 bg-gradient-to-t from-[#030406] via-[#030406]/90 to-transparent pb-4 pt-6">
           <div className="mx-auto max-w-[1400px] px-4 sm:px-8">
             <ChatBar onSendChat={handleSendChat} />
           </div>
         </div>
       )}
 
-      <footer className="relative z-10 border-t border-[#10B981]/25 bg-[#04231F]/60 py-4 text-center text-[11px] text-[#A7F3D0]/75 backdrop-blur-sm">
+      <footer className="relative z-10 border-t border-white/10 bg-[#050608]/95 py-4 text-center text-[11px] text-slate-400">
         AstraCare AI • From Deep Cosmos to Earth Biosphere • Built with NASA Data • NASA-STD-3001 &amp; OCHMO Clinical Standards
       </footer>
 
       {/* OCHMO Clinical Reference Modal */}
       {showOchmoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#113D2E]/40 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030406]/75 p-4 backdrop-blur-sm">
           <div className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[#CBE2D5] bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#E2EFE8] pb-4">
               <div>
-                <span className="rounded-full bg-[#EFF9F2] px-3 py-1 text-xs font-bold text-[#059669] border border-[#CBE2D5]">
+                <span className="rounded-full border border-[#CBE2D5] bg-[#EFF9F2] px-3 py-1 text-xs font-bold text-[#059669]">
                   CLINICAL STANDARDS
                 </span>
                 <h2 className="mt-2 text-xl font-bold text-[#113D2E]">
-                  NASA-STD-3001 & OCHMO Reference Library
+                  NASA-STD-3001 &amp; OCHMO Reference Library
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setShowOchmoModal(false)}
-                className="min-h-[44px] rounded-full border border-[#CBE2D5] bg-[#F7FBF9] px-4 text-sm font-semibold text-[#113D2E] hover:bg-[#EFF9F2]"
+                className="min-h-[44px] rounded-full border border-[#CBE2D5] bg-[#F7FBF9] px-4 text-sm font-semibold text-[#113D2E] hover:bg-[#EFF9F2] cursor-pointer"
               >
                 Close
               </button>
@@ -835,7 +843,7 @@ export default function App() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-mono text-xs font-bold text-[#059669]">{item.code}</span>
-                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#113D2E] border border-[#CBE2D5]">
+                    <span className="rounded-full border border-[#CBE2D5] bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#113D2E]">
                       {item.threshold}
                     </span>
                   </div>
@@ -856,6 +864,17 @@ export default function App() {
           setDossier(null);
           setDossierLoading(false);
         }}
+      />
+
+      {/* Global Critical Alert Pop-up (auto-opens on critical alerts across Crew Hub & Cockpit) */}
+      <CriticalAlertModal
+        alerts={visibleCriticalAlerts}
+        viewMode={viewMode}
+        busyAction={busyAction}
+        onInspectCrew={handleInspectCriticalCrew}
+        onAcknowledge={handleAcknowledgeFromPopup}
+        onDismiss={dismissCriticalKey}
+        onDismissAll={() => setDismissedCriticalKeys((prev) => Array.from(new Set([...prev, ...visibleCriticalAlerts.map((a) => a.key)])))}
       />
     </div>
   );

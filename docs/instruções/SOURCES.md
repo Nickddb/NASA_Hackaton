@@ -3,6 +3,7 @@
 > Complete log of NASA datasets, OCHMO technical briefs, space agency partner resources, design references, and open-source libraries used in **AstraCare AI**.
 
 ## NASA Data, Standards & Clinical Resources
+
 - **NASA Space Apps Challenge 2026 — Challenge 05 (*Create Health Monitoring Software for Astronauts on Space Missions*):** https://www.spaceappschallenge.org/2026/challenges/health-monitoring-software/
 - **NASA DONKI (Space Weather Database Of Notifications, Knowledge, Information) API (`FLR`, `SEP`, `CME`, `GST`):** https://api.nasa.gov/DONKI/FLR, https://api.nasa.gov/DONKI/SEP, https://api.nasa.gov/DONKI/CME, and https://api.nasa.gov/DONKI/GST (Public Domain; queried via backend proxy with local curated sample fallback `nasa_donki_sample.json`).
 - **NASA JPL Horizons Ephemeris System API:** https://ssd.jpl.nasa.gov/api/horizons.api (Public Domain; Earth–Moon and Earth–Mars distance & one-way light-time communication delay calculation with local fallback `nasa_horizons_sample.json`).
@@ -23,12 +24,14 @@
 - **NASA Open Science Data Repository (OSDR — GeneLab / ALSDA) & Life Sciences Portal (NLSP) *Standard Measures*:** https://osdr.nasa.gov/
 
 ## Space Agency Partner Resources
+
 - **Agência Espacial Brasileira (AEB):** Space Apps 2026 Challenge 05 curation and aerospace human health mentorship.
 - **Canadian Space Agency (CSA) — *Monitoring radiation for astronaut health*:** https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp
 - **Canadian Space Agency (CSA) — *Astroskin Bio-Monitor System*:** https://www.asc-csa.gc.ca/eng/iss/bio-monitor.asp
 - **Canadian Space Agency (CSA) — *Why Do We Conduct Science Experiments in Space?*:** https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp
 
 ## Design System, Libraries & Tools
+
 - **Design system adapted from `VoltAgent/awesome-design-md` (`spacex/DESIGN.md` & `sentry/DESIGN.md`), MIT License:** https://github.com/VoltAgent/awesome-design-md
 - **Frontend Stack:** React, Vite, Tailwind CSS (`@tailwindcss/vite`), Three.js (`three`, `@react-three/fiber`, `@react-three/drei`), Recharts (`recharts`), Lucide React (`lucide-react`) — MIT / ISC Licenses.
 - **Backend & AI Stack:** Python 3, FastAPI, Uvicorn, Pydantic, HTTPX, scikit-learn, NumPy, Pandas, LangChain (`langchain`, `langchain-core`, `langchain-google-genai`) — MIT / BSD-3-Clause Licenses.

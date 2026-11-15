@@ -52,13 +52,13 @@ export default function MercurySuitFigure({
 
       {/* Grounded holographic deck pedestal under boots */}
       <div
-        className="pointer-events-none absolute bottom-5 left-1/2 h-6 w-32 -translate-x-1/2 rounded-full border opacity-85"
+        className="pointer-events-none absolute bottom-5 left-1/2 h-6 w-32 -translate-x-1/2 rounded-full border opacity-90"
         style={{
           borderColor: visual.ring,
           background: `radial-gradient(ellipse at center, ${
-            isAlert ? visual.glow : `${accentColor}2A`
-          } 0%, rgba(2, 10, 24, 0.75) 75%)`,
-          boxShadow: `0 0 18px ${isAlert ? visual.glow : "rgba(56, 189, 248, 0.25)"}`,
+            isAlert ? visual.glow : `${accentColor}26`
+          } 0%, rgba(10, 12, 16, 0.88) 75%)`,
+          boxShadow: `0 0 18px ${isAlert ? visual.glow : "rgba(56, 189, 248, 0.2)"}`,
         }}
       />
 
@@ -90,7 +90,7 @@ export default function MercurySuitFigure({
       {/* Callsign badge on deck */}
       <div className="pointer-events-none absolute bottom-1 left-1/2 z-20 -translate-x-1/2">
         <span
-          className="inline-flex items-center gap-1.5 rounded-full border bg-[#041024]/95 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-widest text-white shadow-lg"
+          className="inline-flex items-center gap-1.5 rounded-full border bg-[#090C11]/95 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-widest text-white shadow-lg"
           style={{ borderColor: isAlert ? visual.ring : accentColor }}
         >
           <span
