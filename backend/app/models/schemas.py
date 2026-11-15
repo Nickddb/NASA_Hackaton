@@ -125,6 +125,13 @@ class AdaptiveMetricBaseline(BaseModel):
         "MILD_PERSONAL_DRIFT",
         "SIGNIFICANT_PERSONAL_DEVIATION",
     ]
+    # Longitudinal transparency: how much personal history fed the baseline and how the metric is trending
+    history_points_used: int = 0
+    history_points_quarantined: int = Field(
+        0, description="Prior readings excluded from the baseline because they were already anomalous (anti 'boiling frog')."
+    )
+    trend_slope_sigma_per_day: float = 0.0
+    trend_status: Literal["STABLE", "GRADUAL_DRIFT", "SUSTAINED_DRIFT"] = "STABLE"
 
 
 class AdaptiveBaselineProfile(BaseModel):
@@ -140,6 +147,8 @@ class AdaptiveBaselineProfile(BaseModel):
     is_personally_anomalous: bool
     adaptation_summary: str
     osdr_reference_study: str = "NASA OSDR OSD-570 / OSD-571 Spaceflight Standard Measures"
+    covariance_source: str = "synthetic_physiological_prior"
+    drifting_metrics: list[str] = Field(default_factory=list)
     metrics: dict[str, AdaptiveMetricBaseline]
 
 

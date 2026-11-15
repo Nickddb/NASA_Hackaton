@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 import numpy as np
 from sklearn.covariance import LedoitWolf
@@ -132,17 +133,46 @@ CORE_MAHALANOBIS_KEYS: list[str] = [
 ]
 
 
+# Readings farther than this from the phase-adapted anchor are quarantined: they never feed the
+# personal baseline, so a slow pathological ramp cannot "teach" the model that it is normal.
+QUARANTINE_SIGMA = 2.5
+HISTORY_WINDOW_DAYS = 14
+TREND_WINDOW_DAYS = 5
+MIN_REAL_ROWS_FOR_COVARIANCE = 12
+
+
+def _stable_seed(*parts: str) -> int:
+    """Process-independent seed (built-in hash() is salted per process, which breaks reproducible audits)."""
+    digest = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+    return int(digest[:8], 16)
+
+
+def _trend_slope(values: list[float], scale: float) -> float:
+    """Least-squares slope over the trailing window, normalised to personal sigma per day."""
+    if len(values) < 3:
+        return 0.0
+    tail = np.asarray(values[-TREND_WINDOW_DAYS:], dtype=float)
+    x = np.arange(len(tail), dtype=float)
+    slope = float(np.polyfit(x, tail, 1)[0])
+    return slope / max(scale, 1e-6)
+
+
 class AdaptiveBaselineEngine:
     """
     Pillar 1: Adaptive Individual Baseline Engine.
-    Combines pre-flight personal baseline, NASA OSDR gravitational phase priors,
-    and rolling EWMA + MAD longitudinal history with Ledoit-Wolf shrunk covariance
-    to measure how each astronaut evolves relative to their own physiology.
+
+    Per astronaut and per metric:
+      anchor   = pre-flight personal baseline + NASA OSDR gravitational phase prior
+      baseline = EWMA over the trailing personal history, excluding quarantined anomalous days
+      spread   = robust MAD of accepted history, bounded by the astronaut's natural variability
+      trend    = least-squares slope (sigma/day) to surface slow drifts before they cross thresholds
+    The joint deviation is scored with a Ledoit-Wolf shrunk covariance (Mahalanobis distance), fitted on the
+    astronaut's real history when enough rows exist, otherwise on a physiologically structured prior.
     """
 
     def __init__(self, ewma_alpha: float = 0.25) -> None:
         self.ewma_alpha = ewma_alpha
-        self._cov_models: dict[tuple[str, str], tuple[np.ndarray, LedoitWolf]] = {}
+        self._cov_models: dict[tuple[str, str, int], tuple[LedoitWolf, str]] = {}
 
     def _get_or_fit_personal_covariance(
         self,
@@ -150,31 +180,38 @@ class AdaptiveBaselineEngine:
         mission_phase: str,
         personal_means: np.ndarray,
         personal_stds: np.ndarray,
-    ) -> tuple[np.ndarray, LedoitWolf]:
-        cache_key = (astronaut_id, mission_phase)
+        real_history: np.ndarray,
+    ) -> tuple[LedoitWolf, str]:
+        cache_key = (astronaut_id, mission_phase, len(real_history))
         if cache_key in self._cov_models:
             return self._cov_models[cache_key]
 
-        rng = np.random.default_rng(abs(hash(cache_key)) % (2**31 - 1))
-        n_dim = len(CORE_MAHALANOBIS_KEYS)
-        # Construct realistic physiological correlation structure (e.g. HR negatively correlated with HRV, positively with stress)
-        corr = np.eye(n_dim)
-        # 0:hr, 1:hrv, 2:bp_sys, 3:bp_dia, 4:glucose, 5:temp, 6:sleep, 7:stress
-        corr[0, 1] = corr[1, 0] = -0.58  # HR vs HRV
-        corr[0, 7] = corr[7, 0] = 0.52   # HR vs Stress
-        corr[1, 6] = corr[6, 1] = 0.48   # HRV vs Sleep
-        corr[1, 7] = corr[7, 1] = -0.62  # HRV vs Stress
-        corr[2, 3] = corr[3, 2] = 0.72   # Systolic vs Diastolic BP
-        corr[0, 5] = corr[5, 0] = 0.38   # HR vs Core Temp
+        if len(real_history) >= MIN_REAL_ROWS_FOR_COVARIANCE:
+            lw = LedoitWolf().fit(real_history)
+            result = (lw, f"personal_history_{len(real_history)}_rows")
+        else:
+            rng = np.random.default_rng(_stable_seed(astronaut_id, mission_phase))
+            n_dim = len(CORE_MAHALANOBIS_KEYS)
+            # Physiological correlation prior. Index: 0 hr, 1 hrv, 2 bp_sys, 3 bp_dia, 4 glucose, 5 temp, 6 sleep, 7 stress
+            corr = np.eye(n_dim)
+            corr[0, 1] = corr[1, 0] = -0.58  # HR vs HRV
+            corr[0, 7] = corr[7, 0] = 0.52  # HR vs Stress
+            corr[1, 6] = corr[6, 1] = 0.48  # HRV vs Sleep
+            corr[1, 7] = corr[7, 1] = -0.62  # HRV vs Stress
+            corr[2, 3] = corr[3, 2] = 0.72  # Systolic vs Diastolic BP
+            corr[0, 5] = corr[5, 0] = 0.38  # HR vs Core Temp
+            cov_matrix = np.diag(personal_stds) @ corr @ np.diag(personal_stds)
+            prior_samples = rng.multivariate_normal(mean=personal_means, cov=cov_matrix, size=180)
+            # Pool whatever real rows exist with the prior so personal structure starts to show early.
+            pooled = np.vstack([prior_samples, real_history]) if len(real_history) else prior_samples
+            lw = LedoitWolf().fit(pooled)
+            source = "synthetic_physiological_prior"
+            if len(real_history):
+                source += f"+personal_history_{len(real_history)}_rows"
+            result = (lw, source)
 
-        D = np.diag(personal_stds)
-        cov_matrix = D @ corr @ D
-        synthetic_personal_history = rng.multivariate_normal(
-            mean=personal_means, cov=cov_matrix, size=180
-        )
-        lw = LedoitWolf().fit(synthetic_personal_history)
-        self._cov_models[cache_key] = (personal_means, lw)
-        return personal_means, lw
+        self._cov_models[cache_key] = result
+        return result
 
     def evaluate(
         self,
@@ -196,8 +233,8 @@ class AdaptiveBaselineEngine:
         vitals_dict = vitals.model_dump()
         metrics_out: dict[str, AdaptiveMetricBaseline] = {}
 
-        # Compute per-metric adaptive baseline (Pre-flight + Phase Prior + Rolling EWMA on prior days D-6..D-2)
-        prior_days = longitudinal_series[:-1] if len(longitudinal_series) > 1 else longitudinal_series
+        # The last row of the series is "today" (the current reading); the baseline only learns from prior days.
+        prior_days = longitudinal_series[:-1][-HISTORY_WINDOW_DAYS:] if len(longitudinal_series) > 1 else []
 
         for metric_key, (label, unit, pop_mean, pop_std) in POPULATION_REFERENCE.items():
             current_val = float(vitals_dict.get(metric_key, pop_mean))
@@ -206,24 +243,25 @@ class AdaptiveBaselineEngine:
             phase_offset = float(phase_priors.get(metric_key, 0.0))
             phase_adapted = pf_base + phase_offset
 
-            # Rolling EWMA & Robust MAD from early longitudinal window ( anchored to phase_adapted )
             series_field = SERIES_KEY_MAP.get(metric_key)
-            hist_vals: list[float] = []
-            if series_field and prior_days:
-                for row in prior_days[:4]:  # Baseline reference window before acute event peak
-                    if series_field in row and row[series_field] is not None:
-                        hist_vals.append(float(row[series_field]))
+            raw_hist: list[float] = []
+            if series_field:
+                raw_hist = [
+                    float(row[series_field]) for row in prior_days if row.get(series_field) is not None
+                ]
 
-            if hist_vals:
+            accepted = [
+                v for v in raw_hist if abs(v - phase_adapted) <= QUARANTINE_SIGMA * ind_std_prior
+            ]
+            quarantined = len(raw_hist) - len(accepted)
+
+            if accepted:
                 ewma_val = phase_adapted
-                for hv in hist_vals:
-                    # Clip extreme outliers when updating rolling baseline so acute pathology doesn't corrupt baseline
-                    clipped_hv = float(
-                        np.clip(hv, phase_adapted - 2.2 * ind_std_prior, phase_adapted + 2.2 * ind_std_prior)
-                    )
-                    ewma_val = (1.0 - self.ewma_alpha) * ewma_val + self.ewma_alpha * clipped_hv
-                median_val = float(np.median(hist_vals))
-                mad = float(np.median(np.abs(np.array(hist_vals) - median_val))) * 1.4826
+                for hv in accepted:
+                    ewma_val = (1.0 - self.ewma_alpha) * ewma_val + self.ewma_alpha * hv
+                median_val = float(np.median(accepted))
+                mad = float(np.median(np.abs(np.array(accepted) - median_val))) * 1.4826
+                # Bound the learned spread by the astronaut's natural variability (few points -> unstable MAD).
                 rolling_std = max(ind_std_prior * 0.75, min(ind_std_prior * 1.35, 0.7 * ind_std_prior + 0.3 * mad))
             else:
                 ewma_val = phase_adapted
@@ -233,12 +271,21 @@ class AdaptiveBaselineEngine:
             pop_z = (current_val - pop_mean) / max(pop_std, 1e-6)
             dev_pct = ((current_val - ewma_val) / max(abs(ewma_val), 1e-6)) * 100.0
 
+            # Trend uses prior days only: a multi-day drift, not today's acute spike (that is what z-score is for).
+            slope = _trend_slope(raw_hist, rolling_std)
+            if abs(slope) >= 0.8:
+                trend_status = "SUSTAINED_DRIFT"
+            elif abs(slope) >= 0.4:
+                trend_status = "GRADUAL_DRIFT"
+            else:
+                trend_status = "STABLE"
+
             abs_ind_z = abs(ind_z)
             if abs_ind_z >= 2.5:
                 status_vs_personal = "SIGNIFICANT_PERSONAL_DEVIATION"
             elif abs_ind_z >= 1.5:
                 status_vs_personal = "MILD_PERSONAL_DRIFT"
-            elif abs(current_val - pf_base) / max(ind_std_prior, 1e-6) >= 1.0 and abs_ind_z < 1.5:
+            elif abs(current_val - pf_base) / max(ind_std_prior, 1e-6) >= 1.0:
                 status_vs_personal = "EXPECTED_PHASE_ADAPTATION"
             else:
                 status_vs_personal = "WITHIN_PERSONAL_BAND"
@@ -259,25 +306,40 @@ class AdaptiveBaselineEngine:
                 population_z_score=round(pop_z, 2),
                 deviation_from_personal_pct=round(dev_pct, 1),
                 status_vs_personal=status_vs_personal,
+                history_points_used=len(accepted),
+                history_points_quarantined=quarantined,
+                trend_slope_sigma_per_day=round(slope, 2),
+                trend_status=trend_status,
             )
 
-        # Multivariate Mahalanobis distance on core 8 metrics
+        # Multivariate Mahalanobis distance on the core metrics
         p_means = np.array([metrics_out[k].rolling_ewma_baseline for k in CORE_MAHALANOBIS_KEYS], dtype=float)
         p_stds = np.array([metrics_out[k].rolling_mad_std for k in CORE_MAHALANOBIS_KEYS], dtype=float)
         x_curr = np.array([metrics_out[k].current_value for k in CORE_MAHALANOBIS_KEYS], dtype=float)
+        real_rows = np.array(
+            [
+                [float(row[SERIES_KEY_MAP[k]]) for k in CORE_MAHALANOBIS_KEYS]
+                for row in prior_days
+                if all(row.get(SERIES_KEY_MAP[k]) is not None for k in CORE_MAHALANOBIS_KEYS)
+            ],
+            dtype=float,
+        ).reshape(-1, len(CORE_MAHALANOBIS_KEYS))
 
-        _, lw_model = self._get_or_fit_personal_covariance(astronaut_id, phase, p_means, p_stds)
+        lw_model, cov_source = self._get_or_fit_personal_covariance(
+            astronaut_id, phase, p_means, p_stds, real_rows
+        )
         diff = (x_curr - p_means).reshape(1, -1)
         maha_sq = float((diff @ lw_model.precision_ @ diff.T).item())
         maha_dist = float(np.sqrt(max(0.0, maha_sq)))
 
-        # Map Mahalanobis distance (chi-square df=8, expected nominal ~2.6) to 0..100 personal drift score
+        # Map Mahalanobis distance (chi-square df=8, nominal ~2.6) to a 0..100 personal drift score
         raw_drift = (maha_dist - 1.8) / 8.5 * 100.0
         personal_drift_score = round(float(np.clip(raw_drift, 3.0, 99.5)), 1)
 
         sig_metrics = [
             m for m in metrics_out.values() if m.status_vs_personal == "SIGNIFICANT_PERSONAL_DEVIATION"
         ]
+        drifting = [m.metric for m in metrics_out.values() if m.trend_status == "SUSTAINED_DRIFT"]
         is_personally_anomalous = personal_drift_score >= 45.0 or len(sig_metrics) >= 2
 
         if sig_metrics:
@@ -295,6 +357,9 @@ class AdaptiveBaselineEngine:
                 f"{astronaut_name}'s biomarkers remain within personal phase-adapted EWMA bounds for {phase} "
                 f"(Mahalanobis distance = {maha_dist:.2f}, Drift Score {personal_drift_score:.1f}%)."
             )
+        if drifting:
+            labels = ", ".join(metrics_out[k].label for k in drifting[:4])
+            summary += f" Sustained multi-day drift detected in: {labels}."
 
         return AdaptiveBaselineProfile(
             astronaut_id=astronaut_id,
@@ -303,10 +368,12 @@ class AdaptiveBaselineEngine:
             mission_phase=phase,
             gravitational_g=context.gravitational_g,
             ewma_alpha=self.ewma_alpha,
-            history_window_days=len(longitudinal_series),
+            history_window_days=len(prior_days),
             multivariate_mahalanobis_distance=round(maha_dist, 2),
             personal_drift_score=personal_drift_score,
             is_personally_anomalous=is_personally_anomalous,
             adaptation_summary=summary,
+            covariance_source=cov_source,
+            drifting_metrics=drifting,
             metrics=metrics_out,
         )
