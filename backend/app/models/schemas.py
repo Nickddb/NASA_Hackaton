@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
-SeverityStatus = Literal["NOMINAL", "WARNING", "CRITICAL"]
+SeverityStatus = Literal["NOMINAL", "ATTENTION", "WARNING", "CRITICAL"]
 ReliabilityGrade = Literal["HIGH", "MODERATE", "LOW_REQUIRES_CONFIRMATION"]
 FollowUpStatus = Literal[
     "OPEN_PENDING_CONFIRMATION",
@@ -523,6 +523,7 @@ class ToolTraceItem(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
+    crew_id: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -675,10 +676,108 @@ class CrossDiagnosisResult(BaseModel):
     )
 
 
+# --- Multi-Crew Hub Models ---
+class PersonalBaseline(BaseModel):
+    hr_min: float = 52.0
+    hr_max: float = 78.0
+    spo2_min: float = 96.5
+    bp_sys_min: float = 104.0
+    bp_sys_max: float = 128.0
+    bp_dia_min: float = 64.0
+    bp_dia_max: float = 84.0
+    temp_min: float = 36.2
+    temp_max: float = 37.3
+    resp_min: float = 11.0
+    resp_max: float = 17.5
+    hrv_min: float = 35.0
+    glucose_min: float = 75.0
+    glucose_max: float = 110.0
+    sleep_min: float = 5.0
+    stress_max: float = 42.0
+    radiation_max: float = 0.05
+
+
+class CrewAlertRecord(BaseModel):
+    alert_id: str
+    crew_id: str
+    severity: SeverityStatus
+    syndrome_code: str
+    title: str
+    summary: str
+    deviations: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+    target_system_id: str = "cardiovascular"
+    status: Literal["OPEN", "ACKNOWLEDGED", "STABILIZING", "RESOLVED"] = "OPEN"
+    stabilization_applied: bool = False
+    stabilization_note: str | None = None
+    verification_measurement_completed: bool = False
+    created_at: str
+    updated_at: str
+    origin: str = "SCENARIO_AUTO"
+
+
+class DispatchAlertRequest(BaseModel):
+    severity: SeverityStatus = "WARNING"
+    syndrome_code: str = "external_medical_alert"
+    title: str = "Alerta Biomédico de Telemetria"
+    summary: str = "Desvio detectado fora da linha de base individual do tripulante."
+    target_system_id: str = "cardiovascular"
+    recommended_actions: list[str] = Field(default_factory=list)
+    simulate_vitals_drift: bool = True
+
+
+class StabilizeRequest(BaseModel):
+    intervention_note: str = "Protocolo de estabilização clínica aplicado; aguardando nova aferição."
+    target_system_id: str | None = None
+
+
+class CrewMemberSummary(BaseModel):
+    crew_id: str
+    name: str
+    callsign: str
+    role: str
+    mission_group: str = "INTERNAL"
+    location_module: str
+    suit_variant: str = "IVA_STANDARD"
+    environment_id: str
+    environment_name: str
+    scenario_id: str
+    scenario_name: str
+    overall_status: SeverityStatus
+    syndrome_code: str
+    within_personal_baseline: bool = True
+    baseline_deviations: list[str] = Field(default_factory=list)
+    risk_score: float
+    confidence_pct: float
+    vitals: VitalSigns
+    personal_baseline: PersonalBaseline
+    active_alert: CrewAlertRecord | None = None
+    pending_verification_measurement: bool = False
+    last_measured_at: str
+    last_updated: str
+
+
+class CrewRosterResponse(BaseModel):
+    mission_day: int = 142
+    active_crew_id: str
+    total_crew: int
+    nominal_count: int
+    attention_count: int
+    warning_count: int
+    critical_count: int
+    crew: list[CrewMemberSummary] = Field(default_factory=list)
+    last_updated: str
+
+
 class MissionState(BaseModel):
     mission_day: int = 142
     astronaut_id: str = "elena_vance"
+    crew_id: str = "elena_vance"
     crew_member: str = "CDR Elena Vance (EVA-1)"
+    crew_role: str = "Mission Commander & Lead EVA Specialist"
+    mission_group: str = "EVA"
+    location_module: str = "ISS Quest Airlock (EVA)"
+    suit_variant: str = "MERCURY_EVA_SILVER"
     scenario_id: str
     scenario_name: str
     scenario_description: str
@@ -686,6 +785,12 @@ class MissionState(BaseModel):
     environment_name: str
     one_way_latency_seconds: int
     vitals: VitalSigns
+    personal_baseline: PersonalBaseline | None = None
+    within_personal_baseline: bool = True
+    baseline_deviations: list[str] = Field(default_factory=list)
+    active_alert: CrewAlertRecord | None = None
+    pending_verification_measurement: bool = False
+    last_measured_at: str = ""
     measurement_quality: MeasurementQualityProfile
     mission_context: MissionContext
     nutrition: NutritionHydrationState
@@ -713,3 +818,4 @@ class MissionState(BaseModel):
 
 ChatResponse.model_rebuild()
 MeasurementResponse.model_rebuild()
+CrewRosterResponse.model_rebuild()
