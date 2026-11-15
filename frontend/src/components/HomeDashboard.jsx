@@ -360,50 +360,67 @@ const SOURCE_LABEL = {
 };
 
 // Secondary strip: external space weather (DONKI SEP / FLR / RBE) + sensor stream controls.
-function MissionTelemetryBar({ sw, refreshing, onRefresh, streaming, onToggleStream, onNextReading, live }) {
+// mode: "donki" = external space weather only, "stream" = sensor stream controls only, "both"
+export function MissionTelemetryBar({ sw, refreshing, onRefresh, streaming, onToggleStream, onNextReading, live, mode = "both" }) {
   const level = sw?.alert_level || "NOMINAL";
   const simulated = sw?.events?.some((e) => e.is_active && e.origin === "scenario_simulation");
+  const showDonki = mode !== "stream";
+  const showStream = mode !== "donki";
   const ctl =
     "inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-white/15 bg-[#151922] px-3 text-xs text-slate-200 hover:border-white/35 hover:text-white disabled:opacity-50 cursor-pointer";
   return (
     <GlassCard className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-        <Sun className="h-5 w-5 shrink-0 text-[#FDE68A]" strokeWidth={1.6} />
-        <span className="text-sm text-slate-300">Space weather</span>
-        <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${DONKI_TONE[level]}`}>
-          {sw?.status_label || "Unknown"}
-        </span>
-        {sw && (
-          <span className="font-mono text-[11px] text-slate-400">
-            SEP {sw.active_sep_count} · FLR {sw.active_flare_count} · RBE {sw.active_rbe_count ?? 0} in {sw.active_window_hours ?? 72} h
+      {showDonki ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <Sun className="h-5 w-5 shrink-0 text-[#FDE68A]" strokeWidth={1.6} />
+          <span className="text-sm text-slate-300">Space weather</span>
+          <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${DONKI_TONE[level]}`}>
+            {sw?.status_label || "Unknown"}
           </span>
-        )}
-        {simulated && <span className="text-[11px] text-[#FDE68A]">includes a scenario drill event</span>}
-      </div>
+          {sw && (
+            <span className="font-mono text-[11px] text-slate-400">
+              SEP {sw.active_sep_count} · FLR {sw.active_flare_count} · RBE {sw.active_rbe_count ?? 0} in {sw.active_window_hours ?? 72} h
+            </span>
+          )}
+          {simulated && <span className="text-[11px] text-[#FDE68A]">includes a scenario drill event</span>}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-300">
+          {streaming ? "Live: a new generator reading every 5 seconds." : "Readings come from the NASA-calibrated generator onboard."}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] text-slate-400" title={sw?.fetch_status}>
-          {SOURCE_LABEL[sw?.source] || "DONKI"}
-          {sw?.uses_demo_key ? " · DEMO_KEY" : ""}
-        </span>
-        <button type="button" onClick={onRefresh} disabled={refreshing || !live} className={ctl}>
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Querying" : "Refresh DONKI"}
-        </button>
-        <span className="mx-1 hidden h-5 w-px bg-white/15 sm:block" />
-        <button type="button" onClick={onNextReading} disabled={!live || streaming} className={ctl}>
-          New reading
-        </button>
-        <button
-          type="button"
-          onClick={onToggleStream}
-          disabled={!live}
-          aria-pressed={streaming}
-          className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold disabled:opacity-50 cursor-pointer ${
-            streaming ? "bg-[#10B981] text-[#04231F]" : "bg-sky-600 text-white hover:bg-sky-500"
-          }`}
-        >
-          {streaming ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          {streaming ? "Streaming every 5 s" : "Start sensor stream"}
-        </button>
+        {showDonki && (
+          <>
+            <span className="text-[11px] text-slate-400" title={sw?.fetch_status}>
+              {SOURCE_LABEL[sw?.source] || "DONKI"}
+              {sw?.uses_demo_key ? " · DEMO_KEY" : ""}
+            </span>
+            <button type="button" onClick={onRefresh} disabled={refreshing || !live} className={ctl}>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Querying" : "Refresh DONKI"}
+            </button>
+          </>
+        )}
+        {showDonki && showStream && <span className="mx-1 hidden h-5 w-px bg-white/15 sm:block" />}
+        {showStream && (
+          <>
+            <button type="button" onClick={onNextReading} disabled={!live || streaming} className={ctl}>
+              New reading
+            </button>
+            <button
+              type="button"
+              onClick={onToggleStream}
+              disabled={!live}
+              aria-pressed={streaming}
+              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold disabled:opacity-50 cursor-pointer ${
+                streaming ? "bg-[#10B981] text-[#04231F]" : "bg-sky-600 text-white hover:bg-sky-500"
+              }`}
+            >
+              {streaming ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {streaming ? "Pause stream" : "Start sensor stream"}
+            </button>
+          </>
+        )}
       </div>
     </GlassCard>
   );
@@ -458,7 +475,10 @@ export default function HomeDashboard({
   onRefreshDonki,
   donkiRefreshing = false,
   live = false,
+  // Which blocks to render; App spreads them across separate pages
+  sections = ["telemetry", "baseline", "vitals", "environment", "psych", "trends"],
 }) {
+  const show = (id) => sections.includes(id);
   const [regionId, setRegionId] = useState("arm");
   const [selectedPartId, setSelectedPartId] = useState("left_upper_arm");
   const [measuring, setMeasuring] = useState(false);
@@ -532,7 +552,9 @@ export default function HomeDashboard({
 
   return (
     <div className="flex flex-col gap-6">
+      {show("telemetry") && (
       <MissionTelemetryBar
+        mode="stream"
         sw={state.space_weather}
         refreshing={donkiRefreshing}
         onRefresh={onRefreshDonki}
@@ -540,10 +562,10 @@ export default function HomeDashboard({
         onToggleStream={onToggleStream}
         onNextReading={onNextReading}
         live={live}
-      />
+      />)}
 
       {/* Personal Baseline & Alert Verification Bar */}
-      {pb && (
+      {show("baseline") && pb && (
         <GlassCard
           className={`p-4 ${
             state?.active_alert?.severity === "CRITICAL"
@@ -620,23 +642,24 @@ export default function HomeDashboard({
       )}
 
       {/* Vital cards row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {vitals.map((item) => (
-          <VitalCard key={item.id} item={item} onClick={() => onSelectSystem?.(item.system)} />
-        ))}
-      </div>
+      {show("vitals") && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {vitals.map((item) => (
+            <VitalCard key={item.id} item={item} onClick={() => onSelectSystem?.(item.system)} />
+          ))}
+        </div>
+      )}
 
       {/* Unified Cabin & Suit Environmental Telemetry + Quick Habitat Switcher */}
-      <EnvironmentCockpitPanel
-        state={state}
-        onSwitchEnvironment={onSwitchEnvironment}
-        busyAction={busyAction}
-      />
+      {show("environment") && (
+        <EnvironmentCockpitPanel state={state} onSwitchEnvironment={onSwitchEnvironment} busyAction={busyAction} />
+      )}
 
       {/* Psychological Readiness Rank & Behavioral Contributors */}
-      <PsychCockpitCard state={state} />
+      {show("psych") && <PsychCockpitCard state={state} />}
 
       {/* Charts + hologram */}
+      {show("trends") && (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-4 lg:col-span-7">
           <TrendChart
@@ -728,6 +751,7 @@ export default function HomeDashboard({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
