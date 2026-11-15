@@ -16,6 +16,7 @@ from app.models.schemas import (
     MissionContext,
     MLPredictionResult,
     NutritionHydrationState,
+    PersonalBaseline,
     SeverityStatus,
     SystemEvaluation,
     VitalSigns,
@@ -25,9 +26,155 @@ DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
 SEVERITY_RANK: dict[SeverityStatus, int] = {
     "NOMINAL": 0,
-    "WARNING": 1,
-    "CRITICAL": 2,
+    "ATTENTION": 1,
+    "WARNING": 2,
+    "CRITICAL": 3,
 }
+
+
+def max_severity(a: SeverityStatus, b: SeverityStatus) -> SeverityStatus:
+    return a if SEVERITY_RANK[a] >= SEVERITY_RANK[b] else b
+
+
+def build_personal_baseline_from_profile(astro_profile: dict[str, Any]) -> PersonalBaseline:
+    """Derive a personal min/max normal envelope from the astronaut's pre-flight baseline and microgravity adaptation."""
+    b = astro_profile.get("pre_flight_baseline", {})
+    hr = float(b.get("heart_rate_bpm", 60.0))
+    spo2 = float(b.get("spo2_pct", b.get("spo2_percent", 98.5)))
+    bp_sys = float(b.get("bp_systolic", 115.0))
+    bp_dia = float(b.get("bp_diastolic", 72.0))
+    temp = float(b.get("temperature_c", 36.6))
+    resp = float(b.get("respiration_rpm", 13.5))
+    hrv = float(b.get("hrv_ms", 58.0))
+    glucose = float(b.get("glucose_mg_dl", 88.0))
+    sleep = float(b.get("sleep_hours", 7.2))
+    stress = float(b.get("stress_index", 20.0))
+
+    return PersonalBaseline(
+        hr_min=max(cal.HR_CRIT_LOW + 2.0, round(hr - 12.0, 1)),
+        hr_max=round(hr + 18.0, 1),
+        spo2_min=max(95.0, round(spo2 - 2.2, 1)),
+        bp_sys_min=max(cal.BP_SYS_CRIT_LOW + 4.0, round(bp_sys - 16.0, 1)),
+        bp_sys_max=round(bp_sys + 16.0, 1),
+        bp_dia_min=round(bp_dia - 12.0, 1),
+        bp_dia_max=round(bp_dia + 12.0, 1),
+        temp_min=round(temp - 0.55, 2),
+        temp_max=round(temp + 0.60, 2),
+        resp_min=max(9.0, round(resp - 3.5, 1)),
+        resp_max=round(resp + 4.5, 1),
+        hrv_min=max(25.0, round(hrv - 18.0, 1)),
+        glucose_min=max(72.0, round(glucose - 16.0, 1)),
+        glucose_max=round(glucose + 24.0, 1),
+        sleep_min=max(cal.SLEEP_WARN_H, round(sleep - 2.2, 1)),
+        stress_max=min(50.0, round(stress + 18.0, 1)),
+        radiation_max=0.05,
+    )
+
+
+def evaluate_personal_baseline(
+    vitals: VitalSigns, baseline: PersonalBaseline
+) -> tuple[bool, list[str], SeverityStatus]:
+    """Compare live vitals against the astronaut's personal normal envelope."""
+    deviations: list[str] = []
+    severity: SeverityStatus = "NOMINAL"
+
+    if vitals.heart_rate_bpm > baseline.hr_max:
+        delta = vitals.heart_rate_bpm - baseline.hr_max
+        deviations.append(
+            f"FC {vitals.heart_rate_bpm:.0f} bpm acima do teto pessoal ({baseline.hr_max:.0f} bpm)"
+        )
+        severity = max_severity(
+            severity,
+            "CRITICAL" if (delta >= 22 or vitals.heart_rate_bpm >= cal.HR_CRIT_HIGH) else ("WARNING" if delta >= 8 else "ATTENTION"),
+        )
+    elif vitals.heart_rate_bpm < baseline.hr_min:
+        delta = baseline.hr_min - vitals.heart_rate_bpm
+        deviations.append(
+            f"FC {vitals.heart_rate_bpm:.0f} bpm abaixo do piso pessoal ({baseline.hr_min:.0f} bpm)"
+        )
+        severity = max_severity(severity, "WARNING" if delta >= 6 else "ATTENTION")
+
+    if vitals.spo2_pct < baseline.spo2_min:
+        deviations.append(
+            f"SpO2 {vitals.spo2_pct:.1f}% abaixo do basal pessoal ({baseline.spo2_min:.1f}%)"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.spo2_pct < 94.0 else "WARNING"
+        )
+
+    if vitals.bp_systolic > baseline.bp_sys_max or vitals.bp_diastolic > baseline.bp_dia_max:
+        deviations.append(
+            f"PA {vitals.bp_systolic:.0f}/{vitals.bp_diastolic:.0f} mmHg acima do envelope pessoal ({baseline.bp_sys_max:.0f}/{baseline.bp_dia_max:.0f})"
+        )
+        severity = max_severity(
+            severity,
+            "CRITICAL" if vitals.bp_systolic >= cal.BP_SYS_CRIT_HIGH else ("WARNING" if vitals.bp_systolic >= 138 else "ATTENTION"),
+        )
+    elif vitals.bp_systolic < baseline.bp_sys_min or vitals.bp_diastolic < baseline.bp_dia_min:
+        deviations.append(
+            f"PA {vitals.bp_systolic:.0f}/{vitals.bp_diastolic:.0f} mmHg abaixo do envelope pessoal ({baseline.bp_sys_min:.0f}/{baseline.bp_dia_min:.0f})"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.bp_systolic <= cal.BP_SYS_CRIT_LOW else "WARNING"
+        )
+
+    if vitals.temperature_c > baseline.temp_max:
+        deviations.append(
+            f"Temp {vitals.temperature_c:.1f} C acima do teto pessoal ({baseline.temp_max:.1f} C)"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.temperature_c >= cal.TEMP_CRIT_HIGH else "WARNING"
+        )
+    elif vitals.temperature_c < baseline.temp_min:
+        deviations.append(
+            f"Temp {vitals.temperature_c:.1f} C abaixo do piso pessoal ({baseline.temp_min:.1f} C)"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.temperature_c <= cal.TEMP_CRIT_LOW else "ATTENTION"
+        )
+
+    if vitals.glucose_mg_dl < baseline.glucose_min:
+        deviations.append(
+            f"Glicose {vitals.glucose_mg_dl:.0f} mg/dL abaixo do basal pessoal ({baseline.glucose_min:.0f} mg/dL)"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.glucose_mg_dl < cal.GLUCOSE_CRIT_LOW else "WARNING"
+        )
+    elif vitals.glucose_mg_dl > baseline.glucose_max:
+        deviations.append(
+            f"Glicose {vitals.glucose_mg_dl:.0f} mg/dL acima do teto pessoal ({baseline.glucose_max:.0f} mg/dL)"
+        )
+        severity = max_severity(severity, "ATTENTION")
+
+    if vitals.hrv_ms < baseline.hrv_min:
+        deviations.append(
+            f"VFC {vitals.hrv_ms:.0f} ms reduzida vs piso pessoal ({baseline.hrv_min:.0f} ms)"
+        )
+        severity = max_severity(severity, "WARNING" if vitals.hrv_ms < 25 else "ATTENTION")
+
+    if vitals.sleep_hours < baseline.sleep_min:
+        deviations.append(
+            f"Sono {vitals.sleep_hours:.1f} h abaixo do mínimo pessoal ({baseline.sleep_min:.1f} h)"
+        )
+        severity = max_severity(
+            severity, "WARNING" if vitals.sleep_hours < cal.SLEEP_CRIT_H else "ATTENTION"
+        )
+
+    if vitals.stress_index > baseline.stress_max:
+        deviations.append(
+            f"Estresse {vitals.stress_index:.0f}/100 acima do limite pessoal ({baseline.stress_max:.0f}/100)"
+        )
+        severity = max_severity(severity, "WARNING" if vitals.stress_index >= 72 else "ATTENTION")
+
+    if vitals.radiation_msv_h > baseline.radiation_max:
+        deviations.append(
+            f"Radiação {vitals.radiation_msv_h:.2f} mSv/h acima do limite operacional ({baseline.radiation_max:.2f} mSv/h)"
+        )
+        severity = max_severity(
+            severity, "CRITICAL" if vitals.radiation_msv_h >= cal.RADIATION_SPE_RATE_MSV_H else "WARNING"
+        )
+
+    return (len(deviations) == 0), deviations, severity
 
 SCIENTIFIC_CITATIONS: dict[str, dict[str, str]] = {
     "NASA-STD-3001": {
