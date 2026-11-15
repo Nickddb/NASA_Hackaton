@@ -9,6 +9,8 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 
+from app.engine.clinical_rules import load_scenarios_catalog
+from app.ml.features import FEATURE_KEYS, FEATURE_SPECS, build_generator_cohort, live_feature_vector
 from app.models.schemas import (
     AdaptiveBaselineProfile,
     ContextualIntelligenceReport,
@@ -18,31 +20,13 @@ from app.models.schemas import (
     MissionContext,
     MLPredictionResult,
     MLValidationMetrics,
+    PersonalBaseline,
+    SpaceWeatherSummary,
     NutritionHydrationState,
     ReliabilityGrade,
     UncertaintyAssessment,
     VitalSigns,
 )
-
-FEATURE_SPECS: list[tuple[str, str, float, float]] = [
-    # (key, label, nominal_pop_baseline, scale_std)
-    ("heart_rate_bpm", "Heart Rate (bpm)", 68.0, 8.0),
-    ("hrv_ms", "HRV RMSSD (ms)", 58.0, 9.0),
-    ("bp_systolic", "Systolic BP (mmHg)", 116.0, 9.0),
-    ("bp_diastolic", "Diastolic BP (mmHg)", 74.0, 6.0),
-    ("glucose_mg_dl", "Blood Glucose (mg/dL)", 94.0, 10.0),
-    ("temperature_c", "Body Temp (C)", 36.7, 0.35),
-    ("spo2_pct", "SpO2 Saturation (%)", 98.2, 1.1),
-    ("respiration_rpm", "Respiratory Rate (rpm)", 14.5, 2.2),
-    ("sleep_hours", "Sleep Duration (h)", 7.4, 0.8),
-    ("mood_score", "Mood Check-In (1-5)", 4.6, 0.6),
-    ("radiation_msv_h", "Radiation Rate (mSv/h)", 0.04, 0.03),
-    ("nutrition_goal_pct", "Nutrition Goal (%)", 88.0, 12.0),
-    ("minutes_since_last_exercise", "Time Since Exercise (min)", 300.0, 140.0),
-    ("cabin_co2_mmhg", "Cabin CO2 (mmHg)", 2.5, 0.6),
-    ("individual_hr_z_score", "Personal HR Drift (z-score)", 0.0, 1.0),
-    ("individual_hrv_z_score", "Personal HRV Drift (z-score)", 0.0, 1.0),
-]
 
 SYNDROME_LABELS: dict[str, str] = {
     "nominal": "Nominal Mission State (Within Personal & Population Bounds)",
@@ -85,92 +69,10 @@ class AstraCareRealMLEngine:
         self._train_and_validate_cohort()
 
     def _generate_cohort_dataset(self) -> tuple[np.ndarray, np.ndarray]:
-        rng = np.random.default_rng(42)
-
-        # 16 features:
-        # [hr, hrv, bp_sys, bp_dia, glucose, temp, spo2, rr, sleep, mood, rad, nut_pct, min_ex, co2, ind_hr_z, ind_hrv_z]
-        profiles: dict[str, tuple[int, list[float], list[float]]] = {
-            "nominal": (
-                320,
-                [67.0, 58.0, 115.0, 73.0, 93.0, 36.7, 98.4, 14.0, 7.4, 4.7, 0.04, 88.0, 310.0, 2.5, 0.1, -0.1],
-                [5.0, 6.5, 5.5, 4.0, 6.5, 0.18, 0.5, 1.2, 0.45, 0.4, 0.012, 8.0, 90.0, 0.35, 0.65, 0.65],
-            ),
-            "post_exercise_physiological": (
-                110,
-                [106.0, 36.0, 134.0, 78.0, 89.0, 37.6, 98.1, 20.0, 7.4, 4.8, 0.04, 89.0, 18.0, 2.7, 3.8, -2.4],
-                [7.0, 4.5, 6.5, 4.5, 6.0, 0.22, 0.6, 1.8, 0.45, 0.4, 0.012, 8.0, 10.0, 0.35, 0.8, 0.7],
-            ),
-            "cabin_co2_pocket": (
-                110,
-                [88.0, 39.0, 131.0, 83.0, 96.0, 36.8, 95.2, 21.0, 5.8, 3.0, 0.04, 83.0, 420.0, 4.6, 2.4, -2.1],
-                [5.5, 4.5, 5.5, 4.0, 6.0, 0.18, 0.7, 1.5, 0.55, 0.5, 0.012, 8.0, 95.0, 0.45, 0.7, 0.65],
-            ),
-            "systemic_infection": (
-                110,
-                [112.0, 24.0, 81.0, 51.0, 118.0, 38.5, 94.2, 23.0, 5.2, 2.0, 0.05, 51.0, 650.0, 2.6, 5.2, -4.1],
-                [6.5, 4.0, 5.0, 4.0, 9.5, 0.32, 0.9, 1.8, 0.65, 0.5, 0.015, 9.5, 140.0, 0.35, 0.9, 0.75],
-            ),
-            "orthostatic_intolerance": (
-                110,
-                [107.0, 34.0, 85.0, 55.0, 88.0, 36.6, 97.1, 19.0, 6.4, 3.0, 0.04, 73.0, 240.0, 2.8, 4.3, -2.8],
-                [6.0, 4.5, 4.5, 3.8, 6.0, 0.18, 0.7, 1.5, 0.55, 0.5, 0.015, 9.0, 75.0, 0.35, 0.8, 0.7],
-            ),
-            "behavioral_fatigue": (
-                110,
-                [86.0, 21.0, 128.0, 82.0, 104.0, 36.8, 97.8, 17.0, 3.8, 1.9, 0.04, 71.0, 390.0, 3.0, 2.3, -4.3],
-                [5.5, 3.8, 5.5, 4.5, 6.5, 0.20, 0.6, 1.4, 0.45, 0.45, 0.015, 9.0, 95.0, 0.40, 0.7, 0.7],
-            ),
-            "hypoglycemia": (
-                110,
-                [102.0, 38.0, 104.0, 68.0, 62.0, 36.4, 97.9, 18.0, 6.6, 3.0, 0.05, 41.0, 170.0, 2.8, 3.8, -2.3],
-                [6.0, 4.5, 5.0, 4.0, 4.5, 0.18, 0.6, 1.4, 0.50, 0.5, 0.015, 7.5, 65.0, 0.35, 0.75, 0.65],
-            ),
-            "solar_storm": (
-                110,
-                [96.0, 42.0, 124.0, 78.0, 97.0, 36.8, 98.2, 17.0, 7.1, 3.1, 0.68, 84.0, 220.0, 2.5, 3.0, -1.9],
-                [6.0, 4.8, 5.5, 4.0, 6.0, 0.18, 0.6, 1.4, 0.50, 0.5, 0.13, 8.5, 80.0, 0.35, 0.75, 0.65],
-            ),
-        }
-
-        X_list: list[np.ndarray] = []
-        y_list: list[str] = []
-
-        bounds = [
-            (42.0, 165.0),   # hr
-            (10.0, 105.0),   # hrv
-            (65.0, 185.0),   # bp_sys
-            (40.0, 115.0),   # bp_dia
-            (42.0, 220.0),   # glucose
-            (35.2, 40.6),    # temp
-            (88.0, 100.0),   # spo2
-            (9.0, 34.0),     # rr
-            (2.0, 10.5),     # sleep
-            (1.0, 5.0),      # mood
-            (0.01, 2.5),     # rad
-            (15.0, 130.0),   # nut_pct
-            (2.0, 1440.0),   # min_ex
-            (1.5, 8.5),      # co2
-            (-5.0, 9.0),     # ind_hr_z
-            (-8.0, 5.0),     # ind_hrv_z
-        ]
-
-        for label, (count, means, stds) in profiles.items():
-            # Add realistic biological boundary dispersion (1.35x std + 4% borderline prodromal cases)
-            adj_stds = [s * 1.35 for s in stds]
-            samples = rng.normal(loc=means, scale=adj_stds, size=(count, len(FEATURE_SPECS)))
-            if label != "nominal":
-                # Blend 8% early/prodromal transition cases halfway toward nominal baseline
-                n_prodromal = max(3, int(count * 0.08))
-                nom_means = np.array(profiles["nominal"][1])
-                samples[:n_prodromal] = 0.52 * samples[:n_prodromal] + 0.48 * nom_means + rng.normal(
-                    0, [s * 0.6 for s in stds], size=(n_prodromal, len(FEATURE_SPECS))
-                )
-            for col_idx, (low, high) in enumerate(bounds):
-                samples[:, col_idx] = np.clip(samples[:, col_idx], low, high)
-            X_list.append(samples)
-            y_list.extend([label] * count)
-
-        return np.vstack(X_list), np.array(y_list)
+        """Training data drawn from the NASA-calibrated telemetry generator for every roster astronaut."""
+        X, y, n_astronauts = build_generator_cohort(load_scenarios_catalog())
+        self._cohort_astronauts = n_astronauts
+        return X, y
 
     @staticmethod
     def _compute_ece(y_true_idx: np.ndarray, probs: np.ndarray, n_bins: int = 10) -> float:
@@ -239,6 +141,13 @@ class AstraCareRealMLEngine:
             macro_f1_score=round(f1 * 100.0, 2),
             multiclass_brier_score=round(brier, 4),
             expected_calibration_error=round(ece, 4),
+            training_data_source=(
+                f"NASA-calibrated stochastic generator: {getattr(self, '_cohort_astronauts', 0)} roster astronauts x "
+                f"{len(self.classes_)} profiles (half full-blown, half early 15-100 % of the way), jittered context, "
+                "DONKI level and crew symptom reports. Metrics are measured on synthetic data and are optimistic: "
+                "they are not an estimate of real-world clinical performance."
+            ),
+            feature_names=list(FEATURE_KEYS),
         )
 
     def _extract_vector(
@@ -247,37 +156,10 @@ class AstraCareRealMLEngine:
         nutrition: NutritionHydrationState,
         context: MissionContext,
         adaptive_baseline: AdaptiveBaselineProfile,
+        personal_baseline: PersonalBaseline | None = None,
+        space_weather: SpaceWeatherSummary | None = None,
     ) -> np.ndarray:
-        nutrition_goal_pct = min(
-            130.0,
-            max(10.0, (nutrition.calories_kcal / max(nutrition.goal_calories_kcal, 1.0)) * 100.0),
-        )
-        ind_hr_z = adaptive_baseline.metrics["heart_rate_bpm"].individual_z_score
-        ind_hrv_z = adaptive_baseline.metrics["hrv_ms"].individual_z_score
-
-        return np.array(
-            [
-                [
-                    vitals.heart_rate_bpm,
-                    vitals.hrv_ms,
-                    vitals.bp_systolic,
-                    vitals.bp_diastolic,
-                    vitals.glucose_mg_dl,
-                    vitals.temperature_c,
-                    vitals.spo2_pct,
-                    vitals.respiration_rpm,
-                    vitals.sleep_hours,
-                    float(vitals.mood_score),
-                    vitals.radiation_msv_h,
-                    nutrition_goal_pct,
-                    context.minutes_since_last_exercise,
-                    context.cabin_co2_mmhg,
-                    ind_hr_z,
-                    ind_hrv_z,
-                ]
-            ],
-            dtype=float,
-        )
+        return live_feature_vector(vitals, nutrition, context, adaptive_baseline, personal_baseline, space_weather)
 
     def _compute_uncertainty(
         self,
@@ -415,8 +297,10 @@ class AstraCareRealMLEngine:
         adaptive_baseline: AdaptiveBaselineProfile,
         contextual_report: ContextualIntelligenceReport,
         longitudinal_series: list[dict[str, Any]],
+        personal_baseline: PersonalBaseline | None = None,
+        space_weather: SpaceWeatherSummary | None = None,
     ) -> MLPredictionResult:
-        vec = self._extract_vector(vitals, nutrition, context, adaptive_baseline)
+        vec = self._extract_vector(vitals, nutrition, context, adaptive_baseline, personal_baseline, space_weather)
         vec_scaled = self.scaler.transform(vec)
 
         # 1. Population IsolationForest score

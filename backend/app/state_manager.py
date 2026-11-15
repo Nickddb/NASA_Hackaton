@@ -1215,6 +1215,8 @@ class MissionStateManager:
             adaptive_baseline=adaptive_base,
             contextual_report=contextual_report,
             longitudinal_series=member.longitudinal_series,
+            personal_baseline=member.personal_baseline,
+            space_weather=self.space_weather,
         )
         member.measurement_quality.reliability_grade = ml_pred.uncertainty.reliability_grade
 

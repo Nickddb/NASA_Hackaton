@@ -238,6 +238,8 @@ class MLValidationMetrics(BaseModel):
     macro_f1_score: float
     multiclass_brier_score: float
     expected_calibration_error: float
+    training_data_source: str = ""
+    feature_names: list[str] = Field(default_factory=list)
 
 
 class MLPredictionResult(BaseModel):
