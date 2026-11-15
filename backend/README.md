@@ -1,4 +1,4 @@
-# AstraCare AI — Backend Refatorado com Machine Learning Real (`teste/`)
+# AstraCare AI — Backend (Machine Learning + Continuidade Clínica)
 
 Este diretório contém o backend completo refatorado (**Fase 1: Machine Learning & Continuidade Clínica; Fase 2: Chatbot**) construído sobre 5 pilares médicos e aeroespaciais:
 
@@ -32,8 +32,29 @@ Este diretório contém o backend completo refatorado (**Fase 1: Machine Learnin
      9. `log_sleep_mood_context_tool` (registro de sono, humor, dor no ombro EVA e contexto pós-treino/CO2)
      10. `trigger_psychological_biofeedback_tool` (**Pilar 6 — Contramedida Psicofisiológica & Alerta Central MCC-BHP**: pondera os desvios individuais `individual_z_score` de cada astronauta em 6 diagnósticos emocionais/autonômicos, aciona estímulos do *Personal Crew Vault* [vídeos da família, áudios de amigos, sons da natureza/animais, jogos e música calma], modela a recuperação vagal em ciclo fechado [FC, PA, HRV, Estresse, Humor], agenda reavaliação em `T+15 min` e envia alerta imediato + pacote `SHA-256` para a Central em Terra)
 
+## Melhorias da v0.3.0 (consolidação `teste/` → `backend/`)
+
+- **Baseline adaptativo:** janela móvel de até 14 dias com **quarentena de leituras anômalas** (> 2.5σ do baseline ajustado à fase), para que uma rampa patológica lenta não "ensine" o modelo que aquilo é normal. Novo campo de **tendência** por métrica (`trend_slope_sigma_per_day`, `trend_status`) que detecta deriva de vários dias antes de cruzar limiares. Covariância Ledoit-Wolf passa a usar o histórico real do astronauta (e seed reproduzível; antes usava `hash()`, que muda a cada processo).
+- **Ciclo fechado:** cada reavaliação tem `due_at`; leituras marcam `OVERDUE` automaticamente e o caso expõe `pending_items` / `next_due_at`. Escalonamento para a Terra é **sempre humano** (`POST /api/followup/{id}/escalate`); o motor só sinaliza. Casos resolvidos não podem ser alterados (HTTP 409). Casos persistem em disco (`followup_cases.json`).
+- **Continuidade nave–Terra:** hash SHA-256 sobre o **conteúdo completo** de cada pacote, encadeado ao pacote anterior; log de auditoria também encadeado. `GET /api/earth-sync/verify` recalcula as cadeias (detecta edição, remoção ou reordenação). A sincronização respeita a janela de comunicação (`comms_available`). Escrita atômica do ledger.
+- **Estado de runtime fora do git:** `ASTRACARE_STATE_DIR` (padrão `backend/data/`) guarda `local_mission_ledger.json` e `followup_cases.json`, ambos no `.gitignore`.
+
 ## Como executar localmente
 
 ```powershell
-..\backend\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir . --host 0.0.0.0 --port 8001 --reload
+cd backend
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-dev.txt
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+A porta 8000 é a que o proxy do Vite (`frontend/vite.config.js`) usa.
+
+## Testes
+
+```powershell
+cd backend
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Os testes cobrem os 5 pilares: quarentena do baseline, tendência vs. pico agudo, contexto sem causalidade, explicabilidade + travas de autonomia em todo alerta, ciclo de acompanhamento completo (incluindo atraso e escalonamento humano), cadeia de hash e fila offline.
