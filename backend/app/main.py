@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.agent.orchestrator import AstraCareOrchestrator
 from app.models.schemas import (
@@ -18,6 +20,8 @@ from app.models.schemas import (
     CompleteReassessmentRequest,
     ContextualIntelligenceReport,
     ContextUpdateRequest,
+    CrewRosterResponse,
+    DispatchAlertRequest,
     EarthSyncPackage,
     EscalateCaseRequest,
     ExplainableAlert,
@@ -29,6 +33,7 @@ from app.models.schemas import (
     RecordActionRequest,
     RecordConfirmationRequest,
     SpaceWeatherSummary,
+    StabilizeRequest,
     TelemedicineDossier,
 )
 from app.state_manager import MissionStateManager
@@ -49,15 +54,17 @@ app = FastAPI(
     title="AstraCare AI — Real ML & Clinical Continuity Backend",
     version="0.3.0",
     description=(
-        "5-Pillar Aerospace Medical Backend: "
+        "6-Pillar Aerospace Medical Backend + Multi-Crew Hub: "
         "(1) Adaptive Individual Baseline, "
         "(2) Contextual Mission Intelligence, "
         "(3) Closed-Loop Follow-Up Cycle, "
         "(4) Explainable & Auditable Calibrated ML, "
-        "(5) Spacecraft–Earth Store-and-Forward Continuity."
+        "(5) Spacecraft–Earth Store-and-Forward Continuity, "
+        "(6) Psychophysiological Biofeedback Countermeasure & Central BHP Alert."
     ),
     lifespan=lifespan,
 )
+
 
 @app.exception_handler(ValueError)
 async def invalid_transition_handler(_: Request, exc: ValueError) -> JSONResponse:
@@ -85,6 +92,8 @@ def health_check() -> dict[str, Any]:
         if state_manager.ml_predictor.validation_metrics
         else None,
         "astronaut_id": state_manager.astronaut_id,
+        "active_crew_id": state_manager.active_crew_id,
+        "total_crew": len(state_manager.crew_records),
         "scenario": state_manager.scenario_id,
         "environment": state_manager.environment_id,
         "pending_earth_sync_packages": state_manager.earth_sync.pending_count(),
@@ -92,8 +101,65 @@ def health_check() -> dict[str, Any]:
 
 
 @app.get("/api/state", response_model=MissionState)
-def get_mission_state() -> MissionState:
-    return state_manager.get_state()
+def get_mission_state(crew_id: str | None = None) -> MissionState:
+    return state_manager.get_state(crew_id=crew_id)
+
+
+# --- Multi-Crew Hub Endpoints ---
+@app.get("/api/crew", response_model=CrewRosterResponse)
+def get_crew_roster() -> CrewRosterResponse:
+    return state_manager.get_crew_roster()
+
+
+@app.post("/api/crew/{crew_id}/select", response_model=MissionState)
+def select_crew_member(crew_id: str) -> MissionState:
+    try:
+        return state_manager.select_crew_member(crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/crew/{crew_id}/state", response_model=MissionState)
+def get_crew_member_state(crew_id: str) -> MissionState:
+    if crew_id not in state_manager.crew_records:
+        raise HTTPException(status_code=404, detail=f"Unknown crew_id: {crew_id}")
+    return state_manager.get_state(crew_id=crew_id)
+
+
+@app.post("/api/crew/{crew_id}/alert", response_model=MissionState)
+def dispatch_crew_alert(crew_id: str, payload: DispatchAlertRequest) -> MissionState:
+    try:
+        return state_manager.dispatch_alert(crew_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/acknowledge", response_model=MissionState)
+def acknowledge_crew_alert(crew_id: str) -> MissionState:
+    try:
+        return state_manager.acknowledge_alert(crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/stabilize", response_model=MissionState)
+def stabilize_crew_member(
+    crew_id: str, payload: StabilizeRequest | None = None
+) -> MissionState:
+    try:
+        return state_manager.stabilize_crew_member(crew_id, payload or StabilizeRequest())
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/measure", response_model=MeasurementResponse)
+def measure_crew_member(
+    crew_id: str, system_id: str = "full_body"
+) -> MeasurementResponse:
+    try:
+        return state_manager.trigger_measurement(system_id, crew_id=crew_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 # --- PILLAR 1: Adaptive Individual Baseline Endpoints ---
@@ -106,25 +172,27 @@ def set_astronaut(astronaut_id: str) -> MissionState:
 
 
 @app.get("/api/ml/baseline", response_model=AdaptiveBaselineProfile)
-def get_adaptive_baseline() -> AdaptiveBaselineProfile:
-    return state_manager.get_state().adaptive_baseline
+def get_adaptive_baseline(crew_id: str | None = None) -> AdaptiveBaselineProfile:
+    return state_manager.get_state(crew_id=crew_id).adaptive_baseline
 
 
 # --- PILLAR 2: Contextual Mission Intelligence Endpoints ---
 @app.get("/api/ml/context", response_model=ContextualIntelligenceReport)
-def get_contextual_intelligence() -> ContextualIntelligenceReport:
-    return state_manager.get_state().contextual_intelligence
+def get_contextual_intelligence(crew_id: str | None = None) -> ContextualIntelligenceReport:
+    return state_manager.get_state(crew_id=crew_id).contextual_intelligence
 
 
 @app.post("/api/ml/context", response_model=MissionState)
-def update_contextual_covariates(payload: ContextUpdateRequest) -> MissionState:
-    return state_manager.update_context(payload)
+def update_contextual_covariates(
+    payload: ContextUpdateRequest, crew_id: str | None = None
+) -> MissionState:
+    return state_manager.update_context(payload, crew_id=crew_id)
 
 
 # --- PILLAR 3: Closed-Loop Follow-Up Cycle Endpoints ---
 @app.get("/api/followup/cases", response_model=list[ClinicalFollowUpCase])
-def list_followup_cases() -> list[ClinicalFollowUpCase]:
-    return state_manager.get_state().followup_cases
+def list_followup_cases(crew_id: str | None = None) -> list[ClinicalFollowUpCase]:
+    return state_manager.get_state(crew_id=crew_id).followup_cases
 
 
 @app.post("/api/followup/{case_id}/confirm", response_model=ClinicalFollowUpCase)
@@ -169,8 +237,8 @@ def get_ml_validation_metrics() -> MLValidationMetrics:
 
 
 @app.get("/api/ml/alerts", response_model=list[ExplainableAlert])
-def get_explainable_alerts() -> list[ExplainableAlert]:
-    return state_manager.get_state().explainable_alerts
+def get_explainable_alerts(crew_id: str | None = None) -> list[ExplainableAlert]:
+    return state_manager.get_state(crew_id=crew_id).explainable_alerts
 
 
 # --- PILLAR 5: Spacecraft–Earth Continuity Endpoints ---
@@ -201,8 +269,8 @@ def get_earth_sync_ledger() -> dict[str, Any]:
 
 # --- PILLAR 6: Psychophysiological Biofeedback Countermeasure & Central BHP Alert Endpoints ---
 @app.get("/api/psych/evaluation", response_model=PsychBiofeedbackEvaluation)
-def get_psych_evaluation() -> PsychBiofeedbackEvaluation:
-    st = state_manager.get_state()
+def get_psych_evaluation(crew_id: str | None = None) -> PsychBiofeedbackEvaluation:
+    st = state_manager.get_state(crew_id=crew_id)
     if st.psych_biofeedback is None:
         raise HTTPException(status_code=500, detail="Psychophysiological evaluation not available")
     return st.psych_biofeedback
@@ -215,31 +283,31 @@ def trigger_psych_countermeasure(payload: PsychTriggerRequest | None = None) -> 
 
 
 @app.get("/api/psych/central-alerts", response_model=list[CentralPsychAlertRecord])
-def list_central_psych_alerts() -> list[CentralPsychAlertRecord]:
-    return state_manager.get_state().central_psych_alerts
+def list_central_psych_alerts(crew_id: str | None = None) -> list[CentralPsychAlertRecord]:
+    return state_manager.get_state(crew_id=crew_id).central_psych_alerts
 
 
 # --- Core Mission Scenarios, Measurements & NASA Feeds ---
 @app.post("/api/scenario/{scenario_id}", response_model=MissionState)
-def set_scenario(scenario_id: str) -> MissionState:
+def set_scenario(scenario_id: str, crew_id: str | None = None) -> MissionState:
     try:
-        return state_manager.switch_scenario(scenario_id)
+        return state_manager.switch_scenario(scenario_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/environment/{env_id}", response_model=MissionState)
-def set_environment(env_id: str) -> MissionState:
+def set_environment(env_id: str, crew_id: str | None = None) -> MissionState:
     try:
-        return state_manager.switch_environment(env_id)
+        return state_manager.switch_environment(env_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/measure/{system_id}", response_model=MeasurementResponse)
-def trigger_measurement(system_id: str) -> MeasurementResponse:
+def trigger_measurement(system_id: str, crew_id: str | None = None) -> MeasurementResponse:
     try:
-        return state_manager.trigger_measurement(system_id)
+        return state_manager.trigger_measurement(system_id, crew_id=crew_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -251,20 +319,42 @@ async def get_space_weather(force: bool = False) -> SpaceWeatherSummary:
 
 
 @app.post("/api/telemetry/next", response_model=MissionState)
-def next_telemetry_reading(crisis_probability: float = 0.0) -> MissionState:
+def next_telemetry_reading(
+    crisis_probability: float = 0.0, crew_id: str | None = None
+) -> MissionState:
     """New reading from the NASA-calibrated stochastic generator. crisis_probability (0-1) lets a nominal
     mission randomly enter a crisis profile."""
     if not 0.0 <= crisis_probability <= 1.0:
         raise HTTPException(status_code=422, detail="crisis_probability must be between 0 and 1")
-    return state_manager.next_telemetry_reading(crisis_probability)
+    return state_manager.next_telemetry_reading(crisis_probability, crew_id=crew_id)
 
 
 @app.post("/api/telemedicine/dossier", response_model=TelemedicineDossier)
-def generate_telemedicine_dossier() -> TelemedicineDossier:
-    return state_manager.compile_dossier()
+def generate_telemedicine_dossier(crew_id: str | None = None) -> TelemedicineDossier:
+    return state_manager.compile_dossier(crew_id=crew_id)
 
 
 @app.post("/api/agent/chat", response_model=ChatResponse)
 async def agent_chat(payload: ChatRequest) -> ChatResponse:
-    """Phase 2 Agentic Chatbot & Clinical Decision-Support Orchestrator (9 Tools across 5 Pillars)."""
-    return await orchestrator.handle_chat(payload.message)
+    """Phase 2 Agentic Chatbot & Clinical Decision-Support Orchestrator (10 Tools across 6 Pillars)."""
+    return await orchestrator.handle_chat(payload.message, crew_id=payload.crew_id)
+
+
+# --- Optional Static Frontend Hosting (SPA) ---
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        candidate = FRONTEND_DIST / full_path
+        if full_path and candidate.exists() and candidate.is_file():
+            return FileResponse(str(candidate))
+        index_file = FRONTEND_DIST / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        raise HTTPException(status_code=404, detail="Frontend build not found")

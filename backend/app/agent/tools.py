@@ -205,6 +205,10 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
             state_manager.switch_astronaut("lucas_ferreira")
         elif "kenji" in q_low and state_manager.astronaut_id != "kenji_sato":
             state_manager.switch_astronaut("kenji_sato")
+        elif "amara" in q_low and state_manager.astronaut_id != "amara_okafor":
+            state_manager.switch_astronaut("amara_okafor")
+        elif "liam" in q_low and state_manager.astronaut_id != "liam_soren":
+            state_manager.switch_astronaut("liam_soren")
         elif "elena" in q_low and state_manager.astronaut_id != "elena_vance":
             state_manager.switch_astronaut("elena_vance")
 
