@@ -243,6 +243,28 @@ class TelemetryGenerator:
         vitals["reported_symptoms"] = []
         return vitals
 
+    def reading_at_progress(
+        self, crisis_id: str, progress: float, mission_day: int, rng: np.random.Generator
+    ) -> dict[str, Any]:
+        """A single reading part-way through a crisis (progress 0 = nominal, 1 = full crisis). Used to train
+        the ML on early/prodromal states that overlap with normal variability."""
+        crisis = CRISIS_PROFILES.get(crisis_id, CRISIS_PROFILES["nominal"])
+        vitals: dict[str, Any] = {}
+        for metric in SERIES_FIELDS:
+            v = self._value(metric, progress, crisis, rng, noise_k=0.6)
+            vitals[metric] = round(v, 3 if metric == "radiation_msv_h" else 1)
+        vitals["mood_score"] = int(min(5, max(1, round(vitals["mood_score"]))))
+        short = vitals["sleep_hours"] < cal.SLEEP_CRIT_H
+        vitals["sleep_streak_low_days"] = int(short) + int(short and rng.random() < progress)
+        for metric in ("urinary_calcium_mg_d", "intraocular_pressure_mmhg"):
+            vitals[metric] = round(self._value(metric, progress, crisis, rng, noise_k=0.5), 1)
+        daily = cal.NOMINAL["radiation_msv_h"].mid * 24.0
+        vitals["cumulative_radiation_msv"] = round(mission_day * daily + progress * crisis.extra_cumulative_msv, 1)
+        vitals["shoulder_pain_score"] = int(crisis.extras.get("shoulder_pain_score", 0)) if progress > 0.5 else 0
+        vitals["pfo_decompression_risk"] = crisis.extras.get("pfo_decompression_risk", "LOW") if progress > 0.5 else "LOW"
+        vitals["reported_symptoms"] = []
+        return vitals
+
     def next_reading(self, crisis_id: str, current: dict[str, Any], rng: np.random.Generator) -> dict[str, Any]:
         """A fresh instantaneous reading for 'today': same trajectory, new sensor noise."""
         crisis = CRISIS_PROFILES.get(crisis_id, CRISIS_PROFILES["nominal"])
