@@ -436,6 +436,9 @@ export const createEarthSyncPackage = () => postJson("/api/earth-sync/package");
 export const synchronizeWithEarth = () => postJson("/api/earth-sync/synchronize");
 export const getEarthSyncLedger = () => tryFetch("/api/earth-sync/ledger");
 export const verifyEarthSyncLedger = () => tryFetch("/api/earth-sync/verify");
+// New reading from the NASA-calibrated stochastic generator (backend only; no browser equivalent).
+export const nextTelemetryReading = (crisisProbability = 0) =>
+  postJson(`/api/telemetry/next?crisis_probability=${crisisProbability}`);
 
 export async function getMissionState() {
   try {
@@ -553,9 +556,9 @@ export async function sendAgentChat(message) {
   }
 }
 
-export async function getSpaceWeather() {
+export async function getSpaceWeather(force = false) {
   try {
-    return await tryFetch("/api/nasa/space-weather");
+    return await tryFetch(`/api/nasa/space-weather${force ? "?force=true" : ""}`, { timeoutMs: 12000 });
   } catch {
     await loadLocalData();
     return buildLocalDonkiSummary();

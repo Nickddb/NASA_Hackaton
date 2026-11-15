@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Activity,
   Brain,
@@ -15,6 +15,10 @@ import {
   Thermometer,
   Wind,
   Hand,
+  Pause,
+  Play,
+  RefreshCw,
+  Sun,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./BodyModel3D";
@@ -152,27 +156,6 @@ export function buildRegions(v) {
   ];
 }
 
-/* ---------- simulated intraday series around the current reading ---------- */
-
-const RANGES = { "1h": { points: 30, step: 2, unit: "min" }, "6h": { points: 36, step: 10, unit: "min" }, "24h": { points: 48, step: 30, unit: "min" } };
-
-function buildSeries(current, amplitude, range, seed) {
-  const { points, step } = RANGES[range];
-  const out = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const wave =
-      Math.sin(t * 6.2 + seed) * 0.55 +
-      Math.sin(t * 13.7 + seed * 1.9) * 0.3 +
-      Math.sin(t * 29.3 + seed * 0.7) * 0.15;
-    const fade = 1 - t * 0.6; // converge toward the live value
-    const value = i === points - 1 ? current : current + wave * amplitude * fade;
-    const minsAgo = (points - 1 - i) * step;
-    out.push({ t: minsAgo === 0 ? "now" : `-${minsAgo >= 60 ? `${(minsAgo / 60).toFixed(minsAgo % 60 ? 1 : 0)}h` : `${minsAgo}m`}`, value: Math.round(value * 10) / 10 });
-  }
-  return out;
-}
-
 /* ---------- small building blocks ---------- */
 
 export function GlassCard({ className = "", children }) {
@@ -212,11 +195,15 @@ function VitalCard({ item, onClick }) {
   );
 }
 
-function TrendChart({ title, icon: Icon, current, unit, amplitude, seed, domain, ticks, color = "#60A5FA", label }) {
-  const [range, setRange] = useState("1h");
-  const data = useMemo(() => buildSeries(current, amplitude, range, seed), [current, amplitude, range, seed]);
+const RANGES = ["Live", "7 days"];
+
+// Real data only: "Live" = readings received from the backend generator this session,
+// "7 days" = the generator's daily longitudinal series (state.longitudinal_series).
+function TrendChart({ title, icon: Icon, unit, live, daily, domain, ticks, color = "#60A5FA", label }) {
+  const [range, setRange] = useState("7 days");
+  const data = range === "Live" ? live : daily;
   const last = data[data.length - 1];
-  const gid = `grad-${seed}`;
+  const gid = `grad-${title.replace(/\s/g, "")}`;
 
   return (
     <GlassCard className="p-4">
@@ -225,16 +212,15 @@ function TrendChart({ title, icon: Icon, current, unit, amplitude, seed, domain,
           <Icon className="h-5 w-5 text-[#BFDBFE]" strokeWidth={1.6} />
           <h3 className="text-base font-medium text-white">{title}</h3>
         </div>
-        <div className="flex gap-1">
-          {Object.keys(RANGES).map((r) => (
+        <div className="flex gap-1" role="group" aria-label={`${title} range`}>
+          {RANGES.map((r) => (
             <button
               key={r}
               type="button"
+              aria-pressed={range === r}
               onClick={() => setRange(r)}
-              className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
-                range === r
-                  ? "bg-gradient-to-r from-[#0284C7] to-[#10B981] text-white shadow-[0_0_12px_rgba(16,185,129,0.5)]"
-                  : "bg-[#0B1F3A]/80 text-[#94A3B8] hover:text-white"
+              className={`min-h-[32px] rounded-lg px-3 py-1 text-xs font-medium transition ${
+                range === r ? "bg-[#0284C7] text-white" : "bg-[#0B1F3A]/80 text-[#94A3B8] hover:text-white"
               }`}
             >
               {r}
@@ -244,29 +230,100 @@ function TrendChart({ title, icon: Icon, current, unit, amplitude, seed, domain,
       </div>
 
       <div className="relative mt-2 h-[130px]">
-        <span className="absolute right-2 top-1 z-10 rounded-lg border border-[#3B82F6]/40 bg-[#0B1530]/90 px-2 py-0.5 text-[11px] text-white">
-          {label ?? `${last.value} ${unit}`}
+        {data.length < 2 ? (
+          <p className="flex h-full items-center justify-center px-6 text-center text-xs text-[#94A3B8]">
+            {range === "Live"
+              ? "No live readings yet. Start the sensor stream or take a new reading."
+              : "No daily history for this astronaut yet."}
+          </p>
+        ) : (
+          <>
+            <span className="absolute right-2 top-1 z-10 rounded-lg border border-[#3B82F6]/40 bg-[#0B1530]/90 px-2 py-0.5 text-[11px] text-white">
+              {label ?? `${last.value} ${unit}`}
+            </span>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#1E3A8A" strokeOpacity={0.45} />
+                <XAxis dataKey="t" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis domain={domain} ticks={ticks} stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ background: "#0B1530", border: "1px solid #1D4ED8", borderRadius: 10, color: "#fff", fontSize: 12 }}
+                  formatter={(val) => [`${val} ${unit}`, title]}
+                  labelStyle={{ color: "#94A3B8" }}
+                />
+                <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#${gid})`} isAnimationActive={false} />
+                <ReferenceDot x={last.t} y={last.value} r={4} fill="#fff" stroke={color} strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </>
+        )}
+      </div>
+    </GlassCard>
+  );
+}
+
+const DONKI_TONE = {
+  NOMINAL: "border-[#34D399]/40 text-[#A7F3D0]",
+  WARNING: "border-[#FBBF24]/60 text-[#FDE68A]",
+  CRITICAL: "border-[#F87171]/70 text-[#FECACA]",
+};
+const SOURCE_LABEL = {
+  live_nasa_donki: "Live NASA DONKI",
+  cached_nasa_donki: "Cached NASA DONKI",
+  curated_local_fallback: "Offline sample (DONKI format)",
+};
+
+// Secondary strip: external space weather (DONKI SEP / FLR / RBE) + sensor stream controls.
+function MissionTelemetryBar({ sw, refreshing, onRefresh, streaming, onToggleStream, onNextReading, live }) {
+  const level = sw?.alert_level || "NOMINAL";
+  const simulated = sw?.events?.some((e) => e.is_active && e.origin === "scenario_simulation");
+  const ctl =
+    "inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-[#3B82F6]/40 px-3 text-xs text-[#DBEAFE] hover:bg-[#1D4ED8]/30 disabled:opacity-50";
+  return (
+    <GlassCard className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <Sun className="h-5 w-5 shrink-0 text-[#FDE68A]" strokeWidth={1.6} />
+        <span className="text-sm text-[#CBD5E1]">Space weather</span>
+        <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${DONKI_TONE[level]}`}>
+          {sw?.status_label || "Unknown"}
         </span>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-            <defs>
-              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#1E3A8A" strokeOpacity={0.45} />
-            <XAxis dataKey="t" hide />
-            <YAxis domain={domain} ticks={ticks} stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={{ background: "#0B1530", border: "1px solid #1D4ED8", borderRadius: 10, color: "#fff", fontSize: 12 }}
-              formatter={(val) => [`${val} ${unit}`, title]}
-              labelStyle={{ color: "#94A3B8" }}
-            />
-            <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#${gid})`} isAnimationActive={false} />
-            <ReferenceDot x={last.t} y={last.value} r={4} fill="#fff" stroke={color} strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
+        {sw && (
+          <span className="font-mono text-[11px] text-[#94A3B8]">
+            SEP {sw.active_sep_count} · FLR {sw.active_flare_count} · RBE {sw.active_rbe_count ?? 0} in {sw.active_window_hours ?? 72} h
+          </span>
+        )}
+        {simulated && <span className="text-[11px] text-[#FDE68A]">includes a scenario drill event</span>}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] text-[#94A3B8]" title={sw?.fetch_status}>
+          {SOURCE_LABEL[sw?.source] || "DONKI"}
+          {sw?.uses_demo_key ? " · DEMO_KEY" : ""}
+        </span>
+        <button type="button" onClick={onRefresh} disabled={refreshing || !live} className={ctl}>
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Querying" : "Refresh DONKI"}
+        </button>
+        <span className="mx-1 hidden h-5 w-px bg-[#3B82F6]/30 sm:block" />
+        <button type="button" onClick={onNextReading} disabled={!live || streaming} className={ctl}>
+          New reading
+        </button>
+        <button
+          type="button"
+          onClick={onToggleStream}
+          disabled={!live}
+          aria-pressed={streaming}
+          className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold disabled:opacity-50 ${
+            streaming ? "bg-[#10B981] text-[#04231F]" : "bg-[#0284C7] text-white hover:bg-[#0369A1]"
+          }`}
+        >
+          {streaming ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+          {streaming ? "Streaming every 5 s" : "Start sensor stream"}
+        </button>
       </div>
     </GlassCard>
   );
@@ -306,7 +363,18 @@ function buildPartDetails(v) {
   };
 }
 
-export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSystem }) {
+export default function HomeDashboard({
+  state,
+  onTriggerMeasurement,
+  onSelectSystem,
+  liveReadings = [],
+  streaming = false,
+  onToggleStream,
+  onNextReading,
+  onRefreshDonki,
+  donkiRefreshing = false,
+  live = false,
+}) {
   const [regionId, setRegionId] = useState("arm");
   const [selectedPartId, setSelectedPartId] = useState("left_upper_arm");
   const [measuring, setMeasuring] = useState(false);
@@ -352,11 +420,26 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
     }
   };
 
+  const dailySeries = (key) =>
+    (state.longitudinal_series || [])
+      .filter((r) => typeof r[key] === "number")
+      .map((r) => ({ t: r.day, value: Math.round(r[key] * 10) / 10 }));
+
   const sys = Math.round(v.bp_systolic);
   const dia = Math.round(v.bp_diastolic);
 
   return (
     <div className="flex flex-col gap-6">
+      <MissionTelemetryBar
+        sw={state.space_weather}
+        refreshing={donkiRefreshing}
+        onRefresh={onRefreshDonki}
+        streaming={streaming}
+        onToggleStream={onToggleStream}
+        onNextReading={onNextReading}
+        live={live}
+      />
+
       {/* Vital cards row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {vitals.map((item) => (
@@ -370,20 +453,18 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
           <TrendChart
             title="Blood Pressure"
             icon={Activity}
-            current={sys}
             unit="mmHg"
-            amplitude={9}
-            seed={1.3}
+            live={liveReadings.map((r) => ({ t: r.t, value: r.sys }))}
+            daily={dailySeries("bp_sys")}
             domain={[Math.min(90, sys - 20), Math.max(150, sys + 20)]}
             label={`${sys} / ${dia} mmHg`}
           />
           <TrendChart
             title="Heart Rate"
             icon={Heart}
-            current={Math.round(v.heart_rate_bpm)}
             unit="bpm"
-            amplitude={6}
-            seed={4.1}
+            live={liveReadings.map((r) => ({ t: r.t, value: r.hr }))}
+            daily={dailySeries("hr")}
             domain={[Math.min(45, Math.round(v.heart_rate_bpm) - 15), Math.max(110, Math.round(v.heart_rate_bpm) + 15)]}
           />
 

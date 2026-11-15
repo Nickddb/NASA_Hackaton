@@ -13,6 +13,7 @@ import {
   generateTelemedicineDossier,
   getMissionState,
   getSpaceWeather,
+  nextTelemetryReading,
   sendAgentChat,
   subscribeConnectionMode,
   switchEnvironment,
@@ -65,6 +66,47 @@ export default function App() {
   const settingsRef = useRef(null);
 
   useEffect(() => subscribeConnectionMode(setConnection), []);
+
+  // ---- Live readings from the backend's NASA-calibrated generator (no browser-side synthetic series) ----
+  const [streaming, setStreaming] = useState(false);
+  const [liveReadings, setLiveReadings] = useState([]);
+  const [donkiRefreshing, setDonkiRefreshing] = useState(false);
+  const live = connection === "live";
+
+  useEffect(() => {
+    if (!state?.vitals || !live) return;
+    const t = new Date(state.last_updated || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setLiveReadings((prev) => {
+      if (prev.length && prev[prev.length - 1].key === state.last_updated) return prev;
+      const point = { key: state.last_updated, t, hr: Math.round(state.vitals.heart_rate_bpm * 10) / 10, sys: Math.round(state.vitals.bp_systolic) };
+      return [...prev, point].slice(-40);
+    });
+  }, [state?.last_updated, state?.vitals, live]);
+
+  const takeReading = useCallback(async () => {
+    try {
+      setState(await nextTelemetryReading(0));
+    } catch (err) {
+      setStreaming(false);
+      setError(err?.message || "Could not read the sensor stream.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!streaming || !live) return undefined;
+    const id = setInterval(takeReading, 5000);
+    return () => clearInterval(id);
+  }, [streaming, live, takeReading]);
+
+  const handleRefreshDonki = async () => {
+    setDonkiRefreshing(true);
+    try {
+      setSpaceWeather(await getSpaceWeather(true));
+      await loadState();
+    } finally {
+      setDonkiRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const close = (e) => {
@@ -374,6 +416,13 @@ export default function App() {
             ) : tab === "home" ? (
               <HomeDashboard
                 state={state}
+                live={live}
+                liveReadings={liveReadings}
+                streaming={streaming}
+                onToggleStream={() => setStreaming((s) => !s)}
+                onNextReading={takeReading}
+                onRefreshDonki={handleRefreshDonki}
+                donkiRefreshing={donkiRefreshing}
                 onTriggerMeasurement={handleTriggerMeasurement}
                 onSelectSystem={setSelectedSystem}
               />
