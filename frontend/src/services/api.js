@@ -258,6 +258,237 @@ export function getVitalStatuses(vitals, baseline) {
   return evaluateBaselineAndMetricStatuses(vitals, baseline).statuses;
 }
 
+const DEFAULT_ENV_CONTEXT = {
+  cabin_co2_mmhg: 2.5,
+  cabin_o2_pct: 20.9,
+  cabin_pressure_psia: 14.7,
+  cabin_temp_c: 22.1,
+  cabin_humidity_pct: 44.0,
+  gravitational_g: 0.0,
+  eva_status: "none",
+};
+
+const ENV_CONTEXT_PRESETS = {
+  orbital_station: {
+    cabin_co2_mmhg: 2.4,
+    cabin_o2_pct: 20.9,
+    cabin_pressure_psia: 14.7,
+    cabin_temp_c: 22.1,
+    cabin_humidity_pct: 44.0,
+    gravitational_g: 0.0,
+    eva_status: "none",
+  },
+  transit: {
+    cabin_co2_mmhg: 2.7,
+    cabin_o2_pct: 20.8,
+    cabin_pressure_psia: 14.7,
+    cabin_temp_c: 21.8,
+    cabin_humidity_pct: 43.0,
+    gravitational_g: 0.0,
+    eva_status: "none",
+  },
+  planetary_surface: {
+    cabin_co2_mmhg: 3.1,
+    cabin_o2_pct: 24.5,
+    cabin_pressure_psia: 10.2,
+    cabin_temp_c: 20.5,
+    cabin_humidity_pct: 38.0,
+    gravitational_g: 0.38,
+    eva_status: "pre_eva_prebreathe",
+  },
+};
+
+const SCENARIO_CONTEXT_OVERRIDES = {
+  systemic_infection: { cabin_co2_mmhg: 4.1, cabin_temp_c: 24.4 },
+  eva_decompression_shoulder: { cabin_pressure_psia: 10.2, cabin_o2_pct: 26.5, cabin_co2_mmhg: 2.9, eva_status: "pre_eva_prebreathe" },
+  combined_co2_circadian: { cabin_co2_mmhg: 4.6, cabin_temp_c: 23.8 },
+  hypoglycemia: {},
+  solar_particle_event: { cabin_co2_mmhg: 3.0 },
+};
+
+function buildLocalMissionContext(envId, scenario) {
+  const baseEnv = ENV_CONTEXT_PRESETS[envId] || DEFAULT_ENV_CONTEXT;
+  const scCtx = scenario?.mission_context || {};
+  const scOverride = SCENARIO_CONTEXT_OVERRIDES[scenario?.id] || {};
+  return {
+    ...DEFAULT_ENV_CONTEXT,
+    ...baseEnv,
+    ...scCtx,
+    ...scOverride,
+  };
+}
+
+export function getEnvironmentStatuses(missionContext, vitals, baseline) {
+  const ctx = missionContext || DEFAULT_ENV_CONTEXT;
+  const co2 = ctx.cabin_co2_mmhg ?? 2.5;
+  const o2 = ctx.cabin_o2_pct ?? 20.9;
+  const press = ctx.cabin_pressure_psia ?? 14.7;
+  const temp = ctx.cabin_temp_c ?? 22.1;
+  const hum = ctx.cabin_humidity_pct ?? 44.0;
+  const rad = vitals?.radiation_msv_h ?? 0.04;
+  const radMax = baseline?.radiation_max ?? 0.14;
+
+  const co2Status = co2 >= 5.0 ? "CRITICAL" : co2 >= 3.8 ? "WARNING" : "NOMINAL";
+  const o2Status = o2 < 18.0 || o2 > 28.0 ? "CRITICAL" : o2 < 19.5 || o2 > 23.5 ? "WARNING" : "NOMINAL";
+  const pressStatus = press < 8.5 || press > 16.0 ? "CRITICAL" : press < 13.5 || press > 15.2 ? "WARNING" : "NOMINAL";
+  const radStatus = rad >= 0.5 ? "CRITICAL" : rad > radMax ? "WARNING" : "NOMINAL";
+  const climateStatus =
+    temp < 15.0 || temp > 30.0 || hum < 20.0 || hum > 75.0
+      ? "CRITICAL"
+      : temp < 18.0 || temp > 26.0 || hum < 30.0 || hum > 65.0
+        ? "WARNING"
+        : "NOMINAL";
+
+  const sensors = {
+    co2: {
+      key: "co2",
+      label: "Cabin CO₂",
+      shortLabel: "CO₂",
+      value: Number(co2.toFixed(1)),
+      unit: "mmHg",
+      display: `${co2.toFixed(1)}`,
+      shortValue: `${co2.toFixed(1)}`,
+      range: "≤ 3.8 mmHg",
+      status: co2Status,
+    },
+    o2: {
+      key: "o2",
+      label: "Cabin O₂",
+      shortLabel: "O₂",
+      value: Number(o2.toFixed(1)),
+      unit: "%",
+      display: `${o2.toFixed(1)}`,
+      shortValue: `${o2.toFixed(1)}%`,
+      range: "19.5–23.5%",
+      status: o2Status,
+    },
+    pressure: {
+      key: "pressure",
+      label: "Cabin Pressure",
+      shortLabel: "Press",
+      value: Number(press.toFixed(1)),
+      unit: "psia",
+      display: `${press.toFixed(1)}`,
+      shortValue: `${press.toFixed(1)}p`,
+      range: "13.5–15.2 psia",
+      status: pressStatus,
+    },
+    radiation: {
+      key: "radiation",
+      label: "Radiation Dose",
+      shortLabel: "Rad",
+      value: Number(rad.toFixed(2)),
+      unit: "mSv/h",
+      display: `${rad.toFixed(2)}`,
+      shortValue: `${rad.toFixed(2)}`,
+      range: `≤ ${radMax.toFixed(2)} mSv/h`,
+      status: radStatus,
+    },
+    climate: {
+      key: "climate",
+      label: "Cabin Temp / RH",
+      shortLabel: "Temp/RH",
+      value: Number(temp.toFixed(1)),
+      unit: "°C",
+      display: `${temp.toFixed(1)}° • ${Math.round(hum)}%`,
+      shortValue: `${temp.toFixed(0)}°/${Math.round(hum)}%`,
+      range: "18–26°C • 30–65%",
+      status: climateStatus,
+    },
+  };
+
+  const list = [sensors.co2, sensors.o2, sensors.pressure, sensors.radiation, sensors.climate];
+  const overall = list.reduce((acc, s) => maxStatus(acc, s.status), "NOMINAL");
+  return { overall, sensors, list };
+}
+
+const ENV_LATENCY_DEFAULTS = {
+  orbital_station: 2,
+  transit: 720,
+  planetary_surface: 380,
+};
+
+export function getPsychologicalReadiness(vitals, baseline, opts = {}) {
+  const pb = baseline || DEFAULT_PERSONAL_BASELINE;
+  const v = vitals || {};
+  const mood = v.mood_score ?? 5;
+  const stress = v.stress_index ?? 22;
+  const hrv = v.hrv_ms ?? pb.resting_hrv_ms ?? 55;
+  const hrvMin = pb.hrv_min ?? 35;
+  const sleep = v.sleep_hours ?? 7.2;
+  const sleepMin = pb.sleep_min ?? 6.2;
+  const sleepStreak = v.sleep_streak_low_days ?? 0;
+  const latencySec =
+    opts.oneWayLatencySeconds ??
+    ENV_LATENCY_DEFAULTS[opts.environmentId] ??
+    2;
+
+  const moodPenaltyMap = { 5: 0, 4: 8, 3: 22, 2: 40, 1: 55 };
+  const moodPts = moodPenaltyMap[Math.min(5, Math.max(1, Math.round(mood)))] ?? 22;
+  const stressPts = Math.max(0, (stress - 25) * 0.44);
+  const hrvPts = hrv < hrvMin ? Math.min(24, (hrvMin - hrv) * 0.95) : 0;
+  const sleepPts =
+    (sleep < sleepMin ? Math.min(20, (sleepMin - sleep) * 7.5) : 0) +
+    Math.min(24, sleepStreak * 7.5);
+  const latencyPts = latencySec >= 180 ? Math.min(10, (latencySec / 720) * 8) : 0;
+  const somaticPts =
+    ((v.temperature_c ?? 36.6) >= 38.0 ? 10 : 0) +
+    ((v.shoulder_pain_score ?? 0) >= 4 ? 8 : 0);
+
+  const computedStrain = Math.min(99, Math.max(0, Math.round(moodPts + stressPts + hrvPts + sleepPts + latencyPts + somaticPts)));
+  const apiStrain = opts.psychEvaluation?.primary_score_0_100;
+  const strainScore = apiStrain != null ? Math.round(Math.max(computedStrain, Math.min(99, apiStrain))) : computedStrain;
+  const score = Math.max(0, Math.min(100, 100 - strainScore));
+
+  let tier = "OPTIMAL";
+  let label = "Optimal";
+  let status = "NOMINAL";
+  if (score <= 34) {
+    tier = "CRITICAL_STRAIN";
+    label = "Critical Strain";
+    status = "CRITICAL";
+  } else if (score <= 54) {
+    tier = "HIGH_STRAIN";
+    label = "High Strain";
+    status = "WARNING";
+  } else if (score <= 74) {
+    tier = "CAUTION";
+    label = "Caution";
+    status = "WARNING";
+  }
+
+  const moodStatus = mood <= 2 ? "CRITICAL" : mood <= 3 ? "WARNING" : "NOMINAL";
+  const stressStatus = stress >= 75 ? "CRITICAL" : stress >= 55 ? "WARNING" : "NOMINAL";
+  const hrvStatus = hrv <= Math.max(24, hrvMin - 15) ? "CRITICAL" : hrv < hrvMin ? "WARNING" : "NOMINAL";
+  const sleepStatus = sleepStreak >= 3 || sleep < sleepMin - 1.8 ? "CRITICAL" : sleep < sleepMin ? "WARNING" : "NOMINAL";
+  const delayStatus = latencySec >= 300 ? "WARNING" : "NOMINAL";
+
+  const summary =
+    opts.psychEvaluation?.primary_diagnosis_label ||
+    (tier === "CRITICAL_STRAIN"
+      ? "Acute psychophysiological overload — biofeedback decompression & CMO support recommended"
+      : tier === "HIGH_STRAIN"
+        ? "Elevated behavioral strain & autonomic load — schedule decompression protocol"
+        : tier === "CAUTION"
+          ? "Mild circadian or stress drift above personal baseline"
+          : "Cognitive, affective, and autonomic markers stable within personal baseline");
+
+  const factors = [
+    { key: "mood", label: "Mood Index", display: `${Math.round(mood)}/5`, status: moodStatus },
+    { key: "stress", label: "Autonomic Stress", display: `${Math.round(stress)}%`, status: stressStatus },
+    { key: "hrv", label: "HRV Resilience", display: `${Math.round(hrv)} ms`, status: hrvStatus },
+    { key: "sleep", label: "Sleep Reserve", display: `${sleep.toFixed(1)}h`, status: sleepStatus },
+    {
+      key: "latency",
+      label: "Earth Delay",
+      display: latencySec >= 60 ? `${Math.round(latencySec / 60)}m` : `${latencySec}s`,
+      status: delayStatus,
+    },
+  ];
+
+  return { score, strainScore, tier, label, status, summary, factors };
+}
+
 function evaluateLocalPersonalBaseline(vitals, baseline) {
   const { status, deviations } = evaluateBaselineAndMetricStatuses(vitals, baseline);
   return { status, deviations };
@@ -604,6 +835,7 @@ function ensureLocalCrewStore() {
       scenario_id: sc.id,
       mission_day: sc.mission_day,
       vitals,
+      mission_context: buildLocalMissionContext(spec.environment_id, sc),
       nutrition: { ...sc.nutrition, logged_items: [] },
       longitudinal_series: sc.longitudinal_series.map((p) => ({ ...p })),
       active_alert: null,
@@ -651,6 +883,7 @@ function buildLocalCrewRoster() {
       active_alert: rec.active_alert ? { ...rec.active_alert } : null,
       pending_verification_measurement: rec.pending_verification_measurement,
       vitals: { ...rec.vitals },
+      mission_context: { ...(rec.mission_context || buildLocalMissionContext(rec.environment_id, null)) },
       personal_baseline: { ...rec.baseline },
       primary_diagnosis: clinical.primary_diagnosis,
       anomaly_score: ml.anomaly_score,
@@ -680,6 +913,7 @@ function recomputeLocalState(scenarioId = null, envId = null, crewId = null) {
     rec.scenario_id = sc.id;
     rec.mission_day = sc.mission_day;
     rec.vitals = sc.id === "nominal" ? applyBaselineToVitals({ ...sc.vitals }, rec.baseline) : { ...sc.vitals };
+    rec.mission_context = buildLocalMissionContext(rec.environment_id, sc);
     rec.nutrition = { ...sc.nutrition, logged_items: [] };
     rec.longitudinal_series = sc.longitudinal_series.map((p) => ({ ...p }));
     if (sc.id === "nominal") {
@@ -695,6 +929,11 @@ function recomputeLocalState(scenarioId = null, envId = null, crewId = null) {
   }
   if (envId) {
     rec.environment_id = envId;
+    const preset = ENV_CONTEXT_PRESETS[envId] || DEFAULT_ENV_CONTEXT;
+    rec.mission_context = {
+      ...(rec.mission_context || DEFAULT_ENV_CONTEXT),
+      ...preset,
+    };
   }
 
   const sc = localCatalog.scenarios.find((s) => s.id === rec.scenario_id) || localCatalog.scenarios[0];
@@ -739,6 +978,7 @@ function recomputeLocalState(scenarioId = null, envId = null, crewId = null) {
     environment_name: env.name,
     one_way_latency_seconds: env.one_way_latency_seconds,
     vitals: { ...rec.vitals },
+    mission_context: { ...(rec.mission_context || buildLocalMissionContext(rec.environment_id, sc)) },
     personal_baseline: { ...rec.baseline },
     within_personal_baseline: base.deviations.length === 0,
     baseline_deviations: base.deviations,
@@ -823,10 +1063,22 @@ export async function dispatchCrewAlert(crewId, payload) {
     if (rec) {
       const b = rec.baseline;
       if (payload.simulate_vitals_drift !== false) {
+        const msgLower = String(payload.message || "").toLowerCase();
+        rec.mission_context = { ...(rec.mission_context || ENV_CONTEXT_PRESETS[rec.environment_id] || DEFAULT_ENV_CONTEXT) };
+        if (msgLower.includes("co2")) {
+          rec.mission_context.cabin_co2_mmhg = payload.severity === "CRITICAL" ? 5.8 : 4.5;
+        }
+        if (msgLower.includes("pressure") || msgLower.includes("suit")) {
+          rec.mission_context.cabin_pressure_psia = payload.severity === "CRITICAL" ? 7.8 : 10.2;
+        }
+        if (msgLower.includes("radiation")) {
+          rec.vitals.radiation_msv_h = payload.severity === "CRITICAL" ? 0.68 : 0.28;
+        }
         if (payload.severity === "WARNING") {
           rec.vitals.heart_rate_bpm = Math.round(Math.max(rec.vitals.heart_rate_bpm, b.hr_max + 10) * 10) / 10;
           rec.vitals.bp_systolic = Math.round(Math.min(rec.vitals.bp_systolic, b.bp_sys_min - 7) * 10) / 10;
           rec.vitals.stress_index = Math.max(rec.vitals.stress_index, 64);
+          rec.vitals.mood_score = Math.min(rec.vitals.mood_score ?? 5, 3);
           rec.vitals.hrv_ms = Math.min(rec.vitals.hrv_ms, b.hrv_min - 6);
         } else {
           rec.vitals.heart_rate_bpm = Math.round(Math.max(rec.vitals.heart_rate_bpm, b.hr_max + 26) * 10) / 10;
@@ -834,6 +1086,7 @@ export async function dispatchCrewAlert(crewId, payload) {
           rec.vitals.bp_systolic = Math.round(Math.min(rec.vitals.bp_systolic, Math.max(80, b.bp_sys_min - 18)) * 10) / 10;
           rec.vitals.spo2_pct = Math.round(Math.min(rec.vitals.spo2_pct, Math.max(89.5, b.spo2_min - 3.2)) * 10) / 10;
           rec.vitals.stress_index = Math.max(rec.vitals.stress_index, 85);
+          rec.vitals.mood_score = Math.min(rec.vitals.mood_score ?? 5, 2);
           rec.vitals.hrv_ms = Math.min(rec.vitals.hrv_ms, Math.max(18, b.hrv_min - 18));
         }
       }
@@ -903,6 +1156,10 @@ export async function stabilizeCrewMember(crewId, note = "CHeCS countermeasure &
       };
       rec.nutrition.calories_kcal = Math.max(rec.nutrition.calories_kcal, 2400);
       rec.nutrition.water_ml = Math.max(rec.nutrition.water_ml, 2250);
+      rec.mission_context = {
+        ...DEFAULT_ENV_CONTEXT,
+        ...(ENV_CONTEXT_PRESETS[rec.environment_id] || {}),
+      };
       if (rec.active_alert) {
         rec.pending_verification_measurement = true;
         rec.active_alert.requires_recheck = true;
