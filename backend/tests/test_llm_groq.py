@@ -16,6 +16,7 @@ from app.state_manager import MissionStateManager
 class FakeResponse:
     def __init__(self, payload, status=200):
         self.payload, self.status_code = payload, status
+        self.headers = {}
 
     def json(self):
         return self.payload
@@ -58,7 +59,27 @@ def test_chat_chains_tools_through_groq(groq, monkeypatch):
     assert first["model"] == "qwen/qwen3.8-27b" and sent[0]["headers"]["Authorization"] == "Bearer test-key"
     assert {t["function"]["name"] for t in first["tools"]} >= {"schedule_smartwatch_exam", "trigger_central_alert"}
     tool_msg = second["messages"][-1]
-    assert tool_msg["role"] == "tool" and json.loads(tool_msg["content"])["astronaut_id"] == "kenji_sato"
+    assert tool_msg["role"] == "tool" and tool_msg["content"].startswith('{"astronaut_id": "kenji_sato"')
+    assert len(tool_msg["content"]) <= config.LLM_TOOL_RESULT_MAX_CHARS
+
+
+def test_groq_rate_limit_mid_chain_answers_from_tools(groq, monkeypatch):
+    monkeypatch.setattr(config, "GROQ_RATE_LIMIT_MAX_WAIT_S", 0.0)  # do not wait in tests
+    call = {"id": "c1", "type": "function", "function": {"name": "run_monitoring_cycle", "arguments": '{"astronaut_id": "liam_soren"}'}}
+    limited = FakeResponse({}, status=429)
+    limited.headers = {"retry-after": "30"}
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_groq([message(tool_calls=[call]), limited], []))
+    res = asyncio.run(AstraCareOrchestrator(MissionStateManager()).handle_chat("analise o liam agora"))
+    assert res.mode == "groq"
+    assert res.reply.startswith("**Resultado das ferramentas**") and "run_monitoring_cycle" in res.reply
+
+
+def test_groq_offers_only_configured_tools(groq, monkeypatch):
+    sent = []
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_groq([message(content="ok")], sent))
+    asyncio.run(AstraCareOrchestrator(MissionStateManager()).handle_chat("oi"))
+    names = {t["function"]["name"] for t in sent[0]["body"]["tools"]}
+    assert names == set(config.LLM_TOOLS)
 
 
 def test_groq_failure_falls_back_offline(groq, monkeypatch):
