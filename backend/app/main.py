@@ -11,7 +11,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.agent.orchestrator import AstraCareOrchestrator
+from app.engine.body_regions import BODY_REGIONS
 from app.models.schemas import (
+    PainReportRequest,
     AdaptiveBaselineProfile,
     CentralPsychAlertRecord,
     ChatRequest,
@@ -150,6 +152,28 @@ def stabilize_crew_member(
         return state_manager.stabilize_crew_member(crew_id, payload or StabilizeRequest())
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/crew/{crew_id}/pain", response_model=MissionState)
+def report_pain(crew_id: str, payload: PainReportRequest) -> MissionState:
+    """Pain the astronaut marked on the 3D body (region, 1-10, quality). Feeds rules, cross diagnosis and ML."""
+    try:
+        return state_manager.report_pain(crew_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.delete("/api/crew/{crew_id}/pain/{region}", response_model=MissionState)
+def resolve_pain(crew_id: str, region: str) -> MissionState:
+    try:
+        return state_manager.resolve_pain(crew_id, region)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/api/body/regions")
+def body_regions() -> list[dict[str, str]]:
+    return [{"id": k, "label": v[0], "category": v[1]} for k, v in BODY_REGIONS.items()]
 
 
 @app.post("/api/crew/{crew_id}/measure", response_model=MeasurementResponse)

@@ -13,6 +13,7 @@ from app.engine.clinical_rules import (
     load_scenarios_catalog,
     max_severity,
 )
+from app.engine.body_regions import BODY_REGIONS, SHOULDER_REGIONS
 from app.engine.cross_diagnosis import SEVERE_PSYCH, evaluate_cross_diagnosis
 from app.engine.earth_sync import FOLLOWUP_STORE_PATH, EarthSyncManager
 from app.engine.followup_loop import FollowUpCaseManager
@@ -27,6 +28,8 @@ from app.ml.contextual_intelligence import ContextualIntelligenceEngine
 from app.ml.predictor import AstraCareRealMLEngine
 from app.ml.psych_biofeedback import PsychBiofeedbackEngine
 from app.models.schemas import (
+    PainReport,
+    PainReportRequest,
     CentralPsychAlertRecord,
     ClinicalEvaluationResult,
     ClinicalFollowUpCase,
@@ -116,6 +119,11 @@ SYNDROME_TO_SYSTEM: dict[str, str] = {
     "solar_storm": "radiation",
     "external_medical_alert": "cardiovascular",
 }
+
+
+def _shoulder_pain(reports: list[PainReport]) -> int:
+    """Keep the legacy shoulder_pain_score (EVA rules) in step with shoulder pain marked on the body."""
+    return max((r.intensity for r in reports if r.region in SHOULDER_REGIONS), default=0)
 
 
 class CrewMemberRecord:
@@ -370,6 +378,11 @@ class MissionStateManager:
         sc = self.scenarios_by_id[m.scenario_id]
         vitals, series = self._generator(m).generate(sc.get("crisis_profile", m.scenario_id), m.mission_day)
         vitals["reported_symptoms"] = list(sc.get("reported_symptoms", []))
+        # Pain is reported by the astronaut, not generated: keep it across new telemetry
+        previous = getattr(m, "vitals", None)
+        if previous is not None and previous.pain_reports:
+            vitals["pain_reports"] = [r.model_dump() for r in previous.pain_reports]
+            vitals["shoulder_pain_score"] = max(vitals.get("shoulder_pain_score", 0), _shoulder_pain(previous.pain_reports))
         m.vitals = VitalSigns(**vitals)
         m.longitudinal_series = series
 
@@ -591,6 +604,53 @@ class MissionStateManager:
             member.active_alert.status = "ACKNOWLEDGED"
             member.active_alert.updated_at = now_iso
         member.last_updated = now_iso
+        return self._evaluate_record(member)
+
+    # ---------- Pain reported on the 3D body model ----------
+    def report_pain(self, crew_id: str, req: PainReportRequest) -> MissionState:
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        if req.region not in BODY_REGIONS:
+            raise ValueError(f"Unknown body region: {req.region}")
+        member = self._member(crew_id)
+        label, category = BODY_REGIONS[req.region]
+        report = PainReport(
+            region=req.region,
+            region_label=label,
+            category=category,
+            intensity=req.intensity,
+            quality=req.quality,
+            note=req.note.strip(),
+            reported_at=datetime.now(timezone.utc).isoformat(),
+        )
+        others = [r for r in member.vitals.pain_reports if r.region != req.region]
+        member.vitals.pain_reports = others + [report]
+        member.vitals.shoulder_pain_score = _shoulder_pain(member.vitals.pain_reports)
+        self.earth_sync.record_audit_event(
+            event_type="CREW_PAIN_REPORTED",
+            astronaut_id=crew_id,
+            summary=f"{label}: {req.intensity}/10 {req.quality}" + (f" ({report.note})" if report.note else ""),
+            metadata={"region": req.region, "category": category, "intensity": req.intensity},
+        )
+        self._touch(member)
+        return self._evaluate_record(member)
+
+    def resolve_pain(self, crew_id: str, region: str) -> MissionState:
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        member = self._member(crew_id)
+        before = len(member.vitals.pain_reports)
+        member.vitals.pain_reports = [r for r in member.vitals.pain_reports if r.region != region]
+        if len(member.vitals.pain_reports) == before:
+            raise KeyError(f"No pain reported on {region}")
+        member.vitals.shoulder_pain_score = _shoulder_pain(member.vitals.pain_reports)
+        self.earth_sync.record_audit_event(
+            event_type="CREW_PAIN_RESOLVED",
+            astronaut_id=crew_id,
+            summary=f"{BODY_REGIONS.get(region, (region,))[0]}: pain marked as resolved by the crew",
+            metadata={"region": region},
+        )
+        self._touch(member)
         return self._evaluate_record(member)
 
     def stabilize_crew_member(self, crew_id: str, payload: StabilizeRequest) -> MissionState:

@@ -16,6 +16,28 @@ FollowUpStatus = Literal[
 SyncStatus = Literal["QUEUED_OFFLINE", "SYNCHRONIZED_WITH_MCC_HOUSTON"]
 
 
+PainQuality = Literal["aching", "sharp", "burning", "throbbing", "cramping", "pressure"]
+
+
+class PainReport(BaseModel):
+    """Pain the astronaut marked on the 3D body model."""
+
+    region: str
+    region_label: str
+    category: Literal["head", "chest", "abdominal", "musculoskeletal"]
+    intensity: int = Field(..., ge=0, le=10, description="Numeric rating scale 0-10")
+    quality: PainQuality = "aching"
+    note: str = ""
+    reported_at: str
+
+
+class PainReportRequest(BaseModel):
+    region: str
+    intensity: int = Field(..., ge=1, le=10)
+    quality: PainQuality = "aching"
+    note: str = Field("", max_length=280)
+
+
 class VitalSigns(BaseModel):
     heart_rate_bpm: float = Field(..., description="Resting/active heart rate in beats per minute")
     hrv_ms: float = Field(..., description="Heart rate variability RMSSD in milliseconds")
@@ -40,6 +62,9 @@ class VitalSigns(BaseModel):
     intraocular_pressure_mmhg: float = Field(15.0, description="Tonometry intraocular pressure for SANS screening")
     ctb_reaction_time_ms: float = Field(
         275.0, description="Cognition Test Battery mean reaction time (ms); NASA SSM baseline 250-300 ms"
+    )
+    pain_reports: list["PainReport"] = Field(
+        default_factory=list, description="Active pain reports by body region (from the 3D body model)"
     )
     reported_symptoms: list[str] = Field(
         default_factory=list,
