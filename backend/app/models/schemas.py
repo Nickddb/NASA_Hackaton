@@ -628,6 +628,53 @@ class PsychTriggerRequest(BaseModel):
     preferred_category: str | None = None
 
 
+# --- Cross diagnosis: physical vs. space weather vs. psychological ---
+RootCause = Literal[
+    "NOMINAL",
+    "EXTERNAL_SPACE_WEATHER",
+    "ONBOARD_ENVIRONMENT",
+    "CONTEXTUAL_BENIGN",
+    "INTERNAL_PHYSIOLOGICAL",
+    "PSYCHOLOGICAL_NEUROCOGNITIVE",
+]
+
+
+class CrossEvidence(BaseModel):
+    signal: str
+    value: str
+    rule: str
+    supports: bool = Field(True, description="True = supports the conclusion, False = ruled out")
+
+
+class PsychProtocol(BaseModel):
+    name: str = "PsychGuard / Anchor to Earth"
+    reassurance: str
+    verified_safe_checks: list[str] = Field(default_factory=list)
+    grounding_steps: list[str] = Field(default_factory=list)
+    escalate_to_earth: bool = False
+    escalation_reason: str | None = None
+
+
+class CrossDiagnosisResult(BaseModel):
+    layer: int = Field(..., ge=0, le=3, description="0 nominal, 1 external DONKI, 2 internal/onboard, 3 psychological")
+    root_cause: RootCause
+    title: str
+    summary: str
+    evidence: list[CrossEvidence] = Field(default_factory=list)
+    donki_events_considered: list[str] = Field(default_factory=list)
+    recommended_actions: list[str] = Field(default_factory=list)
+    shelter_recommended: bool = False
+    eva_hold_recommended: bool = False
+    notify_earth: bool = False
+    earth_priority: Literal["NONE", "ROUTINE", "PRIORITY", "IMMEDIATE"] = "NONE"
+    psych_protocol: PsychProtocol | None = None
+    references: list[dict[str, str]] = Field(default_factory=list)
+    disclaimer: str = (
+        "Decision support only: the tree ranks likely causes from data; confirmation and treatment stay with the "
+        "Crew Medical Officer and the Earth Flight Surgeon."
+    )
+
+
 class MissionState(BaseModel):
     mission_day: int = 142
     astronaut_id: str = "elena_vance"
@@ -651,6 +698,7 @@ class MissionState(BaseModel):
     explainable_alerts: list[ExplainableAlert] = Field(default_factory=list)
     followup_cases: list[ClinicalFollowUpCase] = Field(default_factory=list)
     space_weather: SpaceWeatherSummary | None = None
+    cross_diagnosis: CrossDiagnosisResult | None = None
     horizons_link: HorizonsLinkStatus | None = None
     earth_sync_queue_count: int = 0
     earth_sync_last_package_id: str | None = None
