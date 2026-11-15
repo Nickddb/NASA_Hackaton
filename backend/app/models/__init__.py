@@ -1,1 +1,1 @@
-"""Pydantic schemas for AstraCare AI."""
+"""Pydantic schemas for AstraCare AI ML & Clinical Backend."""

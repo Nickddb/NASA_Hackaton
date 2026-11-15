@@ -1,7 +1,7 @@
 [project]
-name = "astracare-backend"
-version = "0.1.0"
-description = "AstraCare AI — Autonomous Offline-First Spaceflight Medical Officer Backend"
+name = "astracare-ml-backend-teste"
+version = "0.2.0"
+description = "AstraCare AI — Adaptive Individual Baseline, Contextual Intelligence, Explainable ML, Closed-Loop Follow-Up & Earth Continuity Backend"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
@@ -11,9 +11,6 @@ dependencies = [
     "scikit-learn>=1.5.2",
     "numpy>=2.1.0",
     "pandas>=2.2.3",
-    "langchain>=0.3.7",
-    "langchain-core>=0.3.15",
-    "langchain-google-genai>=2.0.4",
 ]
 
 [build-system]

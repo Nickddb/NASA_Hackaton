@@ -1,1 +1,1 @@
-"""Clinical rules, NASA DONKI client, and ML predictor engines."""
+"""Clinical rules, Explainable Alerts, Closed-Loop Follow-Up, NASA Live Feeds & Earth Continuity Engine."""
