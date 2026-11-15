@@ -471,19 +471,21 @@ class AstraCareRealMLEngine:
                 ind_z = (curr_v - pop_base) / max(pop_std, 1e-6)
                 pop_z = ind_z
 
-            # Counterfactual perturbation: replace feature with personal baseline and measure probability shift
-            vec_perturbed = vec.copy()
-            vec_perturbed[0, idx] = pers_base
-            vec_pert_scaled = self.scaler.transform(vec_perturbed)
-            pert_prob = 0.5 * self.rf_clf.predict_proba(vec_pert_scaled)[0, best_idx] + 0.5 * self.hgb_calibrated.predict_proba(
-                vec_pert_scaled
-            )[0, best_idx]
-            cf_drop = max(0.0, float(ensemble_probs[best_idx] - pert_prob))
-
             dev_pct = round(((curr_v - pers_base) / max(abs(pers_base), 1.0)) * 100.0, 1)
-            weight = float(global_imp[idx]) * (0.25 + min(abs(ind_z), 5.5)) + cf_drop * 1.8
-            raw_weights.append(weight)
             feature_meta.append((key, label, curr_v, pop_base, pers_base, dev_pct, ind_z, pop_z))
+
+        # Counterfactual perturbation: replace each feature with the personal baseline and measure the probability
+        # shift. All perturbed rows go through the models in ONE batch (was one predict_proba per feature, ~1 s/state).
+        perturbed = np.repeat(vec, len(FEATURE_SPECS), axis=0)
+        for idx, meta in enumerate(feature_meta):
+            perturbed[idx, idx] = meta[4]
+        pert_scaled = self.scaler.transform(perturbed)
+        pert_probs = 0.5 * self.rf_clf.predict_proba(pert_scaled)[:, best_idx] + 0.5 * self.hgb_calibrated.predict_proba(
+            pert_scaled
+        )[:, best_idx]
+        for idx, meta in enumerate(feature_meta):
+            cf_drop = max(0.0, float(ensemble_probs[best_idx] - pert_probs[idx]))
+            raw_weights.append(float(global_imp[idx]) * (0.25 + min(abs(meta[6]), 5.5)) + cf_drop * 1.8)
 
         # Exclude redundant synthetic z-score meta-features from display list so top features are concrete physiological/contextual signals
         display_indices = [i for i, (k, *_) in enumerate(FEATURE_SPECS) if not k.startswith("individual_")]
