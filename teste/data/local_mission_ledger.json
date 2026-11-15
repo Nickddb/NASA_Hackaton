@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-15T00:40:01.540111+00:00",
+  "updated_at": "2026-11-15T16:21:45.725401+00:00",
   "audit_log": [
     {
       "event_id": "AUD-224311",
@@ -131,6 +131,296 @@
       "summary": "Loaded scenario 'Severe Behavioral Fatigue & Circadian Desynchrony' (Day 156).",
       "metadata": {
         "scenario_id": "behavioral_fatigue"
+      }
+    },
+    {
+      "event_id": "AUD-45E09C",
+      "timestamp": "2026-11-15T16:14:19.465878+00:00",
+      "event_type": "SCENARIO_LOADED",
+      "astronaut_id": "elena_vance",
+      "summary": "Loaded scenario 'Nominal Deep Space Cruise' (Day 142).",
+      "metadata": {
+        "scenario_id": "nominal"
+      }
+    },
+    {
+      "event_id": "AUD-F8C7AA",
+      "timestamp": "2026-11-15T16:14:20.907288+00:00",
+      "event_type": "SCENARIO_LOADED",
+      "astronaut_id": "elena_vance",
+      "summary": "Loaded scenario 'Caloric-Deficit Hypoglycemia & EVA Shoulder Strain' (Day 161).",
+      "metadata": {
+        "scenario_id": "hypoglycemia"
+      }
+    },
+    {
+      "event_id": "AUD-8121AF",
+      "timestamp": "2026-11-15T16:14:22.218940+00:00",
+      "event_type": "SCENARIO_LOADED",
+      "astronaut_id": "elena_vance",
+      "summary": "Loaded scenario 'Orthostatic Intolerance / Fluid Shift' (Day 148).",
+      "metadata": {
+        "scenario_id": "orthostatic_intolerance"
+      }
+    },
+    {
+      "event_id": "AUD-9553A7",
+      "timestamp": "2026-11-15T16:14:23.474139+00:00",
+      "event_type": "SCENARIO_LOADED",
+      "astronaut_id": "elena_vance",
+      "summary": "Loaded scenario 'Contextual Confounder: Localized Cabin CO2 Pocket (4.6 mmHg)' (Day 152).",
+      "metadata": {
+        "scenario_id": "cabin_co2_pocket"
+      }
+    },
+    {
+      "event_id": "AUD-94FBFB",
+      "timestamp": "2026-11-15T16:14:24.718649+00:00",
+      "event_type": "SCENARIO_LOADED",
+      "astronaut_id": "elena_vance",
+      "summary": "Loaded scenario 'Systemic Infection / Acute Viral State' (Day 145).",
+      "metadata": {
+        "scenario_id": "systemic_infection"
+      }
+    },
+    {
+      "event_id": "AUD-F8480E",
+      "timestamp": "2026-11-15T16:20:50.344852+00:00",
+      "event_type": "CREW_ALERT_ACKNOWLEDGED",
+      "astronaut_id": "liam_soren",
+      "summary": "EXP-2 Liam Soren acknowledged alert ALT-ORB-4-07B87. Alert remains active until stabilization + confirmatory scan.",
+      "metadata": {
+        "alert_id": "ALT-ORB-4-07B87"
+      }
+    },
+    {
+      "event_id": "AUD-170A1D",
+      "timestamp": "2026-11-15T16:21:01.211282+00:00",
+      "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 102 bpm, BP 104/68 mmHg, SpO2 97.9%, Temp 36.4 C, Glucose 62 mg/dL, Rad 0.05 mSv/h | ALERT REMAINS ACTIVE (WARNING): Biomarkers outside personal baseline (HR 102 bpm (personal 60-89), BP 104/68 mmHg (personal 104-138)).",
+      "metadata": {
+        "system_id": "full_body",
+        "status": "WARNING"
+      }
+    },
+    {
+      "event_id": "AUD-C6674A",
+      "timestamp": "2026-11-15T16:21:01.217880+00:00",
+      "event_type": "STABILIZATION_PROTOCOL_APPLIED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "Stabilization applied for MS-1 Lucas Ferreira (AEB/Payload): 'Administered rapid glucose gel + hydration'. Pending confirmatory measurement.",
+      "metadata": {}
+    },
+    {
+      "event_id": "AUD-A7B068",
+      "timestamp": "2026-11-15T16:21:05.413619+00:00",
+      "event_type": "ALERT_VERIFIED_NORMALIZED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "Confirmatory scan verified personal baseline for MS-1 Lucas Ferreira (AEB/Payload); alert ALT-PYL-1-16798 resolved.",
+      "metadata": {}
+    },
+    {
+      "event_id": "AUD-274A7B",
+      "timestamp": "2026-11-15T16:21:06.703447+00:00",
+      "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 74 bpm, BP 121/78 mmHg, SpO2 98.2%, Temp 36.8 C, Glucose 96 mg/dL, Rad 0.04 mSv/h | VERIFIED PERSONAL BASELINE RESTORED \u2014 Alert ALT-PYL-1-16798 cleared.",
+      "metadata": {
+        "system_id": "full_body",
+        "status": "NOMINAL"
+      }
+    },
+    {
+      "event_id": "AUD-3C73D9",
+      "timestamp": "2026-11-15T16:21:06.711185+00:00",
+      "event_type": "MISSION_CONTROL_ALERT_DISPATCHED",
+      "astronaut_id": "elena_vance",
+      "summary": "[CRITICAL] Suit O2 partial drop during Quest Airlock ops (Issued by Mission Control (Flight Surgeon)).",
+      "metadata": {
+        "alert_id": "ALT-EVA-1-924C8",
+        "simulate_vitals_drift": true
+      }
+    },
+    {
+      "event_id": "AUD-1A2979",
+      "timestamp": "2026-11-15T16:21:17.197112+00:00",
+      "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+      "astronaut_id": "elena_vance",
+      "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 101 bpm, BP 82/71 mmHg, SpO2 92.2%, Temp 38.4 C, Glucose 90 mg/dL, Rad 0.04 mSv/h | ALERT REMAINS ACTIVE (CRITICAL): Biomarkers outside personal baseline (HR 101 bpm (personal 48-75), BP 82/71 mmHg (personal 96-128)).",
+      "metadata": {
+        "system_id": "full_body",
+        "status": "CRITICAL"
+      }
+    },
+    {
+      "event_id": "AUD-47D17A",
+      "timestamp": "2026-11-15T16:21:17.203051+00:00",
+      "event_type": "CREW_FOCUS_SELECTED",
+      "astronaut_id": "amara_okafor",
+      "summary": "Focused telemetry view on CMO Amara Okafor (MED-2 \u00b7 ISS Harmony Medical Bay).",
+      "metadata": {
+        "mission_group": "ISS"
+      }
+    },
+    {
+      "event_id": "AUD-26371F",
+      "timestamp": "2026-11-15T16:21:18.521515+00:00",
+      "event_type": "CREW_FOCUS_SELECTED",
+      "astronaut_id": "liam_soren",
+      "summary": "Focused telemetry view on EXP-2 Liam Soren (ORB-4 \u00b7 Orion Habitation Ring).",
+      "metadata": {
+        "mission_group": "DEEP_SPACE"
+      }
+    },
+    {
+      "event_id": "AUD-F0555C",
+      "timestamp": "2026-11-15T16:21:22.359514+00:00",
+      "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+      "astronaut_id": "liam_soren",
+      "summary": "Created telemetry & decision bundle SYNC-MCC-145-A58C75 (QUEUED_OFFLINE, SHA256=04f16e863a22...).",
+      "metadata": {
+        "package_id": "SYNC-MCC-145-A58C75",
+        "status": "QUEUED_OFFLINE"
+      }
+    },
+    {
+      "event_id": "AUD-9D3F0F",
+      "timestamp": "2026-11-15T16:21:22.365327+00:00",
+      "event_type": "CENTRAL_BHP_PSYCH_ALERT_DISPATCHED",
+      "astronaut_id": "liam_soren",
+      "summary": "Alert MCC-BHP-LIAM-D145-BFD0A sent to Central MCC-Houston BHP & Flight Surgeon: Acute Anxiety & Sympathetic Autonomic Hyper-Arousal (99.0/100) -> Dispatched [Orbital Astrodynamics Trajectory Sandbox & Nordic Folk Acoustic, Nordic Pine Forest Wind, River Rapids & Loon Calls] | Sync Package: SYNC-MCC-145-A58C75.",
+      "metadata": {
+        "central_alert_id": "MCC-BHP-LIAM-D145-BFD0A",
+        "reason": "Crew wellness check",
+        "pre_vitals": {
+          "heart_rate_bpm": 112.0,
+          "hrv_ms": 24.0,
+          "bp_systolic": 80.0,
+          "bp_diastolic": 50.0,
+          "respiration_rpm": 23.0,
+          "stress_index": 79.0,
+          "mood_score": 2.0
+        },
+        "post_vitals": {
+          "heart_rate_bpm": 95.5,
+          "hrv_ms": 34.8,
+          "bp_systolic": 80.0,
+          "bp_diastolic": 50.0,
+          "respiration_rpm": 19.8,
+          "stress_index": 57.0,
+          "mood_score": 3.0
+        },
+        "earth_sync_package_id": "SYNC-MCC-145-A58C75"
+      }
+    },
+    {
+      "event_id": "AUD-D76FC2",
+      "timestamp": "2026-11-15T16:21:22.374586+00:00",
+      "event_type": "CREW_FOCUS_SELECTED",
+      "astronaut_id": "elena_vance",
+      "summary": "Focused telemetry view on CDR Elena Vance (EVA-1) (EVA-1 \u00b7 ISS Quest Airlock (EVA)).",
+      "metadata": {
+        "mission_group": "EVA"
+      }
+    },
+    {
+      "event_id": "AUD-27B260",
+      "timestamp": "2026-11-15T16:21:25.017551+00:00",
+      "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+      "astronaut_id": "elena_vance",
+      "summary": "Created telemetry & decision bundle SYNC-MCC-142-11CA8F (SYNCHRONIZED_WITH_MCC_HOUSTON, SHA256=1c6b707332bf...).",
+      "metadata": {
+        "package_id": "SYNC-MCC-142-11CA8F",
+        "status": "SYNCHRONIZED_WITH_MCC_HOUSTON"
+      }
+    },
+    {
+      "event_id": "AUD-C104A3",
+      "timestamp": "2026-11-15T16:21:26.302106+00:00",
+      "event_type": "CREW_FOCUS_SELECTED",
+      "astronaut_id": "elena_vance",
+      "summary": "Focused telemetry view on CDR Elena Vance (EVA-1) (EVA-1 \u00b7 ISS Quest Airlock (EVA)).",
+      "metadata": {
+        "mission_group": "EVA"
+      }
+    },
+    {
+      "event_id": "AUD-81C995",
+      "timestamp": "2026-11-15T16:21:27.729606+00:00",
+      "event_type": "CREW_FOCUS_SELECTED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "Focused telemetry view on MS-1 Lucas Ferreira (AEB/Payload) (PYL-1 \u00b7 ISS Columbus Bio-Lab).",
+      "metadata": {
+        "mission_group": "ISS"
+      }
+    },
+    {
+      "event_id": "AUD-466529",
+      "timestamp": "2026-11-15T16:21:34.109728+00:00",
+      "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "Created telemetry & decision bundle SYNC-MCC-161-F8E47D (SYNCHRONIZED_WITH_MCC_HOUSTON, SHA256=61042d242c6c...).",
+      "metadata": {
+        "package_id": "SYNC-MCC-161-F8E47D",
+        "status": "SYNCHRONIZED_WITH_MCC_HOUSTON"
+      }
+    },
+    {
+      "event_id": "AUD-300639",
+      "timestamp": "2026-11-15T16:21:34.126034+00:00",
+      "event_type": "CENTRAL_BHP_PSYCH_ALERT_DISPATCHED",
+      "astronaut_id": "lucas_ferreira",
+      "summary": "Alert MCC-BHP-LUCA-D161-128AA sent to Central MCC-Houston BHP & Flight Surgeon: Acute Anxiety & Sympathetic Autonomic Hyper-Arousal (57.1/100) -> Dispatched [Desafio Relaxante de Xadrez R\u00e1pido & Bot\u00e2nica Espacial + Bossa Nova Instrumental (Viol\u00e3o de Nylon), Chuva Suave na Mata Atl\u00e2ntica (Serra da Mantiqueira) + Canto de Sabi\u00e1-Laranjeira e Riacho] | Sync Package: SYNC-MCC-161-F8E47D.",
+      "metadata": {
+        "central_alert_id": "MCC-BHP-LUCA-D161-128AA",
+        "reason": "conversational_or_biometric_auto_trigger",
+        "pre_vitals": {
+          "heart_rate_bpm": 74.0,
+          "hrv_ms": 49.0,
+          "bp_systolic": 121.0,
+          "bp_diastolic": 78.0,
+          "respiration_rpm": 18.0,
+          "stress_index": 20.0,
+          "mood_score": 5.0
+        },
+        "post_vitals": {
+          "heart_rate_bpm": 74.0,
+          "hrv_ms": 49.3,
+          "bp_systolic": 117.6,
+          "bp_diastolic": 75.8,
+          "respiration_rpm": 16.7,
+          "stress_index": 16.0,
+          "mood_score": 5.0
+        },
+        "earth_sync_package_id": "SYNC-MCC-161-F8E47D"
+      }
+    },
+    {
+      "event_id": "AUD-7BB747",
+      "timestamp": "2026-11-15T16:21:40.539366+00:00",
+      "event_type": "STABILIZATION_PROTOCOL_APPLIED",
+      "astronaut_id": "elena_vance",
+      "summary": "Stabilization applied for CDR Elena Vance (EVA-1): 'Cabin repressurized + O2 flow restored'. Pending confirmatory measurement.",
+      "metadata": {}
+    },
+    {
+      "event_id": "AUD-0EE41C",
+      "timestamp": "2026-11-15T16:21:44.426227+00:00",
+      "event_type": "ALERT_VERIFIED_NORMALIZED",
+      "astronaut_id": "elena_vance",
+      "summary": "Confirmatory scan verified personal baseline for CDR Elena Vance (EVA-1); alert ALT-EVA-1-924C8 resolved.",
+      "metadata": {}
+    },
+    {
+      "event_id": "AUD-26D9C6",
+      "timestamp": "2026-11-15T16:21:45.724589+00:00",
+      "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+      "astronaut_id": "elena_vance",
+      "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 61 bpm, BP 112/71 mmHg, SpO2 98.8%, Temp 36.6 C, Glucose 90 mg/dL, Rad 0.04 mSv/h | VERIFIED PERSONAL BASELINE RESTORED \u2014 Alert ALT-EVA-1-924C8 cleared.",
+      "metadata": {
+        "system_id": "full_body",
+        "status": "NOMINAL"
       }
     }
   ],
@@ -1196,6 +1486,3186 @@
           "metadata": {
             "case_id": "CASE-ELEN-D145-43CF",
             "resolved": false
+          }
+        }
+      ]
+    },
+    {
+      "package_id": "SYNC-MCC-145-A58C75",
+      "created_at": "2026-11-15T16:21:22.357049+00:00",
+      "synchronized_at": null,
+      "sync_status": "QUEUED_OFFLINE",
+      "sha256_integrity_hash": "04f16e863a2235713f51437ac088fb34e5d56c3dce62fa56edf4bf089899550c",
+      "astronaut_id": "liam_soren",
+      "crew_member": "EXP-2 Liam Soren",
+      "mission_day": 145,
+      "environment_id": "transit",
+      "horizons_link": {
+        "source": "curated_local_fallback",
+        "fetched_at": "2026-11-15T16:20:37.205229+00:00",
+        "target_body": "Deep Space Transit Corridor (Earth-Mars Transfer)",
+        "distance_km": 215850600.0,
+        "distance_au": 1.4429,
+        "one_way_light_time_seconds": 720.0,
+        "round_trip_light_time_seconds": 1440.0,
+        "bandwidth_kbps": 128.0,
+        "link_window_status": "STORE_AND_FORWARD_DELAYED",
+        "comms_available": true
+      },
+      "space_weather_alert": "CRITICAL",
+      "executive_summary": "[EXP-2 Liam Soren | Day 145 | transit] Personal Drift: 67.3% (Mahalanobis 7.52) | ML Classification: Systemic Infection / Acute Viral State (95.1% \u00b1 16.6%) | Open Follow-Up Cases: 1 | One-Way Latency: 720s.",
+      "adaptive_baseline_snapshot": {
+        "astronaut_id": "liam_soren",
+        "astronaut_name": "EXP-2 Liam Soren",
+        "mission_day": 145,
+        "mission_phase": "chronic_microgravity_cruise",
+        "gravitational_g": 0.0,
+        "ewma_alpha": 0.25,
+        "history_window_days": 7,
+        "multivariate_mahalanobis_distance": 7.52,
+        "personal_drift_score": 67.3,
+        "is_personally_anomalous": true,
+        "adaptation_summary": "Significant deviation from EXP-2 Liam Soren's phase-adapted baseline (chronic_microgravity_cruise): Core Body Temp (38.5 C vs personal 36.97 C, z=+6.3\u03c3), Systolic BP (80.0 mmHg vs personal 109.5 mmHg, z=-5.0\u03c3), SpO2 Saturation (94.2 % vs personal 97.54 %, z=-4.5\u03c3). Multivariate Mahalanobis distance = 7.52 (Drift Score 67.3%).",
+        "osdr_reference_study": "NASA OSDR OSD-570 / OSD-571 Spaceflight Standard Measures",
+        "metrics": {
+          "heart_rate_bpm": {
+            "metric": "heart_rate_bpm",
+            "label": "Heart Rate",
+            "unit": "bpm",
+            "current_value": 95.5,
+            "pre_flight_baseline": 69.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 72.5,
+            "rolling_ewma_baseline": 75.42,
+            "rolling_mad_std": 6.03,
+            "population_baseline": 68.0,
+            "population_std": 8.0,
+            "individual_z_score": 3.33,
+            "population_z_score": 3.44,
+            "deviation_from_personal_pct": 26.6,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "hrv_ms": {
+            "metric": "hrv_ms",
+            "label": "HRV (RMSSD)",
+            "unit": "ms",
+            "current_value": 34.8,
+            "pre_flight_baseline": 54.0,
+            "phase_expected_offset": -3.0,
+            "phase_adapted_baseline": 51.0,
+            "rolling_ewma_baseline": 47.95,
+            "rolling_mad_std": 6.46,
+            "population_baseline": 56.0,
+            "population_std": 9.5,
+            "individual_z_score": -2.04,
+            "population_z_score": -2.23,
+            "deviation_from_personal_pct": -27.4,
+            "status_vs_personal": "MILD_PERSONAL_DRIFT"
+          },
+          "bp_systolic": {
+            "metric": "bp_systolic",
+            "label": "Systolic BP",
+            "unit": "mmHg",
+            "current_value": 80.0,
+            "pre_flight_baseline": 118.0,
+            "phase_expected_offset": -2.5,
+            "phase_adapted_baseline": 115.5,
+            "rolling_ewma_baseline": 109.5,
+            "rolling_mad_std": 5.93,
+            "population_baseline": 116.0,
+            "population_std": 9.0,
+            "individual_z_score": -4.97,
+            "population_z_score": -4.0,
+            "deviation_from_personal_pct": -26.9,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "bp_diastolic": {
+            "metric": "bp_diastolic",
+            "label": "Diastolic BP",
+            "unit": "mmHg",
+            "current_value": 50.0,
+            "pre_flight_baseline": 76.0,
+            "phase_expected_offset": -2.0,
+            "phase_adapted_baseline": 74.0,
+            "rolling_ewma_baseline": 69.58,
+            "rolling_mad_std": 4.43,
+            "population_baseline": 74.0,
+            "population_std": 6.0,
+            "individual_z_score": -4.42,
+            "population_z_score": -4.0,
+            "deviation_from_personal_pct": -28.1,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "glucose_mg_dl": {
+            "metric": "glucose_mg_dl",
+            "label": "Blood Glucose",
+            "unit": "mg/dL",
+            "current_value": 118.0,
+            "pre_flight_baseline": 95.0,
+            "phase_expected_offset": 3.0,
+            "phase_adapted_baseline": 98.0,
+            "rolling_ewma_baseline": 100.58,
+            "rolling_mad_std": 5.91,
+            "population_baseline": 93.0,
+            "population_std": 9.5,
+            "individual_z_score": 2.95,
+            "population_z_score": 2.63,
+            "deviation_from_personal_pct": 17.3,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "temperature_c": {
+            "metric": "temperature_c",
+            "label": "Core Body Temp",
+            "unit": "C",
+            "current_value": 38.5,
+            "pre_flight_baseline": 36.7,
+            "phase_expected_offset": 0.08,
+            "phase_adapted_baseline": 36.78,
+            "rolling_ewma_baseline": 36.97,
+            "rolling_mad_std": 0.24,
+            "population_baseline": 36.7,
+            "population_std": 0.3,
+            "individual_z_score": 6.26,
+            "population_z_score": 6.0,
+            "deviation_from_personal_pct": 4.1,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "spo2_pct": {
+            "metric": "spo2_pct",
+            "label": "SpO2 Saturation",
+            "unit": "%",
+            "current_value": 94.2,
+            "pre_flight_baseline": 98.3,
+            "phase_expected_offset": -0.2,
+            "phase_adapted_baseline": 98.1,
+            "rolling_ewma_baseline": 97.54,
+            "rolling_mad_std": 0.74,
+            "population_baseline": 98.2,
+            "population_std": 1.0,
+            "individual_z_score": -4.49,
+            "population_z_score": -4.0,
+            "deviation_from_personal_pct": -3.4,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "respiration_rpm": {
+            "metric": "respiration_rpm",
+            "label": "Respiratory Rate",
+            "unit": "rpm",
+            "current_value": 19.8,
+            "pre_flight_baseline": 14.5,
+            "phase_expected_offset": 0.4,
+            "phase_adapted_baseline": 14.9,
+            "rolling_ewma_baseline": 15.93,
+            "rolling_mad_std": 1.58,
+            "population_baseline": 14.5,
+            "population_std": 2.0,
+            "individual_z_score": 2.46,
+            "population_z_score": 2.65,
+            "deviation_from_personal_pct": 24.3,
+            "status_vs_personal": "MILD_PERSONAL_DRIFT"
+          },
+          "sleep_hours": {
+            "metric": "sleep_hours",
+            "label": "Sleep Duration",
+            "unit": "h",
+            "current_value": 5.2,
+            "pre_flight_baseline": 7.5,
+            "phase_expected_offset": -0.3,
+            "phase_adapted_baseline": 7.2,
+            "rolling_ewma_baseline": 6.81,
+            "rolling_mad_std": 0.49,
+            "population_baseline": 7.3,
+            "population_std": 0.75,
+            "individual_z_score": -3.27,
+            "population_z_score": -2.8,
+            "deviation_from_personal_pct": -23.6,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "rem_sleep_pct": {
+            "metric": "rem_sleep_pct",
+            "label": "REM Sleep Share",
+            "unit": "%",
+            "current_value": 14.0,
+            "pre_flight_baseline": 21.0,
+            "phase_expected_offset": -1.5,
+            "phase_adapted_baseline": 19.5,
+            "rolling_ewma_baseline": 19.01,
+            "rolling_mad_std": 1.77,
+            "population_baseline": 21.0,
+            "population_std": 2.8,
+            "individual_z_score": -2.82,
+            "population_z_score": -2.5,
+            "deviation_from_personal_pct": -26.4,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "mood_score": {
+            "metric": "mood_score",
+            "label": "Mood Check-In",
+            "unit": "1-5",
+            "current_value": 3.0,
+            "pre_flight_baseline": 4.7,
+            "phase_expected_offset": -0.1,
+            "phase_adapted_baseline": 4.6,
+            "rolling_ewma_baseline": 4.24,
+            "rolling_mad_std": 0.49,
+            "population_baseline": 4.6,
+            "population_std": 0.55,
+            "individual_z_score": -2.53,
+            "population_z_score": -2.91,
+            "deviation_from_personal_pct": -29.2,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "stress_index": {
+            "metric": "stress_index",
+            "label": "Autonomic Stress Index",
+            "unit": "%",
+            "current_value": 57.0,
+            "pre_flight_baseline": 22.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 25.5,
+            "rolling_ewma_baseline": 32.45,
+            "rolling_mad_std": 9.18,
+            "population_baseline": 24.0,
+            "population_std": 10.0,
+            "individual_z_score": 2.67,
+            "population_z_score": 3.3,
+            "deviation_from_personal_pct": 75.7,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "radiation_msv_h": {
+            "metric": "radiation_msv_h",
+            "label": "Radiation Dose Rate",
+            "unit": "mSv/h",
+            "current_value": 0.05,
+            "pre_flight_baseline": 0.01,
+            "phase_expected_offset": 0.03,
+            "phase_adapted_baseline": 0.04,
+            "rolling_ewma_baseline": 0.04,
+            "rolling_mad_std": 0.01,
+            "population_baseline": 0.04,
+            "population_std": 0.03,
+            "individual_z_score": 0.44,
+            "population_z_score": 0.4,
+            "deviation_from_personal_pct": 12.7,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "urinary_calcium_mg_d": {
+            "metric": "urinary_calcium_mg_d",
+            "label": "Urinary Calcium (Urolux)",
+            "unit": "mg/d",
+            "current_value": 210.0,
+            "pre_flight_baseline": 166.0,
+            "phase_expected_offset": 32.0,
+            "phase_adapted_baseline": 198.0,
+            "rolling_ewma_baseline": 198.0,
+            "rolling_mad_std": 19.5,
+            "population_baseline": 175.0,
+            "population_std": 28.0,
+            "individual_z_score": 0.62,
+            "population_z_score": 1.25,
+            "deviation_from_personal_pct": 6.1,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "intraocular_pressure_mmhg": {
+            "metric": "intraocular_pressure_mmhg",
+            "label": "Intraocular Pressure (IOP)",
+            "unit": "mmHg",
+            "current_value": 15.8,
+            "pre_flight_baseline": 14.3,
+            "phase_expected_offset": 1.6,
+            "phase_adapted_baseline": 15.9,
+            "rolling_ewma_baseline": 15.9,
+            "rolling_mad_std": 1.15,
+            "population_baseline": 14.8,
+            "population_std": 1.6,
+            "individual_z_score": -0.09,
+            "population_z_score": 0.62,
+            "deviation_from_personal_pct": -0.6,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          }
+        }
+      },
+      "contextual_report": {
+        "mission_context": {
+          "mission_phase": "chronic_microgravity_cruise",
+          "gravitational_g": 0.0,
+          "exercise_minutes_24h": 20.0,
+          "exercise_modality": "none",
+          "minutes_since_last_exercise": 780.0,
+          "eva_status": "none",
+          "hours_since_last_eva": 120.0,
+          "cabin_co2_mmhg": 2.6,
+          "cabin_o2_pct": 20.8,
+          "cabin_pressure_psia": 14.7,
+          "cabin_temp_c": 22.0,
+          "cabin_humidity_pct": 45.0,
+          "circadian_shift_hours": 0.5
+        },
+        "associations": [
+          {
+            "factor_id": "CTX-CIRCADIAN-SLEEP-DEBT",
+            "factor_name": "Cumulative Sleep Restriction & Circadian Phase Misalignment",
+            "observed_context_value": "Sleep: 5.2h (Streak <5h: 1d, REM: 14%) | Circadian Shift: 0.5h",
+            "correlated_metrics": [
+              "hrv_ms",
+              "stress_index",
+              "mood_score",
+              "bp_systolic",
+              "heart_rate_bpm"
+            ],
+            "association_strength": 0.72,
+            "relationship_type": "OPERATIONAL_WORKLOAD_CORRELATION",
+            "rationale": "Chronic sleep curtailment and slam-shift schedule misalignment suppress vagal tone (HRV RMSSD drop) and elevate sympathetic vascular tone without implying structural cardiac disease.",
+            "scientific_source": "NASA OCHMO-MTB-009 (Circadian Desynchrony & Fatigue Management)"
+          },
+          {
+            "factor_id": "CTX-MICROGRAVITY-FLUID-BONE",
+            "factor_name": "Gravitational Unloading (chronic_microgravity_cruise, 0.00g)",
+            "observed_context_value": "IOP: 15.8 mmHg | Urinary Ca: 210 mg/d",
+            "correlated_metrics": [
+              "intraocular_pressure_mmhg",
+              "urinary_calcium_mg_d",
+              "bp_systolic"
+            ],
+            "association_strength": 0.76,
+            "relationship_type": "GRAVITATIONAL_PHASE_TRANSITION",
+            "rationale": "Cephalic venous congestion in microgravity elevates baseline IOP (SANS risk pathway), while skeletal unloading increases renal calcium excretion (~30\u201345 mg/d expected shift in OSD-570).",
+            "scientific_source": "NASA OCHMO-TB-043 (Longitudinal Health Surveillance / SANS) & OSDR OSD-570"
+          },
+          {
+            "factor_id": "CTX-UNEXPLAINED-AT-REST",
+            "factor_name": "Resting Physiological Deviation Unexplained by Exercise or Cabin Environment",
+            "observed_context_value": "Rested (780m post-exercise) | Nominal ppCO2 (2.6 mmHg) | Personal z-scores: HR +3.3\u03c3, Temp +6.3\u03c3, HRV -2.0\u03c3",
+            "correlated_metrics": [
+              "heart_rate_bpm",
+              "temperature_c",
+              "hrv_ms",
+              "bp_systolic"
+            ],
+            "association_strength": 0.92,
+            "relationship_type": "UNEXPLAINED_BY_CONTEXT",
+            "rationale": "Marked deviation from the astronaut's personal baseline occurred at rest with nominal cabin air quality, ruling out acute exercise recovery or hypercapnia as benign confounders.",
+            "scientific_source": "NASA OCHMO-TB-044 (Medical Operations Requirements Document)"
+          }
+        ],
+        "plausible_non_pathological_confounders": [
+          "Circadian misalignment (0.5h shift) & sleep restriction (5.2h)"
+        ],
+        "context_explains_deviation": false,
+        "context_anomaly_attenuation_pct": 0.0,
+        "primary_contextual_summary": "Contextual factors active (Circadian misalignment (0.5h shift) & sleep restriction (5.2h)). Measurements are evaluated jointly with environmental and operational covariates without assuming automatic causality.",
+        "causal_disclaimer": "OBSERVATIONAL CORRELATION ONLY: Contextual associations link physiological readings with sleep, exercise, EVA, gravity phase, and cabin environment without assuming automatic causality. Targeted confirmation measurements are required before clinical attribution."
+      },
+      "ml_prediction": {
+        "anomaly_score": 81.8,
+        "raw_population_anomaly_score": 99.5,
+        "personal_baseline_anomaly_score": 67.3,
+        "context_adjusted_anomaly_score": 81.8,
+        "is_anomalous": true,
+        "predicted_syndrome": "systemic_infection",
+        "predicted_syndrome_label": "Systemic Infection / Acute Viral State",
+        "confidence_pct": 95.1,
+        "syndrome_probabilities": {
+          "behavioral_fatigue": 0.4,
+          "cabin_co2_pocket": 1.7,
+          "hypoglycemia": 0.4,
+          "nominal": 0.1,
+          "orthostatic_intolerance": 1.5,
+          "post_exercise_physiological": 0.6,
+          "solar_storm": 0.1,
+          "systemic_infection": 95.1
+        },
+        "feature_importances": [
+          {
+            "feature": "temperature_c",
+            "label": "Body Temp (C)",
+            "importance": 29.4,
+            "current_value": 38.5,
+            "baseline_value": 36.7,
+            "personal_baseline_value": 36.97,
+            "deviation_pct": 4.1,
+            "individual_z_score": 6.26,
+            "population_z_score": 6.0,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "bp_systolic",
+            "label": "Systolic BP (mmHg)",
+            "importance": 12.0,
+            "current_value": 80.0,
+            "baseline_value": 116.0,
+            "personal_baseline_value": 109.5,
+            "deviation_pct": -26.9,
+            "individual_z_score": -4.97,
+            "population_z_score": -4.0,
+            "direction": "SUPPRESSED"
+          },
+          {
+            "feature": "bp_diastolic",
+            "label": "Diastolic BP (mmHg)",
+            "importance": 10.9,
+            "current_value": 50.0,
+            "baseline_value": 74.0,
+            "personal_baseline_value": 69.58,
+            "deviation_pct": -28.1,
+            "individual_z_score": -4.42,
+            "population_z_score": -4.0,
+            "direction": "SUPPRESSED"
+          },
+          {
+            "feature": "heart_rate_bpm",
+            "label": "Heart Rate (bpm)",
+            "importance": 8.7,
+            "current_value": 95.5,
+            "baseline_value": 68.0,
+            "personal_baseline_value": 75.42,
+            "deviation_pct": 26.6,
+            "individual_z_score": 3.33,
+            "population_z_score": 3.44,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "minutes_since_last_exercise",
+            "label": "Time Since Exercise (min)",
+            "importance": 7.1,
+            "current_value": 780.0,
+            "baseline_value": 300.0,
+            "personal_baseline_value": 300.0,
+            "deviation_pct": 160.0,
+            "individual_z_score": 3.43,
+            "population_z_score": 3.43,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "spo2_pct",
+            "label": "SpO2 Saturation (%)",
+            "importance": 6.4,
+            "current_value": 94.2,
+            "baseline_value": 98.2,
+            "personal_baseline_value": 97.54,
+            "deviation_pct": -3.4,
+            "individual_z_score": -4.49,
+            "population_z_score": -4.0,
+            "direction": "SUPPRESSED"
+          }
+        ],
+        "uncertainty": {
+          "epistemic_ensemble_std_pct": 14.83,
+          "aleatoric_sensor_noise_pct": 7.4,
+          "total_uncertainty_pct": 16.58,
+          "shannon_entropy_bits": 0.393,
+          "confidence_interval_95_pct": [
+            78.9,
+            99.9
+          ],
+          "reliability_grade": "MODERATE",
+          "uncertainty_factors": [
+            "Blood pressure pending anchored brachial NIBP cuff verification"
+          ],
+          "requires_confirmatory_remeasurement": true
+        },
+        "forecast_72h": [
+          {
+            "horizon_hours": 24,
+            "label": "+24h (M+1)",
+            "predicted_hr_bpm": 104.4,
+            "hr_ci_80": [
+              93.7,
+              115.1
+            ],
+            "predicted_hrv_ms": 28.7,
+            "hrv_ci_80": [
+              19.8,
+              37.7
+            ],
+            "predicted_glucose_mg_dl": 121.4,
+            "glucose_ci_80": [
+              116.9,
+              125.8
+            ],
+            "predicted_anomaly_risk_pct": 90.6,
+            "risk_ci_80": [
+              81.7,
+              99.6
+            ]
+          },
+          {
+            "horizon_hours": 48,
+            "label": "+48h (M+2)",
+            "predicted_hr_bpm": 107.5,
+            "hr_ci_80": [
+              93.9,
+              121.0
+            ],
+            "predicted_hrv_ms": 27.2,
+            "hrv_ci_80": [
+              16.0,
+              38.4
+            ],
+            "predicted_glucose_mg_dl": 123.9,
+            "glucose_ci_80": [
+              119.5,
+              128.4
+            ],
+            "predicted_anomaly_risk_pct": 93.3,
+            "risk_ci_80": [
+              81.2,
+              99.9
+            ]
+          },
+          {
+            "horizon_hours": 72,
+            "label": "+72h (M+3)",
+            "predicted_hr_bpm": 110.5,
+            "hr_ci_80": [
+              93.6,
+              127.5
+            ],
+            "predicted_hrv_ms": 25.6,
+            "hrv_ci_80": [
+              11.7,
+              39.5
+            ],
+            "predicted_glucose_mg_dl": 126.5,
+            "glucose_ci_80": [
+              122.1,
+              131.0
+            ],
+            "predicted_anomaly_risk_pct": 96.1,
+            "risk_ci_80": [
+              80.7,
+              99.9
+            ]
+          }
+        ],
+        "validation_metrics": {
+          "model_architecture": "Calibrated HistGradientBoosting + RandomForest Ensemble + IsolationForest + LedoitWolf Mahalanobis",
+          "calibration_method": "Platt Sigmoid Calibration + 5-Fold Out-of-Fold Verification",
+          "cv_folds": 5,
+          "training_samples": 1090,
+          "stratified_accuracy": 99.08,
+          "macro_f1_score": 99.05,
+          "multiclass_brier_score": 0.0185,
+          "expected_calibration_error": 0.0438
+        }
+      },
+      "explainable_alerts": [
+        {
+          "alert_id": "ALT-LIAM_-D145-SYSTEM",
+          "created_at": "2026-11-15T16:21:22.356753+00:00",
+          "severity": "CRITICAL",
+          "system_id": "respiratory",
+          "syndrome_candidate": "systemic_infection",
+          "title": "Systemic Infection / Acute Viral State with Dehydration Risk",
+          "explanation_summary": "Triggered by personal adaptive drift (67.3%, Mahalanobis=7.52) and calibrated ML classification (Systemic Infection / Acute Viral State: 95.1% \u00b1 16.6% uncertainty; Sensor Reliability: MODERATE).",
+          "originating_signals": [
+            {
+              "metric": "temperature_c",
+              "label": "Body Temp (C)",
+              "current_value": 38.5,
+              "personal_ewma_baseline": 36.97,
+              "population_baseline": 36.7,
+              "individual_z_score": 6.26,
+              "population_z_score": 6.0,
+              "attribution_weight_pct": 29.4,
+              "direction": "ELEVATED"
+            },
+            {
+              "metric": "bp_systolic",
+              "label": "Systolic BP (mmHg)",
+              "current_value": 80.0,
+              "personal_ewma_baseline": 109.5,
+              "population_baseline": 116.0,
+              "individual_z_score": -4.97,
+              "population_z_score": -4.0,
+              "attribution_weight_pct": 12.0,
+              "direction": "SUPPRESSED"
+            },
+            {
+              "metric": "bp_diastolic",
+              "label": "Diastolic BP (mmHg)",
+              "current_value": 50.0,
+              "personal_ewma_baseline": 69.58,
+              "population_baseline": 74.0,
+              "individual_z_score": -4.42,
+              "population_z_score": -4.0,
+              "attribution_weight_pct": 10.9,
+              "direction": "SUPPRESSED"
+            },
+            {
+              "metric": "heart_rate_bpm",
+              "label": "Heart Rate (bpm)",
+              "current_value": 95.5,
+              "personal_ewma_baseline": 75.42,
+              "population_baseline": 68.0,
+              "individual_z_score": 3.33,
+              "population_z_score": 3.44,
+              "attribution_weight_pct": 8.7,
+              "direction": "ELEVATED"
+            },
+            {
+              "metric": "minutes_since_last_exercise",
+              "label": "Time Since Exercise (min)",
+              "current_value": 780.0,
+              "personal_ewma_baseline": 300.0,
+              "population_baseline": 300.0,
+              "individual_z_score": 3.43,
+              "population_z_score": 3.43,
+              "attribution_weight_pct": 7.1,
+              "direction": "ELEVATED"
+            }
+          ],
+          "measurement_quality": {
+            "overall_quality_pct": 92.0,
+            "wearable_ppg_quality_pct": 89.0,
+            "nibp_cuff_verified": false,
+            "cgm_calibration_age_hours": 8.0,
+            "motion_artifact_detected": false,
+            "ambient_temp_compensated": true,
+            "reliability_grade": "MODERATE",
+            "sensor_notes": "Skin thermal array elevated (38.5C); requires sublingual/tympanic IR & anchored NIBP cuff confirmation."
+          },
+          "uncertainty": {
+            "epistemic_ensemble_std_pct": 14.83,
+            "aleatoric_sensor_noise_pct": 7.4,
+            "total_uncertainty_pct": 16.58,
+            "shannon_entropy_bits": 0.393,
+            "confidence_interval_95_pct": [
+              78.9,
+              99.9
+            ],
+            "reliability_grade": "MODERATE",
+            "uncertainty_factors": [
+              "Blood pressure pending anchored brachial NIBP cuff verification"
+            ],
+            "requires_confirmatory_remeasurement": true
+          },
+          "contextual_factors": [
+            "Cumulative Sleep Restriction & Circadian Phase Misalignment: Sleep: 5.2h (Streak <5h: 1d, REM: 14%) | Circadian Shift: 0.5h (OPERATIONAL_WORKLOAD_CORRELATION, strength=0.72)",
+            "Gravitational Unloading (chronic_microgravity_cruise, 0.00g): IOP: 15.8 mmHg | Urinary Ca: 210 mg/d (GRAVITATIONAL_PHASE_TRANSITION, strength=0.76)",
+            "Resting Physiological Deviation Unexplained by Exercise or Cabin Environment: Rested (780m post-exercise) | Nominal ppCO2 (2.6 mmHg) | Personal z-scores: HR +3.3\u03c3, Temp +6.3\u03c3, HRV -2.0\u03c3 (UNEXPLAINED_BY_CONTEXT, strength=0.92)"
+          ],
+          "causal_disclaimer": "OBSERVATIONAL CORRELATION ONLY: Contextual associations link physiological readings with sleep, exercise, EVA, gravity phase, and cabin environment without assuming automatic causality. Targeted confirmation measurements are required before clinical attribution.",
+          "scientific_references": [
+            {
+              "code": "NASA-STD-3001 Vol. 1 & 2",
+              "title": "NASA Space Flight Human-System Standard: Crew Health & Habitability",
+              "url": "https://www.nasa.gov/ochmo/health-and-medical-systems-standards/"
+            },
+            {
+              "code": "NASA OSDR OSD-570 / OSD-571",
+              "title": "Spaceflight Standard Measures: Longitudinal Physiology & Countermeasure Kinetics",
+              "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-570"
+            },
+            {
+              "code": "OCHMO-TB-044",
+              "title": "Medical Operations Requirements Document (MORD)",
+              "url": "https://www.nasa.gov/wp-content/uploads/2025/08/ochmo-tb-044-medical-operations.pdf"
+            }
+          ],
+          "recommended_verification_steps": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration.",
+            "Administer oral electrolyte rehydration (PWD) and consult CMO for CHeCS Medical Kit B protocol."
+          ],
+          "autonomy_guardrail": {
+            "human_in_the_loop_required": true,
+            "autonomous_diagnosis_blocked": true,
+            "autonomous_treatment_blocked": true,
+            "decision_authority": "Crew Medical Officer (CMO) Onboard / Earth Flight Surgeon (MCC-H)",
+            "governance_notice": "AUDITABLE DECISION SUPPORT ONLY: AstraCare AI surfaces statistical deviations, contextual correlations, and NASA-STD-3001 / OCHMO protocol checklists. It never invents treatments or executes autonomous medical decisions."
+          },
+          "followup_case_id": "CASE-LIAM-D145-0B94"
+        }
+      ],
+      "followup_cases": [
+        {
+          "case_id": "CASE-LIAM-D145-0B94",
+          "alert_id": "ALT-LIAM_-D145-SYSTEM",
+          "astronaut_id": "liam_soren",
+          "astronaut_name": "EXP-2 Liam Soren",
+          "mission_day": 145,
+          "system_id": "respiratory",
+          "syndrome_code": "systemic_infection",
+          "title": "Systemic Infection / Acute Viral State with Dehydration Risk",
+          "severity": "CRITICAL",
+          "status": "ACTION_EXECUTED_AWAITING_REASSESSMENT",
+          "created_at": "2026-11-15T16:20:43.541502+00:00",
+          "updated_at": "2026-11-15T16:21:22.356885+00:00",
+          "required_confirmations": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration."
+          ],
+          "confirmations_recorded": [],
+          "recommended_protocol_actions": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration.",
+            "Administer oral electrolyte rehydration (PWD) and consult CMO for CHeCS Medical Kit B protocol.",
+            "Draw capillary blood sample for i-STAT CHEM8+/lactate cartridge and store twin bio-sample in MELFI (-80 C)."
+          ],
+          "actions_executed": [
+            {
+              "action_id": "ACT-75983",
+              "executed_at": "2026-11-15T16:21:21.093672+00:00",
+              "performed_by": "AstraCare Biofeedback Engine + EXP-2 Liam Soren",
+              "protocol_reference": "OCHMO-MTB-009 / BHP Psychophysiological Countermeasure",
+              "action_description": "Dispatched Personal Vault Stimulus (Orbital Astrodynamics Trajectory Sandbox & Nordic Folk Acoustic, Nordic Pine Forest Wind, River Rapids & Loon Calls) for Acute Anxiety & Sympathetic Autonomic Hyper-Arousal [Score 99.0/100]. HR 112->96 bpm, HRV 24->35 ms.",
+              "outcome_note": "Central MCC-BHP alert MCC-BHP-LIAM-D145-BFD0A transmitted; T+15m reassessment scheduled."
+            }
+          ],
+          "reassessments_scheduled": [
+            {
+              "reassessment_id": "REASSESS-58997",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "respiratory",
+              "target_metrics": [
+                "temperature_c",
+                "heart_rate_bpm",
+                "bp_systolic"
+              ],
+              "protocol_reason": "Mandatory closed-loop reassessment for Systemic Infection / Acute Viral State with Dehydration Risk (OCHMO-TB-044).",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            },
+            {
+              "reassessment_id": "REASSESS-EFDD6",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "respiratory",
+              "target_metrics": [
+                "heart_rate_bpm",
+                "hrv_ms",
+                "bp_systolic",
+                "temperature_c"
+              ],
+              "protocol_reason": "Post-intervention efficacy check after: Dispatched Personal Vault Stimulus (Orbital Astrodynamics Tr",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            }
+          ],
+          "resolution_notes": null
+        }
+      ],
+      "longitudinal_series": [
+        {
+          "day": "D-6",
+          "hr": 66,
+          "hrv": 58,
+          "bp_sys": 114,
+          "bp_dia": 73,
+          "temp": 36.7,
+          "spo2": 98.4,
+          "rr": 14,
+          "glucose": 94,
+          "sleep": 7.3,
+          "rem": 21,
+          "radiation": 0.04,
+          "mood": 5,
+          "stress": 22
+        },
+        {
+          "day": "D-5",
+          "hr": 72,
+          "hrv": 52,
+          "bp_sys": 110,
+          "bp_dia": 70,
+          "temp": 36.9,
+          "spo2": 97.8,
+          "rr": 15,
+          "glucose": 98,
+          "sleep": 7.0,
+          "rem": 20,
+          "radiation": 0.04,
+          "mood": 4,
+          "stress": 31
+        },
+        {
+          "day": "D-4",
+          "hr": 78,
+          "hrv": 45,
+          "bp_sys": 104,
+          "bp_dia": 66,
+          "temp": 37.2,
+          "spo2": 97.1,
+          "rr": 17,
+          "glucose": 102,
+          "sleep": 6.6,
+          "rem": 19,
+          "radiation": 0.05,
+          "mood": 4,
+          "stress": 44
+        },
+        {
+          "day": "D-3",
+          "hr": 86,
+          "hrv": 38,
+          "bp_sys": 98,
+          "bp_dia": 62,
+          "temp": 37.6,
+          "spo2": 96.3,
+          "rr": 19,
+          "glucose": 107,
+          "sleep": 6.1,
+          "rem": 17,
+          "radiation": 0.05,
+          "mood": 3,
+          "stress": 56
+        },
+        {
+          "day": "D-2",
+          "hr": 96,
+          "hrv": 31,
+          "bp_sys": 91,
+          "bp_dia": 58,
+          "temp": 38.0,
+          "spo2": 95.4,
+          "rr": 21,
+          "glucose": 112,
+          "sleep": 5.6,
+          "rem": 16,
+          "radiation": 0.05,
+          "mood": 3,
+          "stress": 68
+        },
+        {
+          "day": "D-1",
+          "hr": 104,
+          "hrv": 27,
+          "bp_sys": 85,
+          "bp_dia": 54,
+          "temp": 38.3,
+          "spo2": 94.8,
+          "rr": 22,
+          "glucose": 115,
+          "sleep": 5.3,
+          "rem": 15,
+          "radiation": 0.05,
+          "mood": 2,
+          "stress": 74
+        },
+        {
+          "day": "Today",
+          "hr": 95.5,
+          "hrv": 34.8,
+          "bp_sys": 80.0,
+          "bp_dia": 50.0,
+          "temp": 38.5,
+          "spo2": 94.2,
+          "rr": 23,
+          "glucose": 118,
+          "sleep": 5.2,
+          "rem": 14,
+          "radiation": 0.05,
+          "mood": 3,
+          "stress": 57.0
+        }
+      ],
+      "forecast_72h": [
+        {
+          "horizon_hours": 24,
+          "label": "+24h (M+1)",
+          "predicted_hr_bpm": 104.4,
+          "hr_ci_80": [
+            93.7,
+            115.1
+          ],
+          "predicted_hrv_ms": 28.7,
+          "hrv_ci_80": [
+            19.8,
+            37.7
+          ],
+          "predicted_glucose_mg_dl": 121.4,
+          "glucose_ci_80": [
+            116.9,
+            125.8
+          ],
+          "predicted_anomaly_risk_pct": 90.6,
+          "risk_ci_80": [
+            81.7,
+            99.6
+          ]
+        },
+        {
+          "horizon_hours": 48,
+          "label": "+48h (M+2)",
+          "predicted_hr_bpm": 107.5,
+          "hr_ci_80": [
+            93.9,
+            121.0
+          ],
+          "predicted_hrv_ms": 27.2,
+          "hrv_ci_80": [
+            16.0,
+            38.4
+          ],
+          "predicted_glucose_mg_dl": 123.9,
+          "glucose_ci_80": [
+            119.5,
+            128.4
+          ],
+          "predicted_anomaly_risk_pct": 93.3,
+          "risk_ci_80": [
+            81.2,
+            99.9
+          ]
+        },
+        {
+          "horizon_hours": 72,
+          "label": "+72h (M+3)",
+          "predicted_hr_bpm": 110.5,
+          "hr_ci_80": [
+            93.6,
+            127.5
+          ],
+          "predicted_hrv_ms": 25.6,
+          "hrv_ci_80": [
+            11.7,
+            39.5
+          ],
+          "predicted_glucose_mg_dl": 126.5,
+          "glucose_ci_80": [
+            122.1,
+            131.0
+          ],
+          "predicted_anomaly_risk_pct": 96.1,
+          "risk_ci_80": [
+            80.7,
+            99.9
+          ]
+        }
+      ],
+      "audit_log_entries": [
+        {
+          "event_id": "AUD-1FF2FC",
+          "timestamp": "2026-11-15T00:40:01.539661+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Loaded scenario 'Severe Behavioral Fatigue & Circadian Desynchrony' (Day 156).",
+          "metadata": {
+            "scenario_id": "behavioral_fatigue"
+          }
+        },
+        {
+          "event_id": "AUD-45E09C",
+          "timestamp": "2026-11-15T16:14:19.465878+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Nominal Deep Space Cruise' (Day 142).",
+          "metadata": {
+            "scenario_id": "nominal"
+          }
+        },
+        {
+          "event_id": "AUD-F8C7AA",
+          "timestamp": "2026-11-15T16:14:20.907288+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Caloric-Deficit Hypoglycemia & EVA Shoulder Strain' (Day 161).",
+          "metadata": {
+            "scenario_id": "hypoglycemia"
+          }
+        },
+        {
+          "event_id": "AUD-8121AF",
+          "timestamp": "2026-11-15T16:14:22.218940+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Orthostatic Intolerance / Fluid Shift' (Day 148).",
+          "metadata": {
+            "scenario_id": "orthostatic_intolerance"
+          }
+        },
+        {
+          "event_id": "AUD-9553A7",
+          "timestamp": "2026-11-15T16:14:23.474139+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Contextual Confounder: Localized Cabin CO2 Pocket (4.6 mmHg)' (Day 152).",
+          "metadata": {
+            "scenario_id": "cabin_co2_pocket"
+          }
+        },
+        {
+          "event_id": "AUD-94FBFB",
+          "timestamp": "2026-11-15T16:14:24.718649+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Systemic Infection / Acute Viral State' (Day 145).",
+          "metadata": {
+            "scenario_id": "systemic_infection"
+          }
+        },
+        {
+          "event_id": "AUD-F8480E",
+          "timestamp": "2026-11-15T16:20:50.344852+00:00",
+          "event_type": "CREW_ALERT_ACKNOWLEDGED",
+          "astronaut_id": "liam_soren",
+          "summary": "EXP-2 Liam Soren acknowledged alert ALT-ORB-4-07B87. Alert remains active until stabilization + confirmatory scan.",
+          "metadata": {
+            "alert_id": "ALT-ORB-4-07B87"
+          }
+        },
+        {
+          "event_id": "AUD-170A1D",
+          "timestamp": "2026-11-15T16:21:01.211282+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 102 bpm, BP 104/68 mmHg, SpO2 97.9%, Temp 36.4 C, Glucose 62 mg/dL, Rad 0.05 mSv/h | ALERT REMAINS ACTIVE (WARNING): Biomarkers outside personal baseline (HR 102 bpm (personal 60-89), BP 104/68 mmHg (personal 104-138)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "WARNING"
+          }
+        },
+        {
+          "event_id": "AUD-C6674A",
+          "timestamp": "2026-11-15T16:21:01.217880+00:00",
+          "event_type": "STABILIZATION_PROTOCOL_APPLIED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Stabilization applied for MS-1 Lucas Ferreira (AEB/Payload): 'Administered rapid glucose gel + hydration'. Pending confirmatory measurement.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-A7B068",
+          "timestamp": "2026-11-15T16:21:05.413619+00:00",
+          "event_type": "ALERT_VERIFIED_NORMALIZED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Confirmatory scan verified personal baseline for MS-1 Lucas Ferreira (AEB/Payload); alert ALT-PYL-1-16798 resolved.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-274A7B",
+          "timestamp": "2026-11-15T16:21:06.703447+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 74 bpm, BP 121/78 mmHg, SpO2 98.2%, Temp 36.8 C, Glucose 96 mg/dL, Rad 0.04 mSv/h | VERIFIED PERSONAL BASELINE RESTORED \u2014 Alert ALT-PYL-1-16798 cleared.",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "NOMINAL"
+          }
+        },
+        {
+          "event_id": "AUD-3C73D9",
+          "timestamp": "2026-11-15T16:21:06.711185+00:00",
+          "event_type": "MISSION_CONTROL_ALERT_DISPATCHED",
+          "astronaut_id": "elena_vance",
+          "summary": "[CRITICAL] Suit O2 partial drop during Quest Airlock ops (Issued by Mission Control (Flight Surgeon)).",
+          "metadata": {
+            "alert_id": "ALT-EVA-1-924C8",
+            "simulate_vitals_drift": true
+          }
+        },
+        {
+          "event_id": "AUD-1A2979",
+          "timestamp": "2026-11-15T16:21:17.197112+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "elena_vance",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 101 bpm, BP 82/71 mmHg, SpO2 92.2%, Temp 38.4 C, Glucose 90 mg/dL, Rad 0.04 mSv/h | ALERT REMAINS ACTIVE (CRITICAL): Biomarkers outside personal baseline (HR 101 bpm (personal 48-75), BP 82/71 mmHg (personal 96-128)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "CRITICAL"
+          }
+        },
+        {
+          "event_id": "AUD-47D17A",
+          "timestamp": "2026-11-15T16:21:17.203051+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "amara_okafor",
+          "summary": "Focused telemetry view on CMO Amara Okafor (MED-2 \u00b7 ISS Harmony Medical Bay).",
+          "metadata": {
+            "mission_group": "ISS"
+          }
+        },
+        {
+          "event_id": "AUD-26371F",
+          "timestamp": "2026-11-15T16:21:18.521515+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "liam_soren",
+          "summary": "Focused telemetry view on EXP-2 Liam Soren (ORB-4 \u00b7 Orion Habitation Ring).",
+          "metadata": {
+            "mission_group": "DEEP_SPACE"
+          }
+        }
+      ]
+    },
+    {
+      "package_id": "SYNC-MCC-142-11CA8F",
+      "created_at": "2026-11-15T16:21:25.017366+00:00",
+      "synchronized_at": "2026-11-15T16:21:25.017366+00:00",
+      "sync_status": "SYNCHRONIZED_WITH_MCC_HOUSTON",
+      "sha256_integrity_hash": "1c6b707332bf12237b4f553138bb59f33cd19a0d8dce8f00e2ff0a68a948df58",
+      "astronaut_id": "elena_vance",
+      "crew_member": "CDR Elena Vance (EVA-1)",
+      "mission_day": 142,
+      "environment_id": "orbital_station",
+      "horizons_link": {
+        "source": "curated_local_fallback",
+        "fetched_at": "2026-11-15T16:20:37.202935+00:00",
+        "target_body": "ISS / Lunar Gateway (399 / 301)",
+        "distance_km": 408.0,
+        "distance_au": 2.73e-06,
+        "one_way_light_time_seconds": 2.0,
+        "round_trip_light_time_seconds": 4.0,
+        "bandwidth_kbps": 6500.0,
+        "link_window_status": "CONTINUOUS_TDRS_RELAY",
+        "comms_available": true
+      },
+      "space_weather_alert": "CRITICAL",
+      "executive_summary": "[CDR Elena Vance (EVA-1) | Day 142 | orbital_station] Personal Drift: 99.5% (Mahalanobis 17.51) | ML Classification: Systemic Infection / Acute Viral State (54.0% \u00b1 44.5%) | Open Follow-Up Cases: 1 | One-Way Latency: 2s.",
+      "adaptive_baseline_snapshot": {
+        "astronaut_id": "elena_vance",
+        "astronaut_name": "CDR Elena Vance (EVA-1)",
+        "mission_day": 142,
+        "mission_phase": "chronic_microgravity_cruise",
+        "gravitational_g": 0.0,
+        "ewma_alpha": 0.25,
+        "history_window_days": 7,
+        "multivariate_mahalanobis_distance": 17.51,
+        "personal_drift_score": 99.5,
+        "is_personally_anomalous": true,
+        "adaptation_summary": "Significant deviation from CDR Elena Vance (EVA-1)'s phase-adapted baseline (chronic_microgravity_cruise): SpO2 Saturation (92.2 % vs personal 98.5 %, z=-13.6\u03c3), Autonomic Stress Index (84.0 % vs personal 21.21 %, z=+12.0\u03c3), Core Body Temp (38.4 C vs personal 36.66 C, z=+11.7\u03c3). Multivariate Mahalanobis distance = 17.51 (Drift Score 99.5%).",
+        "osdr_reference_study": "NASA OSDR OSD-570 / OSD-571 Spaceflight Standard Measures",
+        "metrics": {
+          "heart_rate_bpm": {
+            "metric": "heart_rate_bpm",
+            "label": "Heart Rate",
+            "unit": "bpm",
+            "current_value": 101.0,
+            "pre_flight_baseline": 61.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 64.5,
+            "rolling_ewma_baseline": 65.87,
+            "rolling_mad_std": 3.38,
+            "population_baseline": 68.0,
+            "population_std": 8.0,
+            "individual_z_score": 10.38,
+            "population_z_score": 4.12,
+            "deviation_from_personal_pct": 53.3,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "hrv_ms": {
+            "metric": "hrv_ms",
+            "label": "HRV (RMSSD)",
+            "unit": "ms",
+            "current_value": 23.0,
+            "pre_flight_baseline": 64.0,
+            "phase_expected_offset": -3.0,
+            "phase_adapted_baseline": 61.0,
+            "rolling_ewma_baseline": 59.39,
+            "rolling_mad_std": 4.52,
+            "population_baseline": 56.0,
+            "population_std": 9.5,
+            "individual_z_score": -8.06,
+            "population_z_score": -3.47,
+            "deviation_from_personal_pct": -61.3,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "bp_systolic": {
+            "metric": "bp_systolic",
+            "label": "Systolic BP",
+            "unit": "mmHg",
+            "current_value": 82.0,
+            "pre_flight_baseline": 112.0,
+            "phase_expected_offset": -2.5,
+            "phase_adapted_baseline": 109.5,
+            "rolling_ewma_baseline": 113.11,
+            "rolling_mad_std": 3.94,
+            "population_baseline": 116.0,
+            "population_std": 9.0,
+            "individual_z_score": -7.89,
+            "population_z_score": -3.78,
+            "deviation_from_personal_pct": -27.5,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "bp_diastolic": {
+            "metric": "bp_diastolic",
+            "label": "Diastolic BP",
+            "unit": "mmHg",
+            "current_value": 71.0,
+            "pre_flight_baseline": 71.0,
+            "phase_expected_offset": -2.0,
+            "phase_adapted_baseline": 69.0,
+            "rolling_ewma_baseline": 71.69,
+            "rolling_mad_std": 2.88,
+            "population_baseline": 74.0,
+            "population_std": 6.0,
+            "individual_z_score": -0.24,
+            "population_z_score": -0.5,
+            "deviation_from_personal_pct": -1.0,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "glucose_mg_dl": {
+            "metric": "glucose_mg_dl",
+            "label": "Blood Glucose",
+            "unit": "mg/dL",
+            "current_value": 90.0,
+            "pre_flight_baseline": 90.0,
+            "phase_expected_offset": 3.0,
+            "phase_adapted_baseline": 93.0,
+            "rolling_ewma_baseline": 93.24,
+            "rolling_mad_std": 4.52,
+            "population_baseline": 93.0,
+            "population_std": 9.5,
+            "individual_z_score": -0.72,
+            "population_z_score": -0.32,
+            "deviation_from_personal_pct": -3.5,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "temperature_c": {
+            "metric": "temperature_c",
+            "label": "Core Body Temp",
+            "unit": "C",
+            "current_value": 38.4,
+            "pre_flight_baseline": 36.6,
+            "phase_expected_offset": 0.08,
+            "phase_adapted_baseline": 36.68,
+            "rolling_ewma_baseline": 36.66,
+            "rolling_mad_std": 0.15,
+            "population_baseline": 36.7,
+            "population_std": 0.3,
+            "individual_z_score": 11.71,
+            "population_z_score": 5.67,
+            "deviation_from_personal_pct": 4.7,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "spo2_pct": {
+            "metric": "spo2_pct",
+            "label": "SpO2 Saturation",
+            "unit": "%",
+            "current_value": 92.2,
+            "pre_flight_baseline": 98.8,
+            "phase_expected_offset": -0.2,
+            "phase_adapted_baseline": 98.6,
+            "rolling_ewma_baseline": 98.5,
+            "rolling_mad_std": 0.46,
+            "population_baseline": 98.2,
+            "population_std": 1.0,
+            "individual_z_score": -13.56,
+            "population_z_score": -6.0,
+            "deviation_from_personal_pct": -6.4,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "respiration_rpm": {
+            "metric": "respiration_rpm",
+            "label": "Respiratory Rate",
+            "unit": "rpm",
+            "current_value": 14.0,
+            "pre_flight_baseline": 13.5,
+            "phase_expected_offset": 0.4,
+            "phase_adapted_baseline": 13.9,
+            "rolling_ewma_baseline": 13.78,
+            "rolling_mad_std": 0.9,
+            "population_baseline": 14.5,
+            "population_std": 2.0,
+            "individual_z_score": 0.24,
+            "population_z_score": -0.25,
+            "deviation_from_personal_pct": 1.6,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "sleep_hours": {
+            "metric": "sleep_hours",
+            "label": "Sleep Duration",
+            "unit": "h",
+            "current_value": 7.6,
+            "pre_flight_baseline": 7.6,
+            "phase_expected_offset": -0.3,
+            "phase_adapted_baseline": 7.3,
+            "rolling_ewma_baseline": 7.31,
+            "rolling_mad_std": 0.4,
+            "population_baseline": 7.3,
+            "population_std": 0.75,
+            "individual_z_score": 0.71,
+            "population_z_score": 0.4,
+            "deviation_from_personal_pct": 3.9,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "rem_sleep_pct": {
+            "metric": "rem_sleep_pct",
+            "label": "REM Sleep Share",
+            "unit": "%",
+            "current_value": 21.5,
+            "pre_flight_baseline": 23.0,
+            "phase_expected_offset": -1.5,
+            "phase_adapted_baseline": 21.5,
+            "rolling_ewma_baseline": 21.39,
+            "rolling_mad_std": 1.7,
+            "population_baseline": 21.0,
+            "population_std": 2.8,
+            "individual_z_score": 0.07,
+            "population_z_score": 0.18,
+            "deviation_from_personal_pct": 0.5,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "mood_score": {
+            "metric": "mood_score",
+            "label": "Mood Check-In",
+            "unit": "1-5",
+            "current_value": 5.0,
+            "pre_flight_baseline": 4.8,
+            "phase_expected_offset": -0.1,
+            "phase_adapted_baseline": 4.7,
+            "rolling_ewma_baseline": 4.76,
+            "rolling_mad_std": 0.26,
+            "population_baseline": 4.6,
+            "population_std": 0.55,
+            "individual_z_score": 0.9,
+            "population_z_score": 0.73,
+            "deviation_from_personal_pct": 4.9,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "stress_index": {
+            "metric": "stress_index",
+            "label": "Autonomic Stress Index",
+            "unit": "%",
+            "current_value": 84.0,
+            "pre_flight_baseline": 18.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 21.5,
+            "rolling_ewma_baseline": 21.21,
+            "rolling_mad_std": 5.22,
+            "population_baseline": 24.0,
+            "population_std": 10.0,
+            "individual_z_score": 12.04,
+            "population_z_score": 6.0,
+            "deviation_from_personal_pct": 296.1,
+            "status_vs_personal": "SIGNIFICANT_PERSONAL_DEVIATION"
+          },
+          "radiation_msv_h": {
+            "metric": "radiation_msv_h",
+            "label": "Radiation Dose Rate",
+            "unit": "mSv/h",
+            "current_value": 0.04,
+            "pre_flight_baseline": 0.01,
+            "phase_expected_offset": 0.03,
+            "phase_adapted_baseline": 0.04,
+            "rolling_ewma_baseline": 0.04,
+            "rolling_mad_std": 0.01,
+            "population_baseline": 0.04,
+            "population_std": 0.03,
+            "individual_z_score": 0.23,
+            "population_z_score": 0.0,
+            "deviation_from_personal_pct": 7.9,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "urinary_calcium_mg_d": {
+            "metric": "urinary_calcium_mg_d",
+            "label": "Urinary Calcium (Urolux)",
+            "unit": "mg/d",
+            "current_value": 185.0,
+            "pre_flight_baseline": 155.0,
+            "phase_expected_offset": 32.0,
+            "phase_adapted_baseline": 187.0,
+            "rolling_ewma_baseline": 187.0,
+            "rolling_mad_std": 18.0,
+            "population_baseline": 175.0,
+            "population_std": 28.0,
+            "individual_z_score": -0.11,
+            "population_z_score": 0.36,
+            "deviation_from_personal_pct": -1.1,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "intraocular_pressure_mmhg": {
+            "metric": "intraocular_pressure_mmhg",
+            "label": "Intraocular Pressure (IOP)",
+            "unit": "mmHg",
+            "current_value": 15.2,
+            "pre_flight_baseline": 13.8,
+            "phase_expected_offset": 1.6,
+            "phase_adapted_baseline": 15.4,
+            "rolling_ewma_baseline": 15.4,
+            "rolling_mad_std": 1.1,
+            "population_baseline": 14.8,
+            "population_std": 1.6,
+            "individual_z_score": -0.18,
+            "population_z_score": 0.25,
+            "deviation_from_personal_pct": -1.3,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          }
+        }
+      },
+      "contextual_report": {
+        "mission_context": {
+          "mission_phase": "chronic_microgravity_cruise",
+          "gravitational_g": 0.0,
+          "exercise_minutes_24h": 135.0,
+          "exercise_modality": "ARED_resistive",
+          "minutes_since_last_exercise": 320.0,
+          "eva_status": "none",
+          "hours_since_last_eva": 96.0,
+          "cabin_co2_mmhg": 2.4,
+          "cabin_o2_pct": 20.9,
+          "cabin_pressure_psia": 14.7,
+          "cabin_temp_c": 22.1,
+          "cabin_humidity_pct": 44.0,
+          "circadian_shift_hours": 0.2
+        },
+        "associations": [
+          {
+            "factor_id": "CTX-MICROGRAVITY-FLUID-BONE",
+            "factor_name": "Gravitational Unloading (chronic_microgravity_cruise, 0.00g)",
+            "observed_context_value": "IOP: 15.2 mmHg | Urinary Ca: 185 mg/d",
+            "correlated_metrics": [
+              "intraocular_pressure_mmhg",
+              "urinary_calcium_mg_d",
+              "bp_systolic"
+            ],
+            "association_strength": 0.76,
+            "relationship_type": "GRAVITATIONAL_PHASE_TRANSITION",
+            "rationale": "Cephalic venous congestion in microgravity elevates baseline IOP (SANS risk pathway), while skeletal unloading increases renal calcium excretion (~30\u201345 mg/d expected shift in OSD-570).",
+            "scientific_source": "NASA OCHMO-TB-043 (Longitudinal Health Surveillance / SANS) & OSDR OSD-570"
+          },
+          {
+            "factor_id": "CTX-UNEXPLAINED-AT-REST",
+            "factor_name": "Resting Physiological Deviation Unexplained by Exercise or Cabin Environment",
+            "observed_context_value": "Rested (320m post-exercise) | Nominal ppCO2 (2.4 mmHg) | Personal z-scores: HR +10.4\u03c3, Temp +11.7\u03c3, HRV -8.1\u03c3",
+            "correlated_metrics": [
+              "heart_rate_bpm",
+              "temperature_c",
+              "hrv_ms",
+              "bp_systolic"
+            ],
+            "association_strength": 0.92,
+            "relationship_type": "UNEXPLAINED_BY_CONTEXT",
+            "rationale": "Marked deviation from the astronaut's personal baseline occurred at rest with nominal cabin air quality, ruling out acute exercise recovery or hypercapnia as benign confounders.",
+            "scientific_source": "NASA OCHMO-TB-044 (Medical Operations Requirements Document)"
+          }
+        ],
+        "plausible_non_pathological_confounders": [],
+        "context_explains_deviation": false,
+        "context_anomaly_attenuation_pct": 0.0,
+        "primary_contextual_summary": "No acute exercise, EVA, or cabin environmental confounders active; physiological readings reflect resting state in chronic_microgravity_cruise (0.00g).",
+        "causal_disclaimer": "OBSERVATIONAL CORRELATION ONLY: Contextual associations link physiological readings with sleep, exercise, EVA, gravity phase, and cabin environment without assuming automatic causality. Targeted confirmation measurements are required before clinical attribution."
+      },
+      "ml_prediction": {
+        "anomaly_score": 81.1,
+        "raw_population_anomaly_score": 58.6,
+        "personal_baseline_anomaly_score": 99.5,
+        "context_adjusted_anomaly_score": 81.1,
+        "is_anomalous": true,
+        "predicted_syndrome": "systemic_infection",
+        "predicted_syndrome_label": "Systemic Infection / Acute Viral State",
+        "confidence_pct": 54.0,
+        "syndrome_probabilities": {
+          "behavioral_fatigue": 3.8,
+          "cabin_co2_pocket": 3.7,
+          "hypoglycemia": 4.7,
+          "nominal": 5.4,
+          "orthostatic_intolerance": 13.8,
+          "post_exercise_physiological": 12.3,
+          "solar_storm": 2.3,
+          "systemic_infection": 54.0
+        },
+        "feature_importances": [
+          {
+            "feature": "temperature_c",
+            "label": "Body Temp (C)",
+            "importance": 29.9,
+            "current_value": 38.4,
+            "baseline_value": 36.7,
+            "personal_baseline_value": 36.66,
+            "deviation_pct": 4.7,
+            "individual_z_score": 11.71,
+            "population_z_score": 5.67,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "heart_rate_bpm",
+            "label": "Heart Rate (bpm)",
+            "importance": 19.9,
+            "current_value": 101.0,
+            "baseline_value": 68.0,
+            "personal_baseline_value": 65.87,
+            "deviation_pct": 53.3,
+            "individual_z_score": 10.38,
+            "population_z_score": 4.12,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "hrv_ms",
+            "label": "HRV RMSSD (ms)",
+            "importance": 17.0,
+            "current_value": 23.0,
+            "baseline_value": 58.0,
+            "personal_baseline_value": 59.39,
+            "deviation_pct": -61.3,
+            "individual_z_score": -8.06,
+            "population_z_score": -3.47,
+            "direction": "SUPPRESSED"
+          },
+          {
+            "feature": "bp_systolic",
+            "label": "Systolic BP (mmHg)",
+            "importance": 17.0,
+            "current_value": 82.0,
+            "baseline_value": 116.0,
+            "personal_baseline_value": 113.11,
+            "deviation_pct": -27.5,
+            "individual_z_score": -7.89,
+            "population_z_score": -3.78,
+            "direction": "SUPPRESSED"
+          },
+          {
+            "feature": "spo2_pct",
+            "label": "SpO2 Saturation (%)",
+            "importance": 8.7,
+            "current_value": 92.2,
+            "baseline_value": 98.2,
+            "personal_baseline_value": 98.5,
+            "deviation_pct": -6.4,
+            "individual_z_score": -13.56,
+            "population_z_score": -6.0,
+            "direction": "SUPPRESSED"
+          },
+          {
+            "feature": "glucose_mg_dl",
+            "label": "Blood Glucose (mg/dL)",
+            "importance": 1.6,
+            "current_value": 90.0,
+            "baseline_value": 94.0,
+            "personal_baseline_value": 93.24,
+            "deviation_pct": -3.5,
+            "individual_z_score": -0.72,
+            "population_z_score": -0.32,
+            "direction": "NOMINAL"
+          }
+        ],
+        "uncertainty": {
+          "epistemic_ensemble_std_pct": 44.45,
+          "aleatoric_sensor_noise_pct": 1.5,
+          "total_uncertainty_pct": 44.47,
+          "shannon_entropy_bits": 2.162,
+          "confidence_interval_95_pct": [
+            10.4,
+            97.6
+          ],
+          "reliability_grade": "LOW_REQUIRES_CONFIRMATION",
+          "uncertainty_factors": [
+            "Multi-channel ECG/PPG/Dosimeter telemetry locked with high SNR"
+          ],
+          "requires_confirmatory_remeasurement": true
+        },
+        "forecast_72h": [
+          {
+            "horizon_hours": 24,
+            "label": "+24h (M+1)",
+            "predicted_hr_bpm": 86.4,
+            "hr_ci_80": [
+              65.4,
+              107.4
+            ],
+            "predicted_hrv_ms": 38.0,
+            "hrv_ci_80": [
+              16.4,
+              59.6
+            ],
+            "predicted_glucose_mg_dl": 92.4,
+            "glucose_ci_80": [
+              87.9,
+              96.9
+            ],
+            "predicted_anomaly_risk_pct": 63.3,
+            "risk_ci_80": [
+              54.3,
+              72.3
+            ]
+          },
+          {
+            "horizon_hours": 48,
+            "label": "+48h (M+2)",
+            "predicted_hr_bpm": 89.7,
+            "hr_ci_80": [
+              63.3,
+              116.0
+            ],
+            "predicted_hrv_ms": 34.6,
+            "hrv_ci_80": [
+              10.0,
+              61.7
+            ],
+            "predicted_glucose_mg_dl": 92.4,
+            "glucose_ci_80": [
+              87.9,
+              96.9
+            ],
+            "predicted_anomaly_risk_pct": 67.3,
+            "risk_ci_80": [
+              55.2,
+              79.5
+            ]
+          },
+          {
+            "horizon_hours": 72,
+            "label": "+72h (M+3)",
+            "predicted_hr_bpm": 93.0,
+            "hr_ci_80": [
+              60.4,
+              125.5
+            ],
+            "predicted_hrv_ms": 31.2,
+            "hrv_ci_80": [
+              10.0,
+              64.7
+            ],
+            "predicted_glucose_mg_dl": 92.4,
+            "glucose_ci_80": [
+              87.9,
+              96.9
+            ],
+            "predicted_anomaly_risk_pct": 71.3,
+            "risk_ci_80": [
+              56.0,
+              86.7
+            ]
+          }
+        ],
+        "validation_metrics": {
+          "model_architecture": "Calibrated HistGradientBoosting + RandomForest Ensemble + IsolationForest + LedoitWolf Mahalanobis",
+          "calibration_method": "Platt Sigmoid Calibration + 5-Fold Out-of-Fold Verification",
+          "cv_folds": 5,
+          "training_samples": 1090,
+          "stratified_accuracy": 99.08,
+          "macro_f1_score": 99.05,
+          "multiclass_brier_score": 0.0185,
+          "expected_calibration_error": 0.0438
+        }
+      },
+      "explainable_alerts": [
+        {
+          "alert_id": "ALT-ELENA-D142-SYSTEM",
+          "created_at": "2026-11-15T16:21:25.017071+00:00",
+          "severity": "CRITICAL",
+          "system_id": "respiratory",
+          "syndrome_candidate": "systemic_infection",
+          "title": "Systemic Infection / Acute Viral State with Dehydration Risk",
+          "explanation_summary": "Triggered by personal adaptive drift (99.5%, Mahalanobis=17.51) and calibrated ML classification (Systemic Infection / Acute Viral State: 54.0% \u00b1 44.5% uncertainty; Sensor Reliability: LOW_REQUIRES_CONFIRMATION).",
+          "originating_signals": [
+            {
+              "metric": "temperature_c",
+              "label": "Body Temp (C)",
+              "current_value": 38.4,
+              "personal_ewma_baseline": 36.66,
+              "population_baseline": 36.7,
+              "individual_z_score": 11.71,
+              "population_z_score": 5.67,
+              "attribution_weight_pct": 29.9,
+              "direction": "ELEVATED"
+            },
+            {
+              "metric": "heart_rate_bpm",
+              "label": "Heart Rate (bpm)",
+              "current_value": 101.0,
+              "personal_ewma_baseline": 65.87,
+              "population_baseline": 68.0,
+              "individual_z_score": 10.38,
+              "population_z_score": 4.12,
+              "attribution_weight_pct": 19.9,
+              "direction": "ELEVATED"
+            },
+            {
+              "metric": "hrv_ms",
+              "label": "HRV RMSSD (ms)",
+              "current_value": 23.0,
+              "personal_ewma_baseline": 59.39,
+              "population_baseline": 58.0,
+              "individual_z_score": -8.06,
+              "population_z_score": -3.47,
+              "attribution_weight_pct": 17.0,
+              "direction": "SUPPRESSED"
+            },
+            {
+              "metric": "bp_systolic",
+              "label": "Systolic BP (mmHg)",
+              "current_value": 82.0,
+              "personal_ewma_baseline": 113.11,
+              "population_baseline": 116.0,
+              "individual_z_score": -7.89,
+              "population_z_score": -3.78,
+              "attribution_weight_pct": 17.0,
+              "direction": "SUPPRESSED"
+            },
+            {
+              "metric": "spo2_pct",
+              "label": "SpO2 Saturation (%)",
+              "current_value": 92.2,
+              "personal_ewma_baseline": 98.5,
+              "population_baseline": 98.2,
+              "individual_z_score": -13.56,
+              "population_z_score": -6.0,
+              "attribution_weight_pct": 8.7,
+              "direction": "SUPPRESSED"
+            }
+          ],
+          "measurement_quality": {
+            "overall_quality_pct": 99.0,
+            "wearable_ppg_quality_pct": 97.0,
+            "nibp_cuff_verified": true,
+            "cgm_calibration_age_hours": 0.5,
+            "motion_artifact_detected": false,
+            "ambient_temp_compensated": true,
+            "reliability_grade": "HIGH",
+            "sensor_notes": "CSA Astroskin 3-lead ECG + Smartwatch PPG locked; zero motion artifact."
+          },
+          "uncertainty": {
+            "epistemic_ensemble_std_pct": 44.45,
+            "aleatoric_sensor_noise_pct": 1.5,
+            "total_uncertainty_pct": 44.47,
+            "shannon_entropy_bits": 2.162,
+            "confidence_interval_95_pct": [
+              10.4,
+              97.6
+            ],
+            "reliability_grade": "LOW_REQUIRES_CONFIRMATION",
+            "uncertainty_factors": [
+              "Multi-channel ECG/PPG/Dosimeter telemetry locked with high SNR"
+            ],
+            "requires_confirmatory_remeasurement": true
+          },
+          "contextual_factors": [
+            "Gravitational Unloading (chronic_microgravity_cruise, 0.00g): IOP: 15.2 mmHg | Urinary Ca: 185 mg/d (GRAVITATIONAL_PHASE_TRANSITION, strength=0.76)",
+            "Resting Physiological Deviation Unexplained by Exercise or Cabin Environment: Rested (320m post-exercise) | Nominal ppCO2 (2.4 mmHg) | Personal z-scores: HR +10.4\u03c3, Temp +11.7\u03c3, HRV -8.1\u03c3 (UNEXPLAINED_BY_CONTEXT, strength=0.92)"
+          ],
+          "causal_disclaimer": "OBSERVATIONAL CORRELATION ONLY: Contextual associations link physiological readings with sleep, exercise, EVA, gravity phase, and cabin environment without assuming automatic causality. Targeted confirmation measurements are required before clinical attribution.",
+          "scientific_references": [
+            {
+              "code": "NASA-STD-3001 Vol. 1 & 2",
+              "title": "NASA Space Flight Human-System Standard: Crew Health & Habitability",
+              "url": "https://www.nasa.gov/ochmo/health-and-medical-systems-standards/"
+            },
+            {
+              "code": "NASA OSDR OSD-570 / OSD-571",
+              "title": "Spaceflight Standard Measures: Longitudinal Physiology & Countermeasure Kinetics",
+              "url": "https://osdr.nasa.gov/bio/repo/data/studies/OSD-570"
+            },
+            {
+              "code": "OCHMO-TB-044",
+              "title": "Medical Operations Requirements Document (MORD)",
+              "url": "https://www.nasa.gov/wp-content/uploads/2025/08/ochmo-tb-044-medical-operations.pdf"
+            }
+          ],
+          "recommended_verification_steps": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration.",
+            "Administer oral electrolyte rehydration (PWD) and consult CMO for CHeCS Medical Kit B protocol."
+          ],
+          "autonomy_guardrail": {
+            "human_in_the_loop_required": true,
+            "autonomous_diagnosis_blocked": true,
+            "autonomous_treatment_blocked": true,
+            "decision_authority": "Crew Medical Officer (CMO) Onboard / Earth Flight Surgeon (MCC-H)",
+            "governance_notice": "AUDITABLE DECISION SUPPORT ONLY: AstraCare AI surfaces statistical deviations, contextual correlations, and NASA-STD-3001 / OCHMO protocol checklists. It never invents treatments or executes autonomous medical decisions."
+          },
+          "followup_case_id": "CASE-ELEN-D142-95A9"
+        }
+      ],
+      "followup_cases": [
+        {
+          "case_id": "CASE-ELEN-D142-95A9",
+          "alert_id": "ALT-ELENA-D142-SYSTEM",
+          "astronaut_id": "elena_vance",
+          "astronaut_name": "CDR Elena Vance (EVA-1)",
+          "mission_day": 142,
+          "system_id": "respiratory",
+          "syndrome_code": "systemic_infection",
+          "title": "Systemic Infection / Acute Viral State with Dehydration Risk",
+          "severity": "CRITICAL",
+          "status": "RESOLVED",
+          "created_at": "2026-11-15T16:21:08.072247+00:00",
+          "updated_at": "2026-11-15T16:21:43.087935+00:00",
+          "required_confirmations": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration."
+          ],
+          "confirmations_recorded": [],
+          "recommended_protocol_actions": [
+            "CONFIRMATION STEP: Measure tympanic IR temperature and anchored brachial NIBP after 10 min rest.",
+            "Initiate Health Stabilization Program (HSP) cabin isolation and verify HEPA air filtration.",
+            "Administer oral electrolyte rehydration (PWD) and consult CMO for CHeCS Medical Kit B protocol.",
+            "Draw capillary blood sample for i-STAT CHEM8+/lactate cartridge and store twin bio-sample in MELFI (-80 C)."
+          ],
+          "actions_executed": [
+            {
+              "action_id": "ACT-2E7EB",
+              "executed_at": "2026-11-15T16:21:40.539330+00:00",
+              "performed_by": "Crew / CMO Stabilization Protocol (EVA-1)",
+              "protocol_reference": "NASA-STD-3001 / OCHMO-TB-044 Stabilization",
+              "action_description": "Cabin repressurized + O2 flow restored",
+              "outcome_note": "Awaiting confirmatory CHeCS scan before returning to NOMINAL."
+            }
+          ],
+          "reassessments_scheduled": [
+            {
+              "reassessment_id": "REASSESS-AC0CD",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "respiratory",
+              "target_metrics": [
+                "temperature_c",
+                "heart_rate_bpm",
+                "hrv_ms"
+              ],
+              "protocol_reason": "Mandatory closed-loop reassessment for Systemic Infection / Acute Viral State with Dehydration Risk (OCHMO-TB-044).",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            },
+            {
+              "reassessment_id": "REASSESS-9C1FE",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "respiratory",
+              "target_metrics": [
+                "heart_rate_bpm",
+                "hrv_ms",
+                "bp_systolic",
+                "temperature_c"
+              ],
+              "protocol_reason": "Post-intervention efficacy check after: Cabin repressurized + O2 flow restored",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            }
+          ],
+          "resolution_notes": null
+        }
+      ],
+      "longitudinal_series": [
+        {
+          "day": "D-6",
+          "hr": 65,
+          "hrv": 61,
+          "bp_sys": 113,
+          "bp_dia": 72,
+          "temp": 36.6,
+          "spo2": 98.5,
+          "rr": 14,
+          "glucose": 91,
+          "sleep": 7.5,
+          "rem": 22,
+          "radiation": 0.03,
+          "mood": 5,
+          "stress": 20
+        },
+        {
+          "day": "D-5",
+          "hr": 67,
+          "hrv": 58,
+          "bp_sys": 115,
+          "bp_dia": 73,
+          "temp": 36.7,
+          "spo2": 98.3,
+          "rr": 14,
+          "glucose": 94,
+          "sleep": 7.2,
+          "rem": 21,
+          "radiation": 0.04,
+          "mood": 4,
+          "stress": 23
+        },
+        {
+          "day": "D-4",
+          "hr": 65,
+          "hrv": 60,
+          "bp_sys": 114,
+          "bp_dia": 72,
+          "temp": 36.6,
+          "spo2": 98.6,
+          "rr": 13,
+          "glucose": 92,
+          "sleep": 7.6,
+          "rem": 23,
+          "radiation": 0.03,
+          "mood": 5,
+          "stress": 19
+        },
+        {
+          "day": "D-3",
+          "hr": 68,
+          "hrv": 57,
+          "bp_sys": 116,
+          "bp_dia": 74,
+          "temp": 36.7,
+          "spo2": 98.4,
+          "rr": 14,
+          "glucose": 95,
+          "sleep": 7.1,
+          "rem": 20,
+          "radiation": 0.04,
+          "mood": 5,
+          "stress": 22
+        },
+        {
+          "day": "D-2",
+          "hr": 66,
+          "hrv": 59,
+          "bp_sys": 114,
+          "bp_dia": 73,
+          "temp": 36.6,
+          "spo2": 98.5,
+          "rr": 14,
+          "glucose": 91,
+          "sleep": 7.4,
+          "rem": 22,
+          "radiation": 0.04,
+          "mood": 4,
+          "stress": 21
+        },
+        {
+          "day": "D-1",
+          "hr": 65,
+          "hrv": 60,
+          "bp_sys": 113,
+          "bp_dia": 72,
+          "temp": 36.7,
+          "spo2": 98.4,
+          "rr": 14,
+          "glucose": 94,
+          "sleep": 7.5,
+          "rem": 22,
+          "radiation": 0.03,
+          "mood": 5,
+          "stress": 20
+        },
+        {
+          "day": "Today",
+          "hr": 101.0,
+          "hrv": 23.0,
+          "bp_sys": 82.0,
+          "bp_dia": 71.0,
+          "temp": 36.7,
+          "spo2": 98.4,
+          "rr": 14,
+          "glucose": 90.0,
+          "sleep": 7.4,
+          "rem": 21.5,
+          "radiation": 0.04,
+          "mood": 5,
+          "stress": 22
+        }
+      ],
+      "forecast_72h": [
+        {
+          "horizon_hours": 24,
+          "label": "+24h (M+1)",
+          "predicted_hr_bpm": 86.4,
+          "hr_ci_80": [
+            65.4,
+            107.4
+          ],
+          "predicted_hrv_ms": 38.0,
+          "hrv_ci_80": [
+            16.4,
+            59.6
+          ],
+          "predicted_glucose_mg_dl": 92.4,
+          "glucose_ci_80": [
+            87.9,
+            96.9
+          ],
+          "predicted_anomaly_risk_pct": 63.3,
+          "risk_ci_80": [
+            54.3,
+            72.3
+          ]
+        },
+        {
+          "horizon_hours": 48,
+          "label": "+48h (M+2)",
+          "predicted_hr_bpm": 89.7,
+          "hr_ci_80": [
+            63.3,
+            116.0
+          ],
+          "predicted_hrv_ms": 34.6,
+          "hrv_ci_80": [
+            10.0,
+            61.7
+          ],
+          "predicted_glucose_mg_dl": 92.4,
+          "glucose_ci_80": [
+            87.9,
+            96.9
+          ],
+          "predicted_anomaly_risk_pct": 67.3,
+          "risk_ci_80": [
+            55.2,
+            79.5
+          ]
+        },
+        {
+          "horizon_hours": 72,
+          "label": "+72h (M+3)",
+          "predicted_hr_bpm": 93.0,
+          "hr_ci_80": [
+            60.4,
+            125.5
+          ],
+          "predicted_hrv_ms": 31.2,
+          "hrv_ci_80": [
+            10.0,
+            64.7
+          ],
+          "predicted_glucose_mg_dl": 92.4,
+          "glucose_ci_80": [
+            87.9,
+            96.9
+          ],
+          "predicted_anomaly_risk_pct": 71.3,
+          "risk_ci_80": [
+            56.0,
+            86.7
+          ]
+        }
+      ],
+      "audit_log_entries": [
+        {
+          "event_id": "AUD-8121AF",
+          "timestamp": "2026-11-15T16:14:22.218940+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Orthostatic Intolerance / Fluid Shift' (Day 148).",
+          "metadata": {
+            "scenario_id": "orthostatic_intolerance"
+          }
+        },
+        {
+          "event_id": "AUD-9553A7",
+          "timestamp": "2026-11-15T16:14:23.474139+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Contextual Confounder: Localized Cabin CO2 Pocket (4.6 mmHg)' (Day 152).",
+          "metadata": {
+            "scenario_id": "cabin_co2_pocket"
+          }
+        },
+        {
+          "event_id": "AUD-94FBFB",
+          "timestamp": "2026-11-15T16:14:24.718649+00:00",
+          "event_type": "SCENARIO_LOADED",
+          "astronaut_id": "elena_vance",
+          "summary": "Loaded scenario 'Systemic Infection / Acute Viral State' (Day 145).",
+          "metadata": {
+            "scenario_id": "systemic_infection"
+          }
+        },
+        {
+          "event_id": "AUD-F8480E",
+          "timestamp": "2026-11-15T16:20:50.344852+00:00",
+          "event_type": "CREW_ALERT_ACKNOWLEDGED",
+          "astronaut_id": "liam_soren",
+          "summary": "EXP-2 Liam Soren acknowledged alert ALT-ORB-4-07B87. Alert remains active until stabilization + confirmatory scan.",
+          "metadata": {
+            "alert_id": "ALT-ORB-4-07B87"
+          }
+        },
+        {
+          "event_id": "AUD-170A1D",
+          "timestamp": "2026-11-15T16:21:01.211282+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 102 bpm, BP 104/68 mmHg, SpO2 97.9%, Temp 36.4 C, Glucose 62 mg/dL, Rad 0.05 mSv/h | ALERT REMAINS ACTIVE (WARNING): Biomarkers outside personal baseline (HR 102 bpm (personal 60-89), BP 104/68 mmHg (personal 104-138)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "WARNING"
+          }
+        },
+        {
+          "event_id": "AUD-C6674A",
+          "timestamp": "2026-11-15T16:21:01.217880+00:00",
+          "event_type": "STABILIZATION_PROTOCOL_APPLIED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Stabilization applied for MS-1 Lucas Ferreira (AEB/Payload): 'Administered rapid glucose gel + hydration'. Pending confirmatory measurement.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-A7B068",
+          "timestamp": "2026-11-15T16:21:05.413619+00:00",
+          "event_type": "ALERT_VERIFIED_NORMALIZED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Confirmatory scan verified personal baseline for MS-1 Lucas Ferreira (AEB/Payload); alert ALT-PYL-1-16798 resolved.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-274A7B",
+          "timestamp": "2026-11-15T16:21:06.703447+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 74 bpm, BP 121/78 mmHg, SpO2 98.2%, Temp 36.8 C, Glucose 96 mg/dL, Rad 0.04 mSv/h | VERIFIED PERSONAL BASELINE RESTORED \u2014 Alert ALT-PYL-1-16798 cleared.",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "NOMINAL"
+          }
+        },
+        {
+          "event_id": "AUD-3C73D9",
+          "timestamp": "2026-11-15T16:21:06.711185+00:00",
+          "event_type": "MISSION_CONTROL_ALERT_DISPATCHED",
+          "astronaut_id": "elena_vance",
+          "summary": "[CRITICAL] Suit O2 partial drop during Quest Airlock ops (Issued by Mission Control (Flight Surgeon)).",
+          "metadata": {
+            "alert_id": "ALT-EVA-1-924C8",
+            "simulate_vitals_drift": true
+          }
+        },
+        {
+          "event_id": "AUD-1A2979",
+          "timestamp": "2026-11-15T16:21:17.197112+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "elena_vance",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 101 bpm, BP 82/71 mmHg, SpO2 92.2%, Temp 38.4 C, Glucose 90 mg/dL, Rad 0.04 mSv/h | ALERT REMAINS ACTIVE (CRITICAL): Biomarkers outside personal baseline (HR 101 bpm (personal 48-75), BP 82/71 mmHg (personal 96-128)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "CRITICAL"
+          }
+        },
+        {
+          "event_id": "AUD-47D17A",
+          "timestamp": "2026-11-15T16:21:17.203051+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "amara_okafor",
+          "summary": "Focused telemetry view on CMO Amara Okafor (MED-2 \u00b7 ISS Harmony Medical Bay).",
+          "metadata": {
+            "mission_group": "ISS"
+          }
+        },
+        {
+          "event_id": "AUD-26371F",
+          "timestamp": "2026-11-15T16:21:18.521515+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "liam_soren",
+          "summary": "Focused telemetry view on EXP-2 Liam Soren (ORB-4 \u00b7 Orion Habitation Ring).",
+          "metadata": {
+            "mission_group": "DEEP_SPACE"
+          }
+        },
+        {
+          "event_id": "AUD-F0555C",
+          "timestamp": "2026-11-15T16:21:22.359514+00:00",
+          "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+          "astronaut_id": "liam_soren",
+          "summary": "Created telemetry & decision bundle SYNC-MCC-145-A58C75 (QUEUED_OFFLINE, SHA256=04f16e863a22...).",
+          "metadata": {
+            "package_id": "SYNC-MCC-145-A58C75",
+            "status": "QUEUED_OFFLINE"
+          }
+        },
+        {
+          "event_id": "AUD-9D3F0F",
+          "timestamp": "2026-11-15T16:21:22.365327+00:00",
+          "event_type": "CENTRAL_BHP_PSYCH_ALERT_DISPATCHED",
+          "astronaut_id": "liam_soren",
+          "summary": "Alert MCC-BHP-LIAM-D145-BFD0A sent to Central MCC-Houston BHP & Flight Surgeon: Acute Anxiety & Sympathetic Autonomic Hyper-Arousal (99.0/100) -> Dispatched [Orbital Astrodynamics Trajectory Sandbox & Nordic Folk Acoustic, Nordic Pine Forest Wind, River Rapids & Loon Calls] | Sync Package: SYNC-MCC-145-A58C75.",
+          "metadata": {
+            "central_alert_id": "MCC-BHP-LIAM-D145-BFD0A",
+            "reason": "Crew wellness check",
+            "pre_vitals": {
+              "heart_rate_bpm": 112.0,
+              "hrv_ms": 24.0,
+              "bp_systolic": 80.0,
+              "bp_diastolic": 50.0,
+              "respiration_rpm": 23.0,
+              "stress_index": 79.0,
+              "mood_score": 2.0
+            },
+            "post_vitals": {
+              "heart_rate_bpm": 95.5,
+              "hrv_ms": 34.8,
+              "bp_systolic": 80.0,
+              "bp_diastolic": 50.0,
+              "respiration_rpm": 19.8,
+              "stress_index": 57.0,
+              "mood_score": 3.0
+            },
+            "earth_sync_package_id": "SYNC-MCC-145-A58C75"
+          }
+        },
+        {
+          "event_id": "AUD-D76FC2",
+          "timestamp": "2026-11-15T16:21:22.374586+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "elena_vance",
+          "summary": "Focused telemetry view on CDR Elena Vance (EVA-1) (EVA-1 \u00b7 ISS Quest Airlock (EVA)).",
+          "metadata": {
+            "mission_group": "EVA"
+          }
+        }
+      ]
+    },
+    {
+      "package_id": "SYNC-MCC-161-F8E47D",
+      "created_at": "2026-11-15T16:21:34.109564+00:00",
+      "synchronized_at": "2026-11-15T16:21:34.109564+00:00",
+      "sync_status": "SYNCHRONIZED_WITH_MCC_HOUSTON",
+      "sha256_integrity_hash": "61042d242c6c321aca7b358ed177613c3173f50de94bcad39cfdf85d40f5869e",
+      "astronaut_id": "lucas_ferreira",
+      "crew_member": "MS-1 Lucas Ferreira (AEB/Payload)",
+      "mission_day": 161,
+      "environment_id": "orbital_station",
+      "horizons_link": {
+        "source": "curated_local_fallback",
+        "fetched_at": "2026-11-15T16:20:37.203548+00:00",
+        "target_body": "ISS / Lunar Gateway (399 / 301)",
+        "distance_km": 408.0,
+        "distance_au": 2.73e-06,
+        "one_way_light_time_seconds": 2.0,
+        "round_trip_light_time_seconds": 4.0,
+        "bandwidth_kbps": 6500.0,
+        "link_window_status": "CONTINUOUS_TDRS_RELAY",
+        "comms_available": true
+      },
+      "space_weather_alert": "CRITICAL",
+      "executive_summary": "[MS-1 Lucas Ferreira (AEB/Payload) | Day 161 | orbital_station] Personal Drift: 12.9% (Mahalanobis 2.89) | ML Classification: Nominal Mission State (Within Personal & Population Bounds) (97.1% \u00b1 12.2%) | Open Follow-Up Cases: 1 | One-Way Latency: 2s.",
+      "adaptive_baseline_snapshot": {
+        "astronaut_id": "lucas_ferreira",
+        "astronaut_name": "MS-1 Lucas Ferreira (AEB/Payload)",
+        "mission_day": 161,
+        "mission_phase": "chronic_microgravity_cruise",
+        "gravitational_g": 0.0,
+        "ewma_alpha": 0.25,
+        "history_window_days": 7,
+        "multivariate_mahalanobis_distance": 2.89,
+        "personal_drift_score": 12.9,
+        "is_personally_anomalous": false,
+        "adaptation_summary": "MS-1 Lucas Ferreira (AEB/Payload)'s biomarkers remain within personal phase-adapted EWMA bounds for chronic_microgravity_cruise (Mahalanobis distance = 2.89, Drift Score 12.9%).",
+        "osdr_reference_study": "NASA OSDR OSD-570 / OSD-571 Spaceflight Standard Measures",
+        "metrics": {
+          "heart_rate_bpm": {
+            "metric": "heart_rate_bpm",
+            "label": "Heart Rate",
+            "unit": "bpm",
+            "current_value": 74.0,
+            "pre_flight_baseline": 74.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 77.5,
+            "rolling_ewma_baseline": 75.94,
+            "rolling_mad_std": 5.5,
+            "population_baseline": 68.0,
+            "population_std": 8.0,
+            "individual_z_score": -0.35,
+            "population_z_score": 0.75,
+            "deviation_from_personal_pct": -2.6,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "hrv_ms": {
+            "metric": "hrv_ms",
+            "label": "HRV (RMSSD)",
+            "unit": "ms",
+            "current_value": 49.3,
+            "pre_flight_baseline": 49.0,
+            "phase_expected_offset": -3.0,
+            "phase_adapted_baseline": 46.0,
+            "rolling_ewma_baseline": 49.61,
+            "rolling_mad_std": 5.06,
+            "population_baseline": 56.0,
+            "population_std": 9.5,
+            "individual_z_score": -0.06,
+            "population_z_score": -0.71,
+            "deviation_from_personal_pct": -0.6,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "bp_systolic": {
+            "metric": "bp_systolic",
+            "label": "Systolic BP",
+            "unit": "mmHg",
+            "current_value": 117.6,
+            "pre_flight_baseline": 121.0,
+            "phase_expected_offset": -2.5,
+            "phase_adapted_baseline": 118.5,
+            "rolling_ewma_baseline": 112.89,
+            "rolling_mad_std": 4.74,
+            "population_baseline": 116.0,
+            "population_std": 9.0,
+            "individual_z_score": 0.99,
+            "population_z_score": 0.18,
+            "deviation_from_personal_pct": 4.2,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "bp_diastolic": {
+            "metric": "bp_diastolic",
+            "label": "Diastolic BP",
+            "unit": "mmHg",
+            "current_value": 75.8,
+            "pre_flight_baseline": 78.0,
+            "phase_expected_offset": -2.0,
+            "phase_adapted_baseline": 76.0,
+            "rolling_ewma_baseline": 72.68,
+            "rolling_mad_std": 3.38,
+            "population_baseline": 74.0,
+            "population_std": 6.0,
+            "individual_z_score": 0.92,
+            "population_z_score": 0.3,
+            "deviation_from_personal_pct": 4.3,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "glucose_mg_dl": {
+            "metric": "glucose_mg_dl",
+            "label": "Blood Glucose",
+            "unit": "mg/dL",
+            "current_value": 96.0,
+            "pre_flight_baseline": 96.0,
+            "phase_expected_offset": 3.0,
+            "phase_adapted_baseline": 99.0,
+            "rolling_ewma_baseline": 91.08,
+            "rolling_mad_std": 5.98,
+            "population_baseline": 93.0,
+            "population_std": 9.5,
+            "individual_z_score": 0.82,
+            "population_z_score": 0.32,
+            "deviation_from_personal_pct": 5.4,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "temperature_c": {
+            "metric": "temperature_c",
+            "label": "Core Body Temp",
+            "unit": "C",
+            "current_value": 36.8,
+            "pre_flight_baseline": 36.8,
+            "phase_expected_offset": 0.08,
+            "phase_adapted_baseline": 36.88,
+            "rolling_ewma_baseline": 36.64,
+            "rolling_mad_std": 0.16,
+            "population_baseline": 36.7,
+            "population_std": 0.3,
+            "individual_z_score": 0.96,
+            "population_z_score": 0.33,
+            "deviation_from_personal_pct": 0.4,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "spo2_pct": {
+            "metric": "spo2_pct",
+            "label": "SpO2 Saturation",
+            "unit": "%",
+            "current_value": 98.2,
+            "pre_flight_baseline": 98.2,
+            "phase_expected_offset": -0.2,
+            "phase_adapted_baseline": 98.0,
+            "rolling_ewma_baseline": 98.15,
+            "rolling_mad_std": 0.53,
+            "population_baseline": 98.2,
+            "population_std": 1.0,
+            "individual_z_score": 0.1,
+            "population_z_score": 0.0,
+            "deviation_from_personal_pct": 0.1,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "respiration_rpm": {
+            "metric": "respiration_rpm",
+            "label": "Respiratory Rate",
+            "unit": "rpm",
+            "current_value": 16.7,
+            "pre_flight_baseline": 15.0,
+            "phase_expected_offset": 0.4,
+            "phase_adapted_baseline": 15.4,
+            "rolling_ewma_baseline": 15.13,
+            "rolling_mad_std": 1.2,
+            "population_baseline": 14.5,
+            "population_std": 2.0,
+            "individual_z_score": 1.31,
+            "population_z_score": 1.1,
+            "deviation_from_personal_pct": 10.4,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "sleep_hours": {
+            "metric": "sleep_hours",
+            "label": "Sleep Duration",
+            "unit": "h",
+            "current_value": 7.1,
+            "pre_flight_baseline": 7.1,
+            "phase_expected_offset": -0.3,
+            "phase_adapted_baseline": 6.8,
+            "rolling_ewma_baseline": 6.89,
+            "rolling_mad_std": 0.39,
+            "population_baseline": 7.3,
+            "population_std": 0.75,
+            "individual_z_score": 0.53,
+            "population_z_score": -0.27,
+            "deviation_from_personal_pct": 3.1,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "rem_sleep_pct": {
+            "metric": "rem_sleep_pct",
+            "label": "REM Sleep Share",
+            "unit": "%",
+            "current_value": 19.5,
+            "pre_flight_baseline": 20.5,
+            "phase_expected_offset": -1.5,
+            "phase_adapted_baseline": 19.0,
+            "rolling_ewma_baseline": 19.93,
+            "rolling_mad_std": 1.62,
+            "population_baseline": 21.0,
+            "population_std": 2.8,
+            "individual_z_score": -0.26,
+            "population_z_score": -0.54,
+            "deviation_from_personal_pct": -2.2,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          },
+          "mood_score": {
+            "metric": "mood_score",
+            "label": "Mood Check-In",
+            "unit": "1-5",
+            "current_value": 5.0,
+            "pre_flight_baseline": 4.6,
+            "phase_expected_offset": -0.1,
+            "phase_adapted_baseline": 4.5,
+            "rolling_ewma_baseline": 4.26,
+            "rolling_mad_std": 0.3,
+            "population_baseline": 4.6,
+            "population_std": 0.55,
+            "individual_z_score": 2.45,
+            "population_z_score": 0.73,
+            "deviation_from_personal_pct": 17.3,
+            "status_vs_personal": "MILD_PERSONAL_DRIFT"
+          },
+          "stress_index": {
+            "metric": "stress_index",
+            "label": "Autonomic Stress Index",
+            "unit": "%",
+            "current_value": 16.0,
+            "pre_flight_baseline": 24.0,
+            "phase_expected_offset": 3.5,
+            "phase_adapted_baseline": 27.5,
+            "rolling_ewma_baseline": 32.76,
+            "rolling_mad_std": 8.24,
+            "population_baseline": 24.0,
+            "population_std": 10.0,
+            "individual_z_score": -2.04,
+            "population_z_score": -0.8,
+            "deviation_from_personal_pct": -51.2,
+            "status_vs_personal": "MILD_PERSONAL_DRIFT"
+          },
+          "radiation_msv_h": {
+            "metric": "radiation_msv_h",
+            "label": "Radiation Dose Rate",
+            "unit": "mSv/h",
+            "current_value": 0.04,
+            "pre_flight_baseline": 0.01,
+            "phase_expected_offset": 0.03,
+            "phase_adapted_baseline": 0.04,
+            "rolling_ewma_baseline": 0.04,
+            "rolling_mad_std": 0.01,
+            "population_baseline": 0.04,
+            "population_std": 0.03,
+            "individual_z_score": -0.22,
+            "population_z_score": 0.0,
+            "deviation_from_personal_pct": -5.9,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "urinary_calcium_mg_d": {
+            "metric": "urinary_calcium_mg_d",
+            "label": "Urinary Calcium (Urolux)",
+            "unit": "mg/d",
+            "current_value": 220.0,
+            "pre_flight_baseline": 170.0,
+            "phase_expected_offset": 32.0,
+            "phase_adapted_baseline": 202.0,
+            "rolling_ewma_baseline": 202.0,
+            "rolling_mad_std": 20.0,
+            "population_baseline": 175.0,
+            "population_std": 28.0,
+            "individual_z_score": 0.9,
+            "population_z_score": 1.61,
+            "deviation_from_personal_pct": 8.9,
+            "status_vs_personal": "EXPECTED_PHASE_ADAPTATION"
+          },
+          "intraocular_pressure_mmhg": {
+            "metric": "intraocular_pressure_mmhg",
+            "label": "Intraocular Pressure (IOP)",
+            "unit": "mmHg",
+            "current_value": 15.5,
+            "pre_flight_baseline": 14.5,
+            "phase_expected_offset": 1.6,
+            "phase_adapted_baseline": 16.1,
+            "rolling_ewma_baseline": 16.1,
+            "rolling_mad_std": 1.2,
+            "population_baseline": 14.8,
+            "population_std": 1.6,
+            "individual_z_score": -0.5,
+            "population_z_score": 0.44,
+            "deviation_from_personal_pct": -3.7,
+            "status_vs_personal": "WITHIN_PERSONAL_BAND"
+          }
+        }
+      },
+      "contextual_report": {
+        "mission_context": {
+          "mission_phase": "chronic_microgravity_cruise",
+          "gravitational_g": 0.0,
+          "exercise_minutes_24h": 135.0,
+          "exercise_modality": "ARED_resistive",
+          "minutes_since_last_exercise": 320.0,
+          "eva_status": "none",
+          "hours_since_last_eva": 96.0,
+          "cabin_co2_mmhg": 2.4,
+          "cabin_o2_pct": 20.9,
+          "cabin_pressure_psia": 14.7,
+          "cabin_temp_c": 22.1,
+          "cabin_humidity_pct": 44.0,
+          "circadian_shift_hours": 0.2
+        },
+        "associations": [
+          {
+            "factor_id": "CTX-MICROGRAVITY-FLUID-BONE",
+            "factor_name": "Gravitational Unloading (chronic_microgravity_cruise, 0.00g)",
+            "observed_context_value": "IOP: 15.5 mmHg | Urinary Ca: 220 mg/d",
+            "correlated_metrics": [
+              "intraocular_pressure_mmhg",
+              "urinary_calcium_mg_d",
+              "bp_systolic"
+            ],
+            "association_strength": 0.76,
+            "relationship_type": "GRAVITATIONAL_PHASE_TRANSITION",
+            "rationale": "Cephalic venous congestion in microgravity elevates baseline IOP (SANS risk pathway), while skeletal unloading increases renal calcium excretion (~30\u201345 mg/d expected shift in OSD-570).",
+            "scientific_source": "NASA OCHMO-TB-043 (Longitudinal Health Surveillance / SANS) & OSDR OSD-570"
+          }
+        ],
+        "plausible_non_pathological_confounders": [],
+        "context_explains_deviation": false,
+        "context_anomaly_attenuation_pct": 0.0,
+        "primary_contextual_summary": "No acute exercise, EVA, or cabin environmental confounders active; physiological readings reflect resting state in chronic_microgravity_cruise (0.00g).",
+        "causal_disclaimer": "OBSERVATIONAL CORRELATION ONLY: Contextual associations link physiological readings with sleep, exercise, EVA, gravity phase, and cabin environment without assuming automatic causality. Targeted confirmation measurements are required before clinical attribution."
+      },
+      "ml_prediction": {
+        "anomaly_score": 8.0,
+        "raw_population_anomaly_score": 2.0,
+        "personal_baseline_anomaly_score": 12.9,
+        "context_adjusted_anomaly_score": 8.0,
+        "is_anomalous": false,
+        "predicted_syndrome": "nominal",
+        "predicted_syndrome_label": "Nominal Mission State (Within Personal & Population Bounds)",
+        "confidence_pct": 97.1,
+        "syndrome_probabilities": {
+          "behavioral_fatigue": 0.6,
+          "cabin_co2_pocket": 0.1,
+          "hypoglycemia": 0.6,
+          "nominal": 97.1,
+          "orthostatic_intolerance": 0.2,
+          "post_exercise_physiological": 1.1,
+          "solar_storm": 0.1,
+          "systemic_infection": 0.1
+        },
+        "feature_importances": [
+          {
+            "feature": "mood_score",
+            "label": "Mood Check-In (1-5)",
+            "importance": 19.3,
+            "current_value": 5.0,
+            "baseline_value": 4.6,
+            "personal_baseline_value": 4.26,
+            "deviation_pct": 17.4,
+            "individual_z_score": 2.45,
+            "population_z_score": 0.73,
+            "direction": "ELEVATED"
+          },
+          {
+            "feature": "bp_systolic",
+            "label": "Systolic BP (mmHg)",
+            "importance": 13.3,
+            "current_value": 117.6,
+            "baseline_value": 116.0,
+            "personal_baseline_value": 112.89,
+            "deviation_pct": 4.2,
+            "individual_z_score": 0.99,
+            "population_z_score": 0.18,
+            "direction": "NOMINAL"
+          },
+          {
+            "feature": "temperature_c",
+            "label": "Body Temp (C)",
+            "importance": 11.5,
+            "current_value": 36.8,
+            "baseline_value": 36.7,
+            "personal_baseline_value": 36.64,
+            "deviation_pct": 0.4,
+            "individual_z_score": 0.96,
+            "population_z_score": 0.33,
+            "direction": "NOMINAL"
+          },
+          {
+            "feature": "glucose_mg_dl",
+            "label": "Blood Glucose (mg/dL)",
+            "importance": 10.4,
+            "current_value": 96.0,
+            "baseline_value": 94.0,
+            "personal_baseline_value": 91.08,
+            "deviation_pct": 5.4,
+            "individual_z_score": 0.82,
+            "population_z_score": 0.32,
+            "direction": "NOMINAL"
+          },
+          {
+            "feature": "bp_diastolic",
+            "label": "Diastolic BP (mmHg)",
+            "importance": 8.9,
+            "current_value": 75.8,
+            "baseline_value": 74.0,
+            "personal_baseline_value": 72.68,
+            "deviation_pct": 4.3,
+            "individual_z_score": 0.92,
+            "population_z_score": 0.3,
+            "direction": "NOMINAL"
+          },
+          {
+            "feature": "heart_rate_bpm",
+            "label": "Heart Rate (bpm)",
+            "importance": 7.0,
+            "current_value": 74.0,
+            "baseline_value": 68.0,
+            "personal_baseline_value": 75.94,
+            "deviation_pct": -2.6,
+            "individual_z_score": -0.35,
+            "population_z_score": 0.75,
+            "direction": "NOMINAL"
+          }
+        ],
+        "uncertainty": {
+          "epistemic_ensemble_std_pct": 12.09,
+          "aleatoric_sensor_noise_pct": 1.5,
+          "total_uncertainty_pct": 12.18,
+          "shannon_entropy_bits": 0.262,
+          "confidence_interval_95_pct": [
+            85.1,
+            99.9
+          ],
+          "reliability_grade": "MODERATE",
+          "uncertainty_factors": [
+            "Multi-channel ECG/PPG/Dosimeter telemetry locked with high SNR"
+          ],
+          "requires_confirmatory_remeasurement": true
+        },
+        "forecast_72h": [
+          {
+            "horizon_hours": 24,
+            "label": "+24h (M+1)",
+            "predicted_hr_bpm": 83.2,
+            "hr_ci_80": [
+              70.5,
+              95.9
+            ],
+            "predicted_hrv_ms": 46.1,
+            "hrv_ci_80": [
+              39.9,
+              52.2
+            ],
+            "predicted_glucose_mg_dl": 79.4,
+            "glucose_ci_80": [
+              64.2,
+              94.6
+            ],
+            "predicted_anomaly_risk_pct": 15.2,
+            "risk_ci_80": [
+              6.2,
+              24.1
+            ]
+          },
+          {
+            "horizon_hours": 48,
+            "label": "+48h (M+2)",
+            "predicted_hr_bpm": 83.2,
+            "hr_ci_80": [
+              68.6,
+              97.8
+            ],
+            "predicted_hrv_ms": 46.1,
+            "hrv_ci_80": [
+              39.0,
+              53.1
+            ],
+            "predicted_glucose_mg_dl": 79.4,
+            "glucose_ci_80": [
+              61.9,
+              96.9
+            ],
+            "predicted_anomaly_risk_pct": 15.2,
+            "risk_ci_80": [
+              3.0,
+              27.3
+            ]
+          },
+          {
+            "horizon_hours": 72,
+            "label": "+72h (M+3)",
+            "predicted_hr_bpm": 83.2,
+            "hr_ci_80": [
+              66.7,
+              99.7
+            ],
+            "predicted_hrv_ms": 46.1,
+            "hrv_ci_80": [
+              38.1,
+              54.0
+            ],
+            "predicted_glucose_mg_dl": 79.4,
+            "glucose_ci_80": [
+              59.5,
+              99.3
+            ],
+            "predicted_anomaly_risk_pct": 15.2,
+            "risk_ci_80": [
+              1.0,
+              30.5
+            ]
+          }
+        ],
+        "validation_metrics": {
+          "model_architecture": "Calibrated HistGradientBoosting + RandomForest Ensemble + IsolationForest + LedoitWolf Mahalanobis",
+          "calibration_method": "Platt Sigmoid Calibration + 5-Fold Out-of-Fold Verification",
+          "cv_folds": 5,
+          "training_samples": 1090,
+          "stratified_accuracy": 99.08,
+          "macro_f1_score": 99.05,
+          "multiclass_brier_score": 0.0185,
+          "expected_calibration_error": 0.0438
+        }
+      },
+      "explainable_alerts": [],
+      "followup_cases": [
+        {
+          "case_id": "CASE-LUCA-D161-ACF0",
+          "alert_id": "ALT-LUCAS-D161-HYPOGL",
+          "astronaut_id": "lucas_ferreira",
+          "astronaut_name": "MS-1 Lucas Ferreira (AEB/Payload)",
+          "mission_day": 161,
+          "system_id": "metabolic",
+          "syndrome_code": "hypoglycemia",
+          "title": "Caloric-Deficit Hypoglycemia & EVA Musculoskeletal Strain",
+          "severity": "WARNING",
+          "status": "ACTION_EXECUTED_AWAITING_REASSESSMENT",
+          "created_at": "2026-11-15T16:20:39.758938+00:00",
+          "updated_at": "2026-11-15T16:21:32.852666+00:00",
+          "required_confirmations": [
+            "CONFIRMATION STEP: Verify interstitial CGM reading with shielded capillary glucose strip / i-STAT.",
+            "Pause high-exertion physical tasks and consume 20g rapid-absorption glucose pouch + 300 ml water."
+          ],
+          "confirmations_recorded": [],
+          "recommended_protocol_actions": [
+            "CONFIRMATION STEP: Verify interstitial CGM reading with shielded capillary glucose strip / i-STAT.",
+            "Pause high-exertion physical tasks and consume 20g rapid-absorption glucose pouch + 300 ml water.",
+            "Repeat blood glucose measurement at T+15 minutes until >= 85 mg/dL, then follow with balanced protein/carb meal.",
+            "Inspect EVA shoulder ROM and run portable Ultrasound 2 scan for HUT rotator-cuff impingement (OCHMO-MTB-006)."
+          ],
+          "actions_executed": [
+            {
+              "action_id": "ACT-D1194",
+              "executed_at": "2026-11-15T16:21:01.217788+00:00",
+              "performed_by": "Crew / CMO Stabilization Protocol (PYL-1)",
+              "protocol_reference": "NASA-STD-3001 / OCHMO-TB-044 Stabilization",
+              "action_description": "Administered rapid glucose gel + hydration",
+              "outcome_note": "Awaiting confirmatory CHeCS scan before returning to NOMINAL."
+            },
+            {
+              "action_id": "ACT-F243D",
+              "executed_at": "2026-11-15T16:21:32.852666+00:00",
+              "performed_by": "AstraCare Biofeedback Engine + MS-1 Lucas Ferreira (AEB/Payload)",
+              "protocol_reference": "OCHMO-MTB-009 / BHP Psychophysiological Countermeasure",
+              "action_description": "Dispatched Personal Vault Stimulus (Desafio Relaxante de Xadrez R\u00e1pido & Bot\u00e2nica Espacial + Bossa Nova Instrumental (Viol\u00e3o de Nylon), Chuva Suave na Mata Atl\u00e2ntica (Serra da Mantiqueira) + Canto de Sabi\u00e1-Laranjeira e Riacho) for Acute Anxiety & Sympathetic Autonomic Hyper-Arousal [Score 57.1/100]. HR 74->74 bpm, HRV 49->49 ms.",
+              "outcome_note": "Central MCC-BHP alert MCC-BHP-LUCA-D161-128AA transmitted; T+15m reassessment scheduled."
+            }
+          ],
+          "reassessments_scheduled": [
+            {
+              "reassessment_id": "REASSESS-16956",
+              "scheduled_for_offset_minutes": 30,
+              "target_system": "metabolic",
+              "target_metrics": [
+                "glucose_mg_dl",
+                "nutrition_goal_pct",
+                "heart_rate_bpm"
+              ],
+              "protocol_reason": "Mandatory closed-loop reassessment for Caloric-Deficit Hypoglycemia & EVA Musculoskeletal Strain (OCHMO-TB-044).",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            },
+            {
+              "reassessment_id": "REASSESS-2D183",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "metabolic",
+              "target_metrics": [
+                "heart_rate_bpm",
+                "hrv_ms",
+                "bp_systolic",
+                "temperature_c"
+              ],
+              "protocol_reason": "Post-intervention efficacy check after: Administered rapid glucose gel + hydration",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            },
+            {
+              "reassessment_id": "REASSESS-6A21E",
+              "scheduled_for_offset_minutes": 15,
+              "target_system": "metabolic",
+              "target_metrics": [
+                "heart_rate_bpm",
+                "hrv_ms",
+                "bp_systolic",
+                "temperature_c"
+              ],
+              "protocol_reason": "Post-intervention efficacy check after: Dispatched Personal Vault Stimulus (Desafio Relaxante de Xad",
+              "status": "PENDING",
+              "completed_at": null,
+              "post_reassessment_summary": null
+            }
+          ],
+          "resolution_notes": null
+        }
+      ],
+      "longitudinal_series": [
+        {
+          "day": "D-6",
+          "hr": 66,
+          "hrv": 58,
+          "bp_sys": 114,
+          "bp_dia": 73,
+          "temp": 36.6,
+          "spo2": 98.4,
+          "rr": 14,
+          "glucose": 92,
+          "sleep": 7.2,
+          "rem": 21,
+          "radiation": 0.04,
+          "mood": 5,
+          "stress": 22
+        },
+        {
+          "day": "D-5",
+          "hr": 70,
+          "hrv": 55,
+          "bp_sys": 112,
+          "bp_dia": 72,
+          "temp": 36.6,
+          "spo2": 98.3,
+          "rr": 14,
+          "glucose": 89,
+          "sleep": 7.0,
+          "rem": 21,
+          "radiation": 0.04,
+          "mood": 4,
+          "stress": 29
+        },
+        {
+          "day": "D-4",
+          "hr": 75,
+          "hrv": 51,
+          "bp_sys": 110,
+          "bp_dia": 71,
+          "temp": 36.5,
+          "spo2": 98.2,
+          "rr": 15,
+          "glucose": 84,
+          "sleep": 6.9,
+          "rem": 20,
+          "radiation": 0.04,
+          "mood": 4,
+          "stress": 37
+        },
+        {
+          "day": "D-3",
+          "hr": 82,
+          "hrv": 47,
+          "bp_sys": 108,
+          "bp_dia": 70,
+          "temp": 36.5,
+          "spo2": 98.1,
+          "rr": 16,
+          "glucose": 78,
+          "sleep": 6.8,
+          "rem": 20,
+          "radiation": 0.05,
+          "mood": 4,
+          "stress": 45
+        },
+        {
+          "day": "D-2",
+          "hr": 89,
+          "hrv": 43,
+          "bp_sys": 106,
+          "bp_dia": 69,
+          "temp": 36.5,
+          "spo2": 98.0,
+          "rr": 17,
+          "glucose": 72,
+          "sleep": 6.7,
+          "rem": 20,
+          "radiation": 0.05,
+          "mood": 3,
+          "stress": 52
+        },
+        {
+          "day": "D-1",
+          "hr": 96,
+          "hrv": 40,
+          "bp_sys": 105,
+          "bp_dia": 68,
+          "temp": 36.4,
+          "spo2": 97.9,
+          "rr": 17,
+          "glucose": 67,
+          "sleep": 6.6,
+          "rem": 19,
+          "radiation": 0.05,
+          "mood": 3,
+          "stress": 58
+        },
+        {
+          "day": "Today",
+          "hr": 74.0,
+          "hrv": 49.3,
+          "bp_sys": 117.6,
+          "bp_dia": 75.8,
+          "temp": 36.4,
+          "spo2": 97.9,
+          "rr": 18,
+          "glucose": 96.0,
+          "sleep": 7.1,
+          "rem": 19,
+          "radiation": 0.05,
+          "mood": 5,
+          "stress": 16.0
+        }
+      ],
+      "forecast_72h": [
+        {
+          "horizon_hours": 24,
+          "label": "+24h (M+1)",
+          "predicted_hr_bpm": 83.2,
+          "hr_ci_80": [
+            70.5,
+            95.9
+          ],
+          "predicted_hrv_ms": 46.1,
+          "hrv_ci_80": [
+            39.9,
+            52.2
+          ],
+          "predicted_glucose_mg_dl": 79.4,
+          "glucose_ci_80": [
+            64.2,
+            94.6
+          ],
+          "predicted_anomaly_risk_pct": 15.2,
+          "risk_ci_80": [
+            6.2,
+            24.1
+          ]
+        },
+        {
+          "horizon_hours": 48,
+          "label": "+48h (M+2)",
+          "predicted_hr_bpm": 83.2,
+          "hr_ci_80": [
+            68.6,
+            97.8
+          ],
+          "predicted_hrv_ms": 46.1,
+          "hrv_ci_80": [
+            39.0,
+            53.1
+          ],
+          "predicted_glucose_mg_dl": 79.4,
+          "glucose_ci_80": [
+            61.9,
+            96.9
+          ],
+          "predicted_anomaly_risk_pct": 15.2,
+          "risk_ci_80": [
+            3.0,
+            27.3
+          ]
+        },
+        {
+          "horizon_hours": 72,
+          "label": "+72h (M+3)",
+          "predicted_hr_bpm": 83.2,
+          "hr_ci_80": [
+            66.7,
+            99.7
+          ],
+          "predicted_hrv_ms": 46.1,
+          "hrv_ci_80": [
+            38.1,
+            54.0
+          ],
+          "predicted_glucose_mg_dl": 79.4,
+          "glucose_ci_80": [
+            59.5,
+            99.3
+          ],
+          "predicted_anomaly_risk_pct": 15.2,
+          "risk_ci_80": [
+            1.0,
+            30.5
+          ]
+        }
+      ],
+      "audit_log_entries": [
+        {
+          "event_id": "AUD-F8480E",
+          "timestamp": "2026-11-15T16:20:50.344852+00:00",
+          "event_type": "CREW_ALERT_ACKNOWLEDGED",
+          "astronaut_id": "liam_soren",
+          "summary": "EXP-2 Liam Soren acknowledged alert ALT-ORB-4-07B87. Alert remains active until stabilization + confirmatory scan.",
+          "metadata": {
+            "alert_id": "ALT-ORB-4-07B87"
+          }
+        },
+        {
+          "event_id": "AUD-170A1D",
+          "timestamp": "2026-11-15T16:21:01.211282+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 102 bpm, BP 104/68 mmHg, SpO2 97.9%, Temp 36.4 C, Glucose 62 mg/dL, Rad 0.05 mSv/h | ALERT REMAINS ACTIVE (WARNING): Biomarkers outside personal baseline (HR 102 bpm (personal 60-89), BP 104/68 mmHg (personal 104-138)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "WARNING"
+          }
+        },
+        {
+          "event_id": "AUD-C6674A",
+          "timestamp": "2026-11-15T16:21:01.217880+00:00",
+          "event_type": "STABILIZATION_PROTOCOL_APPLIED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Stabilization applied for MS-1 Lucas Ferreira (AEB/Payload): 'Administered rapid glucose gel + hydration'. Pending confirmatory measurement.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-A7B068",
+          "timestamp": "2026-11-15T16:21:05.413619+00:00",
+          "event_type": "ALERT_VERIFIED_NORMALIZED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Confirmatory scan verified personal baseline for MS-1 Lucas Ferreira (AEB/Payload); alert ALT-PYL-1-16798 resolved.",
+          "metadata": {}
+        },
+        {
+          "event_id": "AUD-274A7B",
+          "timestamp": "2026-11-15T16:21:06.703447+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 74 bpm, BP 121/78 mmHg, SpO2 98.2%, Temp 36.8 C, Glucose 96 mg/dL, Rad 0.04 mSv/h | VERIFIED PERSONAL BASELINE RESTORED \u2014 Alert ALT-PYL-1-16798 cleared.",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "NOMINAL"
+          }
+        },
+        {
+          "event_id": "AUD-3C73D9",
+          "timestamp": "2026-11-15T16:21:06.711185+00:00",
+          "event_type": "MISSION_CONTROL_ALERT_DISPATCHED",
+          "astronaut_id": "elena_vance",
+          "summary": "[CRITICAL] Suit O2 partial drop during Quest Airlock ops (Issued by Mission Control (Flight Surgeon)).",
+          "metadata": {
+            "alert_id": "ALT-EVA-1-924C8",
+            "simulate_vitals_drift": true
+          }
+        },
+        {
+          "event_id": "AUD-1A2979",
+          "timestamp": "2026-11-15T16:21:17.197112+00:00",
+          "event_type": "ACTIVE_MEASUREMENT_TRIGGERED",
+          "astronaut_id": "elena_vance",
+          "summary": "[Cardiovascular System] Full-Body Confirmatory Scan: HR 101 bpm, BP 82/71 mmHg, SpO2 92.2%, Temp 38.4 C, Glucose 90 mg/dL, Rad 0.04 mSv/h | ALERT REMAINS ACTIVE (CRITICAL): Biomarkers outside personal baseline (HR 101 bpm (personal 48-75), BP 82/71 mmHg (personal 96-128)).",
+          "metadata": {
+            "system_id": "full_body",
+            "status": "CRITICAL"
+          }
+        },
+        {
+          "event_id": "AUD-47D17A",
+          "timestamp": "2026-11-15T16:21:17.203051+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "amara_okafor",
+          "summary": "Focused telemetry view on CMO Amara Okafor (MED-2 \u00b7 ISS Harmony Medical Bay).",
+          "metadata": {
+            "mission_group": "ISS"
+          }
+        },
+        {
+          "event_id": "AUD-26371F",
+          "timestamp": "2026-11-15T16:21:18.521515+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "liam_soren",
+          "summary": "Focused telemetry view on EXP-2 Liam Soren (ORB-4 \u00b7 Orion Habitation Ring).",
+          "metadata": {
+            "mission_group": "DEEP_SPACE"
+          }
+        },
+        {
+          "event_id": "AUD-F0555C",
+          "timestamp": "2026-11-15T16:21:22.359514+00:00",
+          "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+          "astronaut_id": "liam_soren",
+          "summary": "Created telemetry & decision bundle SYNC-MCC-145-A58C75 (QUEUED_OFFLINE, SHA256=04f16e863a22...).",
+          "metadata": {
+            "package_id": "SYNC-MCC-145-A58C75",
+            "status": "QUEUED_OFFLINE"
+          }
+        },
+        {
+          "event_id": "AUD-9D3F0F",
+          "timestamp": "2026-11-15T16:21:22.365327+00:00",
+          "event_type": "CENTRAL_BHP_PSYCH_ALERT_DISPATCHED",
+          "astronaut_id": "liam_soren",
+          "summary": "Alert MCC-BHP-LIAM-D145-BFD0A sent to Central MCC-Houston BHP & Flight Surgeon: Acute Anxiety & Sympathetic Autonomic Hyper-Arousal (99.0/100) -> Dispatched [Orbital Astrodynamics Trajectory Sandbox & Nordic Folk Acoustic, Nordic Pine Forest Wind, River Rapids & Loon Calls] | Sync Package: SYNC-MCC-145-A58C75.",
+          "metadata": {
+            "central_alert_id": "MCC-BHP-LIAM-D145-BFD0A",
+            "reason": "Crew wellness check",
+            "pre_vitals": {
+              "heart_rate_bpm": 112.0,
+              "hrv_ms": 24.0,
+              "bp_systolic": 80.0,
+              "bp_diastolic": 50.0,
+              "respiration_rpm": 23.0,
+              "stress_index": 79.0,
+              "mood_score": 2.0
+            },
+            "post_vitals": {
+              "heart_rate_bpm": 95.5,
+              "hrv_ms": 34.8,
+              "bp_systolic": 80.0,
+              "bp_diastolic": 50.0,
+              "respiration_rpm": 19.8,
+              "stress_index": 57.0,
+              "mood_score": 3.0
+            },
+            "earth_sync_package_id": "SYNC-MCC-145-A58C75"
+          }
+        },
+        {
+          "event_id": "AUD-D76FC2",
+          "timestamp": "2026-11-15T16:21:22.374586+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "elena_vance",
+          "summary": "Focused telemetry view on CDR Elena Vance (EVA-1) (EVA-1 \u00b7 ISS Quest Airlock (EVA)).",
+          "metadata": {
+            "mission_group": "EVA"
+          }
+        },
+        {
+          "event_id": "AUD-27B260",
+          "timestamp": "2026-11-15T16:21:25.017551+00:00",
+          "event_type": "EARTH_SYNC_PACKAGE_CREATED",
+          "astronaut_id": "elena_vance",
+          "summary": "Created telemetry & decision bundle SYNC-MCC-142-11CA8F (SYNCHRONIZED_WITH_MCC_HOUSTON, SHA256=1c6b707332bf...).",
+          "metadata": {
+            "package_id": "SYNC-MCC-142-11CA8F",
+            "status": "SYNCHRONIZED_WITH_MCC_HOUSTON"
+          }
+        },
+        {
+          "event_id": "AUD-C104A3",
+          "timestamp": "2026-11-15T16:21:26.302106+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "elena_vance",
+          "summary": "Focused telemetry view on CDR Elena Vance (EVA-1) (EVA-1 \u00b7 ISS Quest Airlock (EVA)).",
+          "metadata": {
+            "mission_group": "EVA"
+          }
+        },
+        {
+          "event_id": "AUD-81C995",
+          "timestamp": "2026-11-15T16:21:27.729606+00:00",
+          "event_type": "CREW_FOCUS_SELECTED",
+          "astronaut_id": "lucas_ferreira",
+          "summary": "Focused telemetry view on MS-1 Lucas Ferreira (AEB/Payload) (PYL-1 \u00b7 ISS Columbus Bio-Lab).",
+          "metadata": {
+            "mission_group": "ISS"
           }
         }
       ]

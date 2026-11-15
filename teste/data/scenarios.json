@@ -165,9 +165,16 @@
     {
       "astronaut_id": "kenji_sato",
       "name": "PLT Kenji Sato (Flight Eng)",
+      "callsign": "PLT-1",
       "role": "Spacecraft Pilot & Systems Engineer",
       "agency": "JAXA / NASA Partner",
       "age": 39,
+      "mission_group": "DEEP_SPACE",
+      "location_module": "Orion Flight Deck",
+      "environment_id": "transit",
+      "initial_scenario_id": "nominal",
+      "suit_variant": "MERCURY_IVA_SLATE",
+      "suit_accent": "#34D399",
       "pre_flight_baseline": {
         "heart_rate_bpm": 66.0,
         "hrv_ms": 56.0,
@@ -239,6 +246,166 @@
             "duration_min": 12,
             "description": "Problemas contemplativos de Go acompanhados de melodia tradicional suave para foco calmo.",
             "target_effect": "Dissipa ansiedade/hiperativação simpática e estabiliza frequência cardíaca."
+          }
+        ]
+      }
+    },
+    {
+      "astronaut_id": "amara_okafor",
+      "name": "CMO Amara Okafor",
+      "callsign": "MED-2",
+      "role": "Crew Medical Officer",
+      "agency": "ESA / NASA Partner",
+      "age": 37,
+      "mission_group": "ISS",
+      "location_module": "ISS Harmony Medical Bay",
+      "environment_id": "orbital_station",
+      "initial_scenario_id": "nominal",
+      "suit_variant": "MERCURY_EVA_CYAN",
+      "suit_accent": "#22D3EE",
+      "pre_flight_baseline": {
+        "heart_rate_bpm": 64.0,
+        "hrv_ms": 61.0,
+        "bp_systolic": 114.0,
+        "bp_diastolic": 72.0,
+        "glucose_mg_dl": 91.0,
+        "temperature_c": 36.6,
+        "spo2_pct": 98.7,
+        "respiration_rpm": 14.0,
+        "sleep_hours": 7.4,
+        "rem_sleep_pct": 22.0,
+        "mood_score": 4.8,
+        "stress_index": 19.0,
+        "radiation_msv_h": 0.01,
+        "urinary_calcium_mg_d": 158.0,
+        "intraocular_pressure_mmhg": 14.0
+      },
+      "natural_std": {
+        "heart_rate_bpm": 4.4,
+        "hrv_ms": 5.4,
+        "bp_systolic": 5.1,
+        "bp_diastolic": 3.9,
+        "glucose_mg_dl": 5.6,
+        "temperature_c": 0.18,
+        "spo2_pct": 0.6,
+        "respiration_rpm": 1.2,
+        "sleep_hours": 0.46,
+        "rem_sleep_pct": 1.8,
+        "mood_score": 0.36,
+        "stress_index": 6.6,
+        "radiation_msv_h": 0.015,
+        "urinary_calcium_mg_d": 18.5,
+        "intraocular_pressure_mmhg": 1.1
+      },
+      "personal_psych_vault": {
+        "family_videos": [
+          {
+            "id": "amara_fam_01",
+            "title": "Video Message from Parents and Twin Sister Chioma in Lagos",
+            "category": "family_video",
+            "duration_min": 5,
+            "description": "Weekend family dinner greeting with homemade jollof recipe notes and conservatory piano rehearsal.",
+            "target_effect": "Elevates emotional warmth, reinforces familial bond, and buffers isolation fatigue."
+          }
+        ],
+        "nature_animal_sounds": [
+          {
+            "id": "amara_nat_01",
+            "title": "Atlantic Rainstorm & Alpine Conservatory Birds (0.1 Hz Paced Audio)",
+            "category": "nature_animals_audio",
+            "duration_min": 14,
+            "description": "Soft tropical rain with binaural acoustic warmth calibrated for vagal heart-rate variability coherence.",
+            "target_effect": "Lowers sympathetic arousal, reduces HR (-7 bpm), and restores HRV."
+          }
+        ],
+        "games_and_interests": [
+          {
+            "id": "amara_game_01",
+            "title": "Medical Case Diagnosis Puzzles & Classical Piano Micro-Etudes",
+            "category": "interactive_game_interest",
+            "duration_min": 10,
+            "description": "Low-pressure spatial chess & harmonic theory puzzles for cognitive decompression.",
+            "target_effect": "Sustains clinical composure and restorative parasympathetic tone."
+          }
+        ]
+      }
+    },
+    {
+      "astronaut_id": "liam_soren",
+      "name": "EXP-2 Liam Soren",
+      "callsign": "ORB-4",
+      "role": "Deep Space Habitat Specialist",
+      "agency": "NASA",
+      "age": 42,
+      "mission_group": "DEEP_SPACE",
+      "location_module": "Orion Habitation Ring",
+      "environment_id": "transit",
+      "initial_scenario_id": "systemic_infection",
+      "suit_variant": "MERCURY_TRANSIT_COBALT",
+      "suit_accent": "#EF4444",
+      "pre_flight_baseline": {
+        "heart_rate_bpm": 69.0,
+        "hrv_ms": 54.0,
+        "bp_systolic": 118.0,
+        "bp_diastolic": 76.0,
+        "glucose_mg_dl": 95.0,
+        "temperature_c": 36.7,
+        "spo2_pct": 98.3,
+        "respiration_rpm": 14.5,
+        "sleep_hours": 7.5,
+        "rem_sleep_pct": 21.0,
+        "mood_score": 4.7,
+        "stress_index": 22.0,
+        "radiation_msv_h": 0.01,
+        "urinary_calcium_mg_d": 166.0,
+        "intraocular_pressure_mmhg": 14.3
+      },
+      "natural_std": {
+        "heart_rate_bpm": 4.8,
+        "hrv_ms": 5.1,
+        "bp_systolic": 5.3,
+        "bp_diastolic": 4.1,
+        "glucose_mg_dl": 5.9,
+        "temperature_c": 0.19,
+        "spo2_pct": 0.65,
+        "respiration_rpm": 1.3,
+        "sleep_hours": 0.48,
+        "rem_sleep_pct": 1.9,
+        "mood_score": 0.38,
+        "stress_index": 6.8,
+        "radiation_msv_h": 0.015,
+        "urinary_calcium_mg_d": 19.5,
+        "intraocular_pressure_mmhg": 1.15
+      },
+      "personal_psych_vault": {
+        "family_videos": [
+          {
+            "id": "liam_fam_01",
+            "title": "Norwegian Fjord Cabin Greeting from Partner Ingrid & Son Noah",
+            "category": "family_video",
+            "duration_min": 6,
+            "description": "Snowy trail walk and wooden model rocket launch prepared by Noah for Dad aboard Orion.",
+            "target_effect": "Reduces deep-space isolation anxiety and supports immune-autonomic recovery."
+          }
+        ],
+        "nature_animal_sounds": [
+          {
+            "id": "liam_nat_01",
+            "title": "Nordic Pine Forest Wind, River Rapids & Loon Calls",
+            "category": "nature_animals_audio",
+            "duration_min": 15,
+            "description": "Cooling natural forest acoustics paired with slow guided exhalation cues (0.1 Hz).",
+            "target_effect": "Dampens sympathetic storming and improves autonomic HRV."
+          }
+        ],
+        "games_and_interests": [
+          {
+            "id": "liam_game_01",
+            "title": "Orbital Astrodynamics Trajectory Sandbox & Nordic Folk Acoustic",
+            "category": "interactive_game_interest",
+            "duration_min": 12,
+            "description": "Tactile Hohmann transfer sandbox paired with calm guitar acoustics.",
+            "target_effect": "Redirects hypervigilance into grounded focus during recovery."
           }
         ]
       }
