@@ -56,8 +56,11 @@ Copie `backend/.env.example` para `backend/.env` e preencha. O arquivo é lido s
 
 | Variável | Para que serve | Padrão |
 | --- | --- | --- |
-| `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`) | Liga o LLM no chat. Sem ela, o agente usa o pipeline offline determinístico. Requer `pip install -r requirements-llm.txt` | vazio |
-| `ASTRACARE_LLM_MODEL` | Modelo Gemini | `gemini-2.5-flash` |
+| `ASTRACARE_LLM_PROVIDER` | `groq`, `gemini` ou `offline`. Vazio escolhe o primeiro com chave, começando pelo Groq | vazio |
+| `GROQ_API_KEY` | Liga o LLM do Groq no chat (API compatível com a OpenAI, sem pacote extra) | vazio |
+| `ASTRACARE_GROQ_REASONING_FORMAT` | Esconde o raciocínio `<think>` do Qwen na resposta | `hidden` |
+| `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`) | Alternativa: Gemini via LangChain. Requer `pip install -r requirements-llm.txt` | vazio |
+| `ASTRACARE_LLM_MODEL` | Modelo do provedor escolhido | `qwen/qwen3.8-27b` (Groq) ou `gemini-2.5-flash` |
 | `ASTRACARE_LLM_MAX_TOOL_ROUNDS` | Rodadas de tool calls encadeadas por mensagem | `5` |
 | `ASTRACARE_LLM_TIMEOUT_S` | Timeout de cada chamada ao LLM, em segundos | `12` |
 | `NASA_API_KEY` | Chave da api.nasa.gov para o DONKI (TODO: trocar a `DEMO_KEY`) | `DEMO_KEY` |
