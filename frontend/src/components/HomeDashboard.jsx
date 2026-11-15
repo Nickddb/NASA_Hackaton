@@ -23,6 +23,8 @@ import {
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ANATOMICAL_PARTS_META, HoloBodyCanvas } from "./BodyModel3D";
 import { getVitalStatuses } from "../services/api";
+import { EnvironmentCockpitPanel } from "./EnvironmentPanel";
+import { PsychCockpitCard } from "./PsychRankPanel";
 
 /* ---------- status helpers ---------- */
 
@@ -35,22 +37,22 @@ const STATUS_STYLE = {
 
 const CARD_LIGHT_SURFACE = {
   CRITICAL: {
-    card: "!border-red-500/85 !from-red-950/75 !via-[#2B0B14]/75 !to-[#1A0810]/70 !shadow-[0_0_20px_rgba(239,68,68,0.42)] hover:!border-red-400",
+    card: "!border-red-500/85 !bg-[#1A090C] !shadow-[0_0_20px_rgba(239,68,68,0.42)] hover:!border-red-400",
     led: "bg-red-500 shadow-[0_0_10px_3px_rgba(239,68,68,0.95)]",
     ping: true,
     icon: "text-red-400",
     value: "text-red-200",
     chartStroke: "#EF4444",
-    badge: "border-red-400/70 bg-red-950/85 text-red-200",
+    badge: "border-red-400/75 bg-red-950/90 text-red-100",
   },
   WARNING: {
-    card: "!border-amber-400/85 !from-amber-950/65 !via-[#2B1D0A]/75 !to-[#1A1208]/70 !shadow-[0_0_18px_rgba(245,158,11,0.34)] hover:!border-amber-300",
+    card: "!border-amber-400/85 !bg-[#191206] !shadow-[0_0_18px_rgba(245,158,11,0.34)] hover:!border-amber-300",
     led: "bg-amber-400 shadow-[0_0_10px_2px_rgba(245,158,11,0.9)] animate-pulse",
     ping: false,
     icon: "text-amber-300",
     value: "text-amber-200",
     chartStroke: "#F59E0B",
-    badge: "border-amber-400/70 bg-amber-950/85 text-amber-200",
+    badge: "border-amber-400/75 bg-amber-950/90 text-amber-100",
   },
 };
 
@@ -213,7 +215,7 @@ function buildSeries(current, amplitude, range, seed) {
 export function GlassCard({ className = "", children }) {
   return (
     <div
-      className={`rounded-2xl border border-[#38BDF8]/30 bg-gradient-to-br from-[#0B1736]/75 via-[#0A2540]/70 to-[#062E2B]/65 shadow-[0_8px_30px_-8px_rgba(16,185,129,0.28)] backdrop-blur-md ${className}`}
+      className={`rounded-2xl border border-white/15 bg-[#0E1218] shadow-[0_12px_32px_rgba(0,0,0,0.65)] ${className}`}
     >
       {children}
     </div>
@@ -237,7 +239,7 @@ function VitalCard({ item, onClick }) {
     <button type="button" onClick={onClick} className="text-left">
       <GlassCard
         className={`relative h-full p-4 transition ${
-          alertSurface ? alertSurface.card : "hover:border-[#60A5FA]/70 hover:bg-[#0F1D40]/80"
+          alertSurface ? alertSurface.card : "hover:border-white/35 hover:bg-[#141922]"
         }`}
       >
         {alertSurface && (
@@ -248,11 +250,11 @@ function VitalCard({ item, onClick }) {
             <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${alertSurface.led}`} />
           </span>
         )}
-        <Icon className={`h-7 w-7 ${alertSurface ? alertSurface.icon : "text-[#BFDBFE]"}`} strokeWidth={1.4} />
-        <div className="mt-3 text-[11px] text-[#CBD5E1]">{item.label}</div>
+        <Icon className={`h-7 w-7 ${alertSurface ? alertSurface.icon : "text-sky-300"}`} strokeWidth={1.4} />
+        <div className="mt-3 text-[11px] text-slate-300">{item.label}</div>
         <div className={`mt-1 font-sans text-2xl font-semibold ${alertSurface ? alertSurface.value : "text-white"}`}>
           {item.value}
-          <span className="ml-1 text-sm font-normal text-[#CBD5E1]">{item.unit}</span>
+          <span className="ml-1 text-sm font-normal text-slate-400">{item.unit}</span>
         </div>
         <StatusLine status={item.status} />
       </GlassCard>
@@ -284,10 +286,10 @@ function TrendChart({
     <GlassCard className={`p-4 transition ${alertSurface ? alertSurface.card : ""}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Icon className={`h-5 w-5 ${alertSurface ? alertSurface.icon : "text-[#BFDBFE]"}`} strokeWidth={1.6} />
+          <Icon className={`h-5 w-5 ${alertSurface ? alertSurface.icon : "text-sky-300"}`} strokeWidth={1.6} />
           <h3 className="text-base font-medium text-white">{title}</h3>
           {alertSurface && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
               <span className="relative flex h-2 w-2 items-center justify-center">
                 {alertSurface.ping && (
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-85" />
@@ -304,10 +306,10 @@ function TrendChart({
               key={r}
               type="button"
               onClick={() => setRange(r)}
-              className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+              className={`rounded-lg px-3 py-1 text-xs font-medium transition cursor-pointer ${
                 range === r
-                  ? "bg-gradient-to-r from-[#0284C7] to-[#10B981] text-white shadow-[0_0_12px_rgba(16,185,129,0.5)]"
-                  : "bg-[#0B1F3A]/80 text-[#94A3B8] hover:text-white"
+                  ? "bg-white text-slate-950 font-bold shadow-sm"
+                  : "border border-white/10 bg-[#151922] text-slate-300 hover:border-white/30 hover:text-white"
               }`}
             >
               {r}
@@ -319,7 +321,7 @@ function TrendChart({
       <div className="relative mt-2 h-[130px]">
         <span
           className={`absolute right-2 top-1 z-10 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${
-            alertSurface ? alertSurface.badge : "border-[#3B82F6]/40 bg-[#0B1530]/90 text-white"
+            alertSurface ? alertSurface.badge : "border-white/20 bg-[#151922] text-white"
           }`}
         >
           {label ?? `${last.value} ${unit}`}
@@ -332,11 +334,11 @@ function TrendChart({
                 <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#1E3A8A" strokeOpacity={0.45} />
+            <CartesianGrid stroke="#252A36" strokeOpacity={0.85} />
             <XAxis dataKey="t" hide />
             <YAxis domain={domain} ticks={ticks} stroke="#94A3B8" fontSize={11} tickLine={false} axisLine={false} />
             <Tooltip
-              contentStyle={{ background: "#0B1530", border: "1px solid #1D4ED8", borderRadius: 10, color: "#fff", fontSize: 12 }}
+              contentStyle={{ background: "#0A0D12", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 10, color: "#fff", fontSize: 12 }}
               formatter={(val) => [`${val} ${unit}`, title]}
               labelStyle={{ color: "#94A3B8" }}
             />
@@ -384,7 +386,14 @@ function buildPartDetails(v, pb) {
   };
 }
 
-export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSystem, onStabilizeCrew }) {
+export default function HomeDashboard({
+  state,
+  busyAction = false,
+  onTriggerMeasurement,
+  onSelectSystem,
+  onStabilizeCrew,
+  onSwitchEnvironment,
+}) {
   const [regionId, setRegionId] = useState("arm");
   const [selectedPartId, setSelectedPartId] = useState("left_upper_arm");
   const [measuring, setMeasuring] = useState(false);
@@ -458,10 +467,10 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
         <GlassCard
           className={`p-4 ${
             state?.active_alert?.severity === "CRITICAL"
-              ? "border-red-400/60 bg-gradient-to-r from-red-950/55 via-[#0A2540]/80 to-[#062E2B]/75"
+              ? "!border-red-500/80 !bg-[#1A090C]"
               : hasAlert
-              ? "border-amber-400/55 bg-gradient-to-r from-amber-950/45 via-[#0A2540]/80 to-[#062E2B]/75"
-              : "border-emerald-400/35"
+              ? "!border-amber-400/75 !bg-[#191206]"
+              : "border-white/15"
           }`}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -479,18 +488,18 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
                       : "Alert Active — Personal Baseline Deviation"}
                   </span>
                 )}
-                <span className="font-mono text-[11px] text-sky-200/90">
+                <span className="font-mono text-[11px] text-slate-300">
                   Personal Normal: HR {pb.hr_min}-{pb.hr_max} bpm • BP {pb.bp_sys_min}-{pb.bp_sys_max} mmHg • Temp {pb.temp_min}-{pb.temp_max}°C • SpO₂ ≥{pb.spo2_min}%
                 </span>
               </div>
 
               {state?.baseline_deviations?.length > 0 && (
-                <p className="text-xs text-amber-100">
+                <p className="text-xs text-amber-200">
                   Out-of-baseline indicators: <span className="font-semibold">{state.baseline_deviations.join(" • ")}</span>
                 </p>
               )}
               {state?.active_alert?.message && (
-                <p className="text-xs text-[#DBEAFE]">
+                <p className="text-xs text-slate-200">
                   Active Alert (
                   {state.active_alert.origin_type === "MISSION_CONTROL_DISPATCH" ||
                   state.active_alert.source === "MISSION_CONTROL"
@@ -519,7 +528,7 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
                   type="button"
                   disabled={measuring}
                   onClick={() => runScan("full_body")}
-                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#10B981] px-4 text-xs font-semibold text-white shadow-[0_0_16px_rgba(16,185,129,0.45)] transition hover:brightness-110 disabled:opacity-60 cursor-pointer"
+                  className="flex min-h-[40px] items-center gap-1.5 rounded-xl bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:opacity-60 cursor-pointer"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {measuring ? "Verifying..." : "Run Confirmatory Scan"}
@@ -536,6 +545,16 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
           <VitalCard key={item.id} item={item} onClick={() => onSelectSystem?.(item.system)} />
         ))}
       </div>
+
+      {/* Unified Cabin & Suit Environmental Telemetry + Quick Habitat Switcher */}
+      <EnvironmentCockpitPanel
+        state={state}
+        onSwitchEnvironment={onSwitchEnvironment}
+        busyAction={busyAction}
+      />
+
+      {/* Psychological Readiness Rank & Behavioral Contributors */}
+      <PsychCockpitCard state={state} />
 
       {/* Charts + hologram */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -564,17 +583,17 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
 
           {/* Selected exam */}
           <GlassCard className="flex flex-wrap items-center gap-5 p-5">
-            <Stethoscope className="h-12 w-12 text-[#BFDBFE]" strokeWidth={1.3} />
+            <Stethoscope className="h-12 w-12 text-sky-300" strokeWidth={1.3} />
             <div className="min-w-[160px] flex-1">
-              <div className="text-xs text-[#CBD5E1]">Selected Exam</div>
+              <div className="text-xs text-slate-400">Selected Exam</div>
               <div className="text-xl font-semibold text-white">{displayExam}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-[#A7F3D0]">
-                <MapPin className="h-3.5 w-3.5 text-[#34D399]" /> Location: {displayLocation}
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-300">
+                <MapPin className="h-3.5 w-3.5 text-emerald-400" /> Location: {displayLocation}
               </div>
             </div>
-            <div className="hidden h-14 w-px bg-[#3B82F6]/30 sm:block" />
+            <div className="hidden h-14 w-px bg-white/15 sm:block" />
             <div className="min-w-[150px]">
-              <div className="text-xs text-[#CBD5E1]">Latest Reading</div>
+              <div className="text-xs text-slate-400">Latest Reading</div>
               <div className="text-xl font-semibold text-white">{displayReading}</div>
               <StatusLine status={displayStatus} />
             </div>
@@ -582,13 +601,13 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
               type="button"
               onClick={() => runScan()}
               disabled={measuring}
-              className="ml-auto flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#10B981] px-4 text-xs font-semibold text-white shadow-[0_0_16px_rgba(16,185,129,0.45)] transition hover:brightness-110 disabled:opacity-60"
+              className="ml-auto flex min-h-[44px] items-center gap-2 rounded-xl bg-sky-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:opacity-60 cursor-pointer"
             >
               <Scan className="h-4 w-4" />
               {measuring ? "Scanning..." : "Run Scan"}
             </button>
             {lastReading?.reading_summary && (
-              <div className="w-full rounded-xl border border-[#3B82F6]/30 bg-[#0F1D40]/80 px-3 py-2 font-mono text-[11px] text-[#BFDBFE]">
+              <div className="w-full rounded-xl border border-white/15 bg-[#151922] px-3 py-2 font-mono text-[11px] text-slate-200">
                 {lastReading.reading_summary}
               </div>
             )}
@@ -598,7 +617,7 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
         {/* Custom Procedural 3D Body + Region Selector */}
         <div className="relative flex min-h-[480px] items-stretch lg:col-span-5">
           <div className="relative flex-1">
-            <div className="pointer-events-none absolute inset-x-8 bottom-6 h-24 rounded-[50%] bg-[#10B981]/25 blur-2xl" />
+            <div className="pointer-events-none absolute inset-x-8 bottom-6 h-24 rounded-[50%] bg-white/[0.04] blur-2xl" />
             <HoloBodyCanvas
               state={state}
               selectedSystem={activeSystemId}
@@ -614,17 +633,17 @@ export default function HomeDashboard({ state, onTriggerMeasurement, onSelectSys
               const Icon = r.icon;
               const active = r.id === regionId;
               return (
-                <button key={r.id} type="button" onClick={() => selectRegion(r)} className="group flex flex-col items-center gap-1">
+                <button key={r.id} type="button" onClick={() => selectRegion(r)} className="group flex flex-col items-center gap-1 cursor-pointer">
                   <span
                     className={`flex h-14 w-14 items-center justify-center rounded-full border transition ${
                       active
-                        ? "border-[#6EE7B7] bg-gradient-to-br from-[#0284C7]/60 to-[#10B981]/50 shadow-[0_0_20px_rgba(52,211,153,0.75)]"
-                        : "border-[#38BDF8]/45 bg-[#0A1E36]/80 group-hover:border-[#6EE7B7]"
+                        ? "border-sky-400 bg-sky-500/20 shadow-[0_0_18px_rgba(56,189,248,0.45)]"
+                        : "border-white/15 bg-[#12161F] group-hover:border-white/40"
                     }`}
                   >
-                    <Icon className="h-6 w-6 text-[#DBEAFE]" strokeWidth={1.4} />
+                    <Icon className={`h-6 w-6 ${active ? "text-white" : "text-slate-300"}`} strokeWidth={1.4} />
                   </span>
-                  <span className={`text-[11px] ${active ? "text-white" : "text-[#CBD5E1]"}`}>{r.label}</span>
+                  <span className={`text-[11px] ${active ? "font-semibold text-white" : "text-slate-400"}`}>{r.label}</span>
                 </button>
               );
             })}

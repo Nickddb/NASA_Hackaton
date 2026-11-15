@@ -20,36 +20,13 @@ import {
 import { GlassCard } from "./HomeDashboard";
 import MercurySuitFigure from "./MercurySuitFigure";
 import { getVitalStatuses } from "../services/api";
-
-const METRIC_LIGHT_STYLE = {
-  CRITICAL: {
-    card: "border-red-500/85 bg-red-950/60 shadow-[0_0_16px_rgba(239,68,68,0.45)]",
-    led: "bg-red-500 shadow-[0_0_10px_2px_rgba(239,68,68,0.95)] animate-pulse",
-    ping: true,
-    label: "text-red-200",
-    value: "text-red-300",
-    sub: "text-red-300/85",
-    iconColor: "text-red-400",
-  },
-  WARNING: {
-    card: "border-amber-400/85 bg-amber-950/50 shadow-[0_0_14px_rgba(245,158,11,0.38)]",
-    led: "bg-amber-400 shadow-[0_0_9px_2px_rgba(245,158,11,0.9)] animate-pulse",
-    ping: false,
-    label: "text-amber-200",
-    value: "text-amber-300",
-    sub: "text-amber-200/85",
-    iconColor: "text-amber-300",
-  },
-  NOMINAL: {
-    card: "border-white/10 bg-[#041022]/75",
-    led: "bg-emerald-400/75",
-    ping: false,
-    label: "text-[#94A3B8]",
-    value: "text-white",
-    sub: "text-slate-400",
-    iconColor: null,
-  },
-};
+import {
+  EnvironmentCrewChips,
+  EnvironmentSectorSummary,
+  METRIC_LIGHT_STYLE,
+  StatusLedDot,
+} from "./EnvironmentPanel";
+import { PsychCrewBar } from "./PsychRankPanel";
 
 const FILTERS = [
   { id: "ALL", label: "All Crew" },
@@ -184,19 +161,19 @@ export default function CrewHub({
 
           {/* Summary KPI Pills */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="rounded-xl border border-white/15 bg-[#041022]/80 px-3.5 py-2 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8]">Total Crew</div>
+            <div className="rounded-xl border border-white/15 bg-[#151922] px-3.5 py-2 text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Crew</div>
               <div className="font-mono text-lg font-bold text-white">{counts.total}</div>
             </div>
-            <div className="rounded-xl border border-emerald-400/35 bg-emerald-950/50 px-3.5 py-2 text-center">
+            <div className="rounded-xl border border-emerald-400/45 bg-emerald-950/70 px-3.5 py-2 text-center">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Nominal</div>
               <div className="font-mono text-lg font-bold text-emerald-200">{counts.nominal}</div>
             </div>
-            <div className="rounded-xl border border-amber-400/45 bg-amber-950/55 px-3.5 py-2 text-center">
+            <div className="rounded-xl border border-amber-400/55 bg-amber-950/75 px-3.5 py-2 text-center">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-300">Warning</div>
               <div className="font-mono text-lg font-bold text-amber-200">{counts.warning}</div>
             </div>
-            <div className="rounded-xl border border-red-400/55 bg-red-950/60 px-3.5 py-2 text-center">
+            <div className="rounded-xl border border-red-400/65 bg-red-950/80 px-3.5 py-2 text-center">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-red-300">Critical</div>
               <div className="font-mono text-lg font-bold text-red-200">{counts.critical}</div>
             </div>
@@ -215,8 +192,8 @@ export default function CrewHub({
                   onClick={() => setFilter(f.id)}
                   className={`min-h-[38px] rounded-full px-4 text-xs font-semibold transition cursor-pointer ${
                     active
-                      ? "bg-gradient-to-r from-[#0284C7] to-[#10B981] text-white shadow-[0_0_16px_rgba(16,185,129,0.45)]"
-                      : "border border-white/15 bg-[#061428]/70 text-[#CBD5E1] hover:border-sky-300/45 hover:text-white"
+                      ? "bg-white text-slate-950 font-bold shadow-sm"
+                      : "border border-white/15 bg-[#151922] text-slate-200 hover:border-white/35 hover:text-white"
                   }`}
                 >
                   {f.label}
@@ -225,25 +202,28 @@ export default function CrewHub({
             })}
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-[#071526]/80 px-3 py-1.5 text-[11px] text-amber-100/90">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-[#171209] px-3 py-1.5 text-[11px] text-amber-200">
             <Lock className="h-3.5 w-3.5 text-amber-300" />
             <span>Alert Lock: No manual silence — re-measure within personal baseline required</span>
           </div>
         </div>
 
         {feedbackToast && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-sky-400/35 bg-[#071A34]/90 px-3.5 py-2 font-mono text-xs text-sky-100">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-sky-400/40 bg-[#131924] px-3.5 py-2 font-mono text-xs text-slate-100">
             <span>{feedbackToast}</span>
             <button
               type="button"
               onClick={() => setFeedbackToast("")}
-              className="text-sky-300 hover:text-white cursor-pointer"
+              className="text-slate-300 hover:text-white cursor-pointer"
             >
               ✕
             </button>
           </div>
         )}
       </GlassCard>
+
+      {/* Unified Habitat & Cabin Environmental Telemetry by Sector */}
+      <EnvironmentSectorSummary crew={filteredCrew} />
 
       {/* Astronauts Full-Body Pedestal Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -255,10 +235,10 @@ export default function CrewHub({
 
           const cardAlertClass =
             member.status === "CRITICAL"
-              ? "suit-card-critical border-red-400/80 bg-gradient-to-b from-[#2A0B18]/85 via-[#131733]/85 to-[#061822]/90"
+              ? "suit-card-critical border-red-500/85 bg-gradient-to-b from-[#23090E] via-[#130C10] to-[#0E1218] shadow-[0_0_24px_rgba(239,68,68,0.28)]"
               : member.status === "WARNING"
-              ? "suit-card-warning border-amber-400/75 bg-gradient-to-b from-[#291B09]/80 via-[#0E1E38]/85 to-[#062124]/90"
-              : "border-[#38BDF8]/30 bg-gradient-to-br from-[#0B1736]/78 via-[#0A2540]/72 to-[#062E2B]/68 hover:border-emerald-300/60";
+              ? "suit-card-warning border-amber-400/80 bg-gradient-to-b from-[#221707] via-[#14110B] to-[#0E1218] shadow-[0_0_20px_rgba(245,158,11,0.24)]"
+              : "border-white/15 bg-[#0E1218] hover:border-white/35";
 
           return (
             <div
@@ -298,7 +278,7 @@ export default function CrewHub({
                 <button
                   type="button"
                   onClick={() => handleCardZoomAndEnter(member.crew_id)}
-                  className="relative mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#030C1B]/60 py-3 transition hover:border-emerald-300/45 hover:bg-[#05152C]/75 cursor-pointer"
+                  className="relative mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-white/12 bg-[#07090D] py-3 transition hover:border-white/30 hover:bg-[#0B0E14] cursor-pointer"
                   title={`Zoom in and open ${member.name}'s telemetry dashboard`}
                 >
                   <MercurySuitFigure
@@ -307,7 +287,7 @@ export default function CrewHub({
                     callsign={member.callsign}
                     zooming={isZooming}
                   />
-                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-sky-200/85 opacity-80 transition group-hover:text-emerald-200 group-hover:opacity-100">
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-slate-300 opacity-90 transition group-hover:text-white group-hover:opacity-100">
                     Click suit to zoom &amp; inspect vitals <ArrowRight className="h-3.5 w-3.5" />
                   </span>
                 </button>
@@ -367,11 +347,8 @@ export default function CrewHub({
                             key={m.key}
                             className={`relative rounded-xl border px-2 py-2 transition-colors ${st.card}`}
                           >
-                            <span className="absolute right-1.5 top-1.5 flex h-2 w-2 items-center justify-center">
-                              {st.ping && (
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-80" />
-                              )}
-                              <span className={`relative inline-flex h-2 w-2 rounded-full ${st.led}`} />
+                            <span className="absolute right-1.5 top-1.5">
+                              <StatusLedDot status={m.status} />
                             </span>
                             <div className={`flex items-center justify-center gap-1 text-[10px] ${st.label}`}>
                               <MetricIcon className={`h-3 w-3 ${st.iconColor || m.defaultIcon}`} /> {m.label}
@@ -386,6 +363,12 @@ export default function CrewHub({
                     </div>
                   );
                 })()}
+
+                {/* Per-Astronaut Cabin & Suit Environmental Sensors */}
+                <EnvironmentCrewChips member={member} />
+
+                {/* Psychological Readiness Rank & Tier */}
+                <PsychCrewBar member={member} />
 
                 {/* Personal Normality & Active Alert Status */}
                 <div className="mt-3 space-y-2">
@@ -446,7 +429,7 @@ export default function CrewHub({
                   <button
                     type="button"
                     onClick={() => handleCardZoomAndEnter(member.crew_id)}
-                    className="flex min-h-[38px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#10B981] px-3 text-xs font-semibold text-white shadow-[0_0_14px_rgba(16,185,129,0.35)] transition hover:brightness-110 cursor-pointer"
+                    className="flex min-h-[38px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-sky-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500 cursor-pointer"
                   >
                     Open Cockpit <ArrowRight className="h-3.5 w-3.5" />
                   </button>
@@ -463,7 +446,7 @@ export default function CrewHub({
                       className={`flex min-h-[38px] items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition cursor-pointer ${
                         drawerOpen
                           ? "border-amber-300 bg-amber-500/25 text-amber-100"
-                          : "border-white/20 bg-[#051428]/80 text-slate-200 hover:border-amber-300/60 hover:text-white"
+                          : "border-white/20 bg-[#151922] text-slate-200 hover:border-amber-300/60 hover:text-white"
                       }`}
                     >
                       <ShieldAlert className="h-3.5 w-3.5 text-amber-300" />
@@ -514,7 +497,7 @@ export default function CrewHub({
 
                 {/* Mission Control Inline Alert Dispatcher */}
                 {viewMode === "control" && drawerOpen && (
-                  <div className="rounded-2xl border border-amber-300/40 bg-[#040E1F]/95 p-3 space-y-2.5">
+                  <div className="rounded-2xl border border-amber-400/45 bg-[#090C11] p-3 space-y-2.5">
                     <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-amber-200">
                       <span>Dispatch Alert to {member.callsign}</span>
                       <button
@@ -572,7 +555,7 @@ export default function CrewHub({
                       value={alertMessage}
                       onChange={(e) => setAlertMessage(e.target.value)}
                       placeholder="Alert reason (optional)..."
-                      className="w-full rounded-xl border border-white/15 bg-[#08162E] px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:border-sky-400 focus:outline-none"
+                      className="w-full rounded-xl border border-white/15 bg-[#151922] px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:border-sky-400 focus:outline-none"
                     />
 
                     <button
