@@ -1150,7 +1150,7 @@ function buildPersonalBaselineFromState(rawState, spec) {
 function buildEffectiveMissionContext(rawState, overlay) {
   const envId = rawState?.environment_id || "transit_hab";
   const scId = rawState?.scenario_id || "nominal";
-  const sc = cachedScenarios?.scenarios?.find((s) => s.id === scId) || { id: scId };
+  const sc = localCatalog?.scenarios?.find((s) => s.id === scId) || { id: scId };
   return {
     ...buildLocalMissionContext(envId, sc),
     ...(rawState?.mission_context || {}),
@@ -1465,7 +1465,9 @@ export async function getMissionState(crewId = null) {
     localActiveCrewId = raw.astronaut_id || targetId || "elena_vance";
     lastLiveState = raw;
     return enrichBackendState(raw);
-  } catch {
+  } catch (err) {
+    // A bug in the enrichment below used to look exactly like "backend offline"; say why we fell back.
+    console.warn("[AstraCare] using browser simulation for mission state:", err);
     await loadLocalData();
     return recomputeLocalState(null, null, targetId);
   }
