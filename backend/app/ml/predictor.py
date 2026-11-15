@@ -10,7 +10,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 
 from app.engine.clinical_rules import load_scenarios_catalog
-from app.ml.features import FEATURE_KEYS, FEATURE_SPECS, build_generator_cohort, live_feature_vector
+from app.ml.features import FEATURE_KEYS, FEATURE_SPECS, PAIN_FEATURES, build_generator_cohort, live_feature_vector
 from app.models.schemas import (
     AdaptiveBaselineProfile,
     ContextualIntelligenceReport,
@@ -325,6 +325,32 @@ class AstraCareRealMLEngine:
         ensemble_probs = 0.5 * rf_probs + 0.5 * hgb_probs
 
         prob_map = {cls: round(float(p) * 100.0, 1) for cls, p in zip(self.classes_, ensemble_probs)}
+
+        # How the crew's pain report moved the model: same reading with the pain features zeroed.
+        pain_influence: list[dict[str, Any]] = []
+        pain_summary = ""
+        pain_idx = [FEATURE_KEYS.index(k) for k in PAIN_FEATURES]
+        if vitals.pain_reports and np.any(vec[0, pain_idx] > 0):
+            no_pain = vec.copy()
+            no_pain[0, pain_idx] = 0.0
+            np_scaled = self.scaler.transform(no_pain)
+            probs_no_pain = 0.5 * self.rf_clf.predict_proba(np_scaled)[0] + 0.5 * self.hgb_calibrated.predict_proba(np_scaled)[0]
+            deltas = (ensemble_probs - probs_no_pain) * 100.0
+            for cls_idx in np.argsort(-np.abs(deltas)):
+                if abs(deltas[cls_idx]) < 1.0:
+                    break
+                cls = self.classes_[cls_idx]
+                pain_influence.append(
+                    {"syndrome": cls, "label": SYNDROME_LABELS.get(cls, cls), "delta_pct": round(float(deltas[cls_idx]), 1)}
+                )
+            regions = ", ".join(f"{r.region_label} {r.intensity}/10" for r in vitals.pain_reports)
+            up = [i for i in pain_influence if i["delta_pct"] > 0][:2]
+            pain_summary = (
+                f"Reported pain ({regions}) raised: "
+                + "; ".join(f"{i['label']} +{i['delta_pct']:.0f} pp" for i in up)
+                if up
+                else f"Reported pain ({regions}) did not change the syndrome probabilities by more than 1 pp."
+            )
         best_idx = int(np.argmax(ensemble_probs))
         predicted_syndrome = self.classes_[best_idx]
         confidence_pct = round(float(ensemble_probs[best_idx]) * 100.0, 1)
@@ -406,6 +432,8 @@ class AstraCareRealMLEngine:
         )
 
         return MLPredictionResult(
+            pain_influence=pain_influence,
+            pain_summary=pain_summary,
             anomaly_score=context_adjusted_anomaly,
             raw_population_anomaly_score=raw_pop_anomaly,
             personal_baseline_anomaly_score=personal_anomaly,

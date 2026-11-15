@@ -12,6 +12,7 @@ Features added on top of the vital signs:
   donki_activity               0 nominal / 1 warning / 2 critical external space weather (NASA DONKI)
   radiation_symptom_flag       crew report compatible with radiation (nausea, light flashes)
   behavioural_symptom_flag     crew report of unusual smell, irritability, insomnia...
+  pain_head/chest/abdominal/musculoskeletal  highest pain (0-10) the crew marked on the 3D body, per category
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Any
 
 import numpy as np
 
+from app.engine.body_regions import BODY_REGIONS, pain_by_category
 from app.engine.clinical_rules import build_personal_baseline_from_profile, evaluate_personal_baseline
 from app.engine.cross_diagnosis import RADIATION_SYMPTOMS, SENSORY_BEHAVIOURAL, _norm
 from app.engine.telemetry_generator import CRISIS_PROFILES, TelemetryGenerator
@@ -54,10 +56,15 @@ FEATURE_SPECS: list[tuple[str, str, float, float]] = [
     ("donki_activity", "NASA DONKI Space Weather Level", 0.0, 0.5),
     ("radiation_symptom_flag", "Radiation-Compatible Symptom Report", 0.0, 0.3),
     ("behavioural_symptom_flag", "Behavioural / Sensory Symptom Report", 0.0, 0.3),
+    ("pain_head", "Headache (crew report, 0-10)", 0.0, 1.5),
+    ("pain_chest", "Chest Pain (crew report, 0-10)", 0.0, 1.5),
+    ("pain_abdominal", "Abdominal Pain (crew report, 0-10)", 0.0, 1.5),
+    ("pain_musculoskeletal", "Musculoskeletal Pain (crew report, 0-10)", 0.0, 1.5),
     ("individual_hr_z_score", "Personal HR Drift (z-score)", 0.0, 1.0),
     ("individual_hrv_z_score", "Personal HRV Drift (z-score)", 0.0, 1.0),
 ]
 FEATURE_KEYS = [k for k, *_ in FEATURE_SPECS]
+PAIN_FEATURES = ["pain_head", "pain_chest", "pain_abdominal", "pain_musculoskeletal"]
 DERIVED_KEYS = {"individual_hr_z_score", "individual_hrv_z_score"}
 
 _DONKI_LEVEL = {"NOMINAL": 0.0, "WARNING": 1.0, "CRITICAL": 2.0}
@@ -83,6 +90,7 @@ def feature_vector(
         _, devs, _ = evaluate_personal_baseline(vitals, personal_baseline)
         deviations = len(devs)
     rad_flag, beh_flag = symptom_flags(vitals.reported_symptoms)
+    pain = pain_by_category(vitals.pain_reports)
     return [
         vitals.heart_rate_bpm,
         vitals.hrv_ms,
@@ -104,6 +112,10 @@ def feature_vector(
         _DONKI_LEVEL.get(space_weather.alert_level, 0.0) if space_weather else 0.0,
         rad_flag,
         beh_flag,
+        pain["head"],
+        pain["chest"],
+        pain["abdominal"],
+        pain["musculoskeletal"],
         ind_hr_z,
         ind_hrv_z,
     ]
@@ -131,6 +143,38 @@ def live_feature_vector(
         ],
         dtype=float,
     )
+
+
+# (probability, region, intensity range) per crisis profile. Chest pain never appears here: it is a red flag
+# handled by the rules and the cross-diagnosis tree, not something the classifier should learn to explain away.
+PAIN_PATTERNS: dict[str, list[tuple[float, str, tuple[int, int]]]] = {
+    "nominal": [(0.06, "lower_back", (1, 3))],
+    "post_exercise_physiological": [(0.5, "left_thigh", (2, 5)), (0.3, "right_calf", (2, 4))],
+    "hypoglycemia": [(0.7, "right_shoulder", (5, 7)), (0.2, "abdomen", (2, 4))],
+    "cabin_co2_pocket": [(0.6, "head", (3, 6))],
+    "systemic_infection": [(0.4, "head", (3, 6)), (0.4, "lower_back", (2, 5))],
+    "orthostatic_intolerance": [(0.35, "head", (2, 5))],
+    "behavioral_fatigue": [(0.25, "head", (2, 4)), (0.2, "neck", (2, 4))],
+    "solar_storm": [(0.3, "head", (2, 4)), (0.2, "abdomen", (2, 4))],
+}
+
+
+def _sample_pain(crisis: str, rng: np.random.Generator) -> list[dict[str, Any]]:
+    reports = []
+    for prob, region, (lo, hi) in PAIN_PATTERNS.get(crisis, []):
+        if rng.random() < prob:
+            label, category = BODY_REGIONS[region]
+            reports.append(
+                {
+                    "region": region,
+                    "region_label": label,
+                    "category": category,
+                    "intensity": int(rng.integers(lo, hi + 1)),
+                    "quality": "aching",
+                    "reported_at": "",
+                }
+            )
+    return reports
 
 
 def build_generator_cohort(
@@ -168,6 +212,7 @@ def build_generator_cohort(
                 vitals_d["reported_symptoms"] = (["light flashes"] if rad_symptom else []) + (
                     ["irritability"] if beh_symptom else []
                 )
+                vitals_d["pain_reports"] = _sample_pain(crisis, rng)
                 vitals = VitalSigns(**vitals_d)
 
                 # Context is informative only where it is the cause (exercise, CO2 pocket, caloric deficit).

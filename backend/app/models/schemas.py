@@ -281,6 +281,11 @@ class MLPredictionResult(BaseModel):
     uncertainty: UncertaintyAssessment
     forecast_72h: list[ForecastHorizonPoint] = Field(default_factory=list)
     validation_metrics: MLValidationMetrics | None = None
+    pain_influence: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Syndromes whose probability moved because of crew-reported pain (with vs. without the pain features)",
+    )
+    pain_summary: str = ""
 
 
 class AutonomyGuardrail(BaseModel):
