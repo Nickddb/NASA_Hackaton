@@ -31,6 +31,7 @@ from app.models.schemas import (
     DispatchAlertRequest,
     EarthSyncPackage,
     EscalateCaseRequest,
+    HorizonsLinkStatus,
     ExplainableAlert,
     MeasurementResponse,
     MissionState,
@@ -62,10 +63,22 @@ async def smartwatch_loop() -> None:
             log.exception("smartwatch cycle failed")
 
 
+async def nasa_refresh_loop() -> None:
+    """NASA DONKI + JPL Horizons at start-up, then every NASA_REFRESH_MIN. Both cache, so a tick costs nothing
+    while the cache is fresh; offline, the last good answer (or the curated sample) stays in place."""
+    while True:
+        for refresh in (state_manager.refresh_space_weather, state_manager.refresh_horizons):
+            try:
+                await refresh()
+            except Exception:
+                log.exception("NASA refresh failed: %s", refresh.__name__)
+        await asyncio.sleep(config.NASA_REFRESH_MIN * 60)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Pull NASA DONKI once at start-up without blocking it; offline -> cache/sample is already loaded.
-    tasks = [asyncio.create_task(state_manager.refresh_space_weather())]
+    tasks = [asyncio.create_task(nasa_refresh_loop())]
     if config.SCHEDULER_ENABLED:
         tasks.append(asyncio.create_task(smartwatch_loop()))
     yield
@@ -361,6 +374,12 @@ def trigger_measurement(system_id: str, crew_id: str | None = None) -> Measureme
 async def get_space_weather(force: bool = False) -> SpaceWeatherSummary:
     """NASA DONKI SEP/FLR/RBE summary. Uses a 30-min cache to respect the DEMO_KEY quota; force=true bypasses it."""
     return await state_manager.refresh_space_weather(force=force)
+
+
+@app.get("/api/nasa/horizons", response_model=dict[str, HorizonsLinkStatus])
+async def get_horizons(force: bool = False) -> dict[str, HorizonsLinkStatus]:
+    """Earth range and one-way light time per crew member, from NASA JPL Horizons (6 h cache; force=true bypasses it)."""
+    return await state_manager.refresh_horizons(force=force)
 
 
 @app.post("/api/telemetry/next", response_model=MissionState)

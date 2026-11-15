@@ -63,6 +63,9 @@ LLM_TOOL_RESULT_MAX_CHARS = int(_float("ASTRACARE_LLM_TOOL_RESULT_MAX_CHARS", 12
 LLM_MAX_TOOL_ROUNDS = int(_float("ASTRACARE_LLM_MAX_TOOL_ROUNDS", 5))
 LLM_TIMEOUT_S = _float("ASTRACARE_LLM_TIMEOUT_S", 30.0)
 
+# NASA DONKI + JPL Horizons refresh period, in minutes (each feed also keeps its own cache)
+NASA_REFRESH_MIN = _float("ASTRACARE_NASA_REFRESH_MIN", 30.0)
+
 # Autonomous smartwatch monitoring
 SCHEDULER_ENABLED = _bool("ASTRACARE_SCHEDULER_ENABLED", True)
 SCHEDULER_TICK_S = _float("ASTRACARE_SCHEDULER_TICK_S", 30.0)
