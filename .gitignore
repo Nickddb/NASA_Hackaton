@@ -13,6 +13,7 @@ space-apps-2026-kit/
 # Env & OS
 .env
 .env.local
+.env.*.local
 .DS_Store
 Thumbs.db
 
