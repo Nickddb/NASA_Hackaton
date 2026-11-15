@@ -1112,6 +1112,10 @@ export const createEarthSyncPackage = () => postJson("/api/earth-sync/package");
 export const synchronizeWithEarth = () => postJson("/api/earth-sync/synchronize");
 export const getEarthSyncLedger = () => tryFetch("/api/earth-sync/ledger");
 export const verifyEarthSyncLedger = () => tryFetch("/api/earth-sync/verify");
+// Pain marked on the 3D body. Backend only: a fabricated pain history would mislead the ML and the ground team.
+export const reportPain = (crewId, payload) => postJson(`/api/crew/${encodeURIComponent(crewId)}/pain`, payload);
+export const resolvePain = (crewId, region) =>
+  tryFetch(`/api/crew/${encodeURIComponent(crewId)}/pain/${encodeURIComponent(region)}`, { method: "DELETE", timeoutMs: 15000 });
 
 function buildPersonalBaselineFromState(rawState, spec) {
   if (spec?.baseline) return { ...spec.baseline };
