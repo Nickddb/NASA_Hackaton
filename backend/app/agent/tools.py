@@ -375,8 +375,11 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
             )
             return "No active closed-loop follow-up cases. All prior alerts resolved or nominal."
 
-        active_case = cases[0]
         op = operation.lower().strip()
+        open_cases = [c for c in cases if c.status != "RESOLVED"]
+        if op in ("confirm", "action", "reassess") and not open_cases:
+            return "All follow-up cases are RESOLVED; there is no open case to update."
+        active_case = open_cases[0] if open_cases else cases[0]
 
         if op == "confirm" and metric_or_action:
             updated_case = state_manager.record_followup_confirmation(
