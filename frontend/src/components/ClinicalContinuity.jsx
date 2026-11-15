@@ -879,6 +879,7 @@ function CrossDiagnosisPanel({ result }) {
 // Workspace
 // ======================================================================
 export default function ClinicalContinuity({ state, connection, onRefresh }) {
+  const [view, setView] = useState("overview");
   const now = useNow();
   const [error, setError] = useState("");
   const onError = useCallback((msg) => setError(msg), []);
@@ -907,6 +908,12 @@ export default function ClinicalContinuity({ state, connection, onRefresh }) {
     );
   }
 
+  const VIEWS = [
+    { id: "overview", label: "Root cause & follow-up" },
+    { id: "alerts", label: "Alerts" },
+    { id: "baseline", label: "Baseline & context" },
+    { id: "earth", label: "Earth link" },
+  ];
   const metricOptions = Object.values(state.adaptive_baseline.metrics).map((m) => ({
     key: m.metric,
     label: m.label,
@@ -928,64 +935,97 @@ export default function ClinicalContinuity({ state, connection, onRefresh }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
-        <div className="space-y-5 xl:col-span-7">
-          <CrossDiagnosisPanel result={state.cross_diagnosis} />
-          <section className={panel} aria-labelledby="followup-title">
-            <SectionTitle
-              icon={FileCheck2}
-              aside={
-                <span className="text-xs font-semibold text-[#476458]">
-                  {openCases.length} open{overdue > 0 && <span className="text-[#991B1B]"> · {overdue} overdue</span>}
-                </span>
-              }
-            >
-              <span id="followup-title">Follow-up</span>
-            </SectionTitle>
-            {openCases.length === 0 ? (
-              <p className="text-sm text-[#476458]">No open cases. Every alert so far was confirmed, acted on and closed.</p>
-            ) : (
-              <div className="space-y-3">
-                {openCases.map((c) => (
-                  <FollowUpCase key={c.case_id} item={c} metricOptions={metricOptions} now={now} onChanged={onChanged} onError={onError} />
-                ))}
-              </div>
+      <div role="tablist" aria-label="Diagnosis views" className="mb-5 flex flex-wrap gap-1 rounded-xl bg-[#E6F1EA] p-1">
+        {VIEWS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            role="tab"
+            aria-selected={view === v.id}
+            onClick={() => setView(v.id)}
+            className={`min-h-[40px] flex-1 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition ${
+              view === v.id ? "bg-white text-[#113D2E] shadow-sm" : "text-[#476458] hover:text-[#113D2E]"
+            }`}
+          >
+            {v.label}
+            {v.id === "overview" && overdue > 0 && (
+              <span className="ml-1.5 rounded-full bg-[#FEE2E2] px-1.5 text-xs text-[#991B1B]">{overdue}</span>
             )}
-            {closedCases.length > 0 && (
-              <details className="mt-4 text-sm text-[#476458]">
-                <summary className="min-h-[44px] cursor-pointer py-2 font-semibold text-[#113D2E]">
-                  {closedCases.length} resolved case{closedCases.length > 1 ? "s" : ""}
-                </summary>
-                <div className="mt-2 space-y-3">
-                  {closedCases.map((c) => (
-                    <FollowUpCase key={c.case_id} item={c} metricOptions={metricOptions} now={now} onChanged={onChanged} onError={onError} />
-                  ))}
-                </div>
-              </details>
+            {v.id === "alerts" && state.explainable_alerts.length > 0 && (
+              <span className="ml-1.5 rounded-full bg-[#FEF3C7] px-1.5 text-xs text-[#92400E]">{state.explainable_alerts.length}</span>
             )}
-          </section>
+          </button>
+        ))}
+      </div>
 
-          <section className={panel} aria-labelledby="alerts-title">
-            <SectionTitle icon={AlertTriangle}>
-              <span id="alerts-title">Why alerts fired</span>
-            </SectionTitle>
-            {state.explainable_alerts.length === 0 ? (
-              <p className="text-sm text-[#476458]">No active alerts. All readings sit within this astronaut's personal band.</p>
-            ) : (
-              <div className="space-y-3">
-                {state.explainable_alerts.map((a) => (
-                  <ExplainableAlertItem key={a.alert_id} alert={a} />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        <div className="space-y-5 xl:col-span-5">
-          <BaselinePanel baseline={state.adaptive_baseline} />
-          <ContextPanel report={state.contextual_intelligence} />
-          <EarthLinkPanel state={state} onChanged={onChanged} onError={onError} />
-        </div>
+      <div role="tabpanel" className="space-y-5">
+        {view === "overview" && (
+          <>
+            <CrossDiagnosisPanel result={state.cross_diagnosis} />
+              <section className={panel} aria-labelledby="followup-title">
+                <SectionTitle
+                  icon={FileCheck2}
+                  aside={
+                    <span className="text-xs font-semibold text-[#476458]">
+                      {openCases.length} open{overdue > 0 && <span className="text-[#991B1B]"> · {overdue} overdue</span>}
+                    </span>
+                  }
+                >
+                  <span id="followup-title">Follow-up</span>
+                </SectionTitle>
+                {openCases.length === 0 ? (
+                  <p className="text-sm text-[#476458]">No open cases. Every alert so far was confirmed, acted on and closed.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {openCases.map((c) => (
+                      <FollowUpCase key={c.case_id} item={c} metricOptions={metricOptions} now={now} onChanged={onChanged} onError={onError} />
+                    ))}
+                  </div>
+                )}
+                {closedCases.length > 0 && (
+                  <details className="mt-4 text-sm text-[#476458]">
+                    <summary className="min-h-[44px] cursor-pointer py-2 font-semibold text-[#113D2E]">
+                      {closedCases.length} resolved case{closedCases.length > 1 ? "s" : ""}
+                    </summary>
+                    <div className="mt-2 space-y-3">
+                      {closedCases.map((c) => (
+                        <FollowUpCase key={c.case_id} item={c} metricOptions={metricOptions} now={now} onChanged={onChanged} onError={onError} />
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </section>
+          </>
+        )}
+        {view === "alerts" && (
+          <>
+              <section className={panel} aria-labelledby="alerts-title">
+                <SectionTitle icon={AlertTriangle}>
+                  <span id="alerts-title">Why alerts fired</span>
+                </SectionTitle>
+                {state.explainable_alerts.length === 0 ? (
+                  <p className="text-sm text-[#476458]">No active alerts. All readings sit within this astronaut's personal band.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {state.explainable_alerts.map((a) => (
+                      <ExplainableAlertItem key={a.alert_id} alert={a} />
+                    ))}
+                  </div>
+                )}
+              </section>
+          </>
+        )}
+        {view === "baseline" && (
+          <div className="grid gap-5 xl:grid-cols-5">
+            <div className="xl:col-span-3">
+              <BaselinePanel baseline={state.adaptive_baseline} />
+            </div>
+            <div className="xl:col-span-2">
+              <ContextPanel report={state.contextual_intelligence} />
+            </div>
+          </div>
+        )}
+        {view === "earth" && <EarthLinkPanel state={state} onChanged={onChanged} onError={onError} />}
       </div>
     </div>
   );
