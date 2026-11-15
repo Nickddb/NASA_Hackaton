@@ -406,22 +406,33 @@ class ClinicalEvaluationResult(BaseModel):
 # --- PILLAR 5: NASA Feeds & Spacecraft-Earth Continuity ---
 class SpaceWeatherEvent(BaseModel):
     event_id: str
-    event_type: Literal["FLR", "SEP", "CME", "GST"]
+    event_type: Literal["FLR", "SEP", "CME", "GST", "RBE"]
     begin_time: str
     peak_time: str | None = None
     class_or_intensity: str
     source_location: str
     note: str
+    is_active: bool = Field(False, description="Started inside the active window (default 72 h)")
+    origin: Literal["nasa_donki", "scenario_simulation"] = "nasa_donki"
+    link: str | None = None
 
 
 class SpaceWeatherSummary(BaseModel):
-    source: Literal["live_nasa_donki", "curated_local_fallback"]
+    source: Literal["live_nasa_donki", "cached_nasa_donki", "curated_local_fallback"]
     fetched_at: str
     alert_level: SeverityStatus
     active_flare_count: int
     active_sep_count: int
     active_cme_count: int = 0
     active_gst_count: int = 0
+    active_rbe_count: int = 0
+    status_label: str = "Nominal"
+    fetch_status: str = Field("", description="Why this source was used, e.g. 'live', 'HTTP 429 -> cache from 12 min ago'")
+    window_start: str | None = None
+    window_end: str | None = None
+    active_window_hours: int = 72
+    uses_demo_key: bool = True
+    includes_scenario_simulation: bool = False
     comms_degradation_risk: Literal["NONE", "MODERATE_HF_SCINTILLATION", "SEVERE_BLACKOUT_WINDOW"] = "NONE"
     recommended_dose_limit_msv_h: float
     alara_instruction: str

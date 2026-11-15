@@ -513,7 +513,7 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
 
     @tool
     def check_nasa_donki_and_horizons_tool(window_days: int = 14) -> str:
-        """Check NASA DONKI Space Weather (FLR, SEP, CME, GST) and NASA JPL Horizons Earth-Spacecraft distance & light-time latency."""
+        """Check NASA DONKI space weather (SEP, FLR, RBE) and NASA JPL Horizons Earth-spacecraft distance & light-time latency."""
         state = state_manager.get_state()
         sw = state.space_weather
         hz = state.horizons_link
@@ -524,16 +524,17 @@ def build_agent_tools(state_manager: MissionStateManager, trace_log: list[ToolTr
                 tool_name="check_nasa_donki_and_horizons",
                 status="OK" if sw_status == "NOMINAL" else sw_status,
                 summary=(
-                    f"DONKI: {sw.active_flare_count if sw else 0} FLR, {sw.active_sep_count if sw else 0} SEP, "
-                    f"{sw.active_cme_count if sw else 0} CME | Horizons: {hz.one_way_light_time_seconds if hz else 720:.0f}s delay"
+                    f"DONKI: {sw.status_label if sw else 'n/a'} ({sw.active_sep_count if sw else 0} SEP, "
+                    f"{sw.active_flare_count if sw else 0} FLR, {sw.active_rbe_count if sw else 0} RBE active) | "
+                    f"Horizons: {hz.one_way_light_time_seconds if hz else 720:.0f}s delay"
                 ),
                 rule_or_score=f"ALARA {sw_status} | {hz.distance_au if hz else 1.44:.2f} AU",
             )
         )
         return (
-            f"NASA DONKI ({sw.source if sw else 'fallback'}): Alert={sw_status}, "
-            f"FLR={sw.active_flare_count if sw else 0}, SEP={sw.active_sep_count if sw else 0}, "
-            f"CME={sw.active_cme_count if sw else 0}, GST={sw.active_gst_count if sw else 0}, "
+            f"NASA DONKI ({sw.source if sw else 'fallback'}; {sw.fetch_status if sw else ''}): {sw.status_label if sw else 'n/a'} | "
+            f"Alert={sw_status}, active in last {sw.active_window_hours if sw else 72} h: SEP={sw.active_sep_count if sw else 0}, "
+            f"FLR={sw.active_flare_count if sw else 0}, RBE={sw.active_rbe_count if sw else 0}, "
             f"Comms Risk={sw.comms_degradation_risk if sw else 'NONE'}. "
             f"NASA JPL Horizons ({hz.target_body if hz else 'Deep Space'}): Distance={hz.distance_km if hz else 0:,.0f} km "
             f"({hz.distance_au if hz else 0:.4f} AU), One-Way Light Time={hz.one_way_light_time_seconds if hz else 720:.0f}s."

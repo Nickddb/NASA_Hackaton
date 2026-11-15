@@ -19,3 +19,4 @@ Thumbs.db
 # Runtime offline ledger (AstraCare backend)
 backend/data/local_mission_ledger.json
 backend/data/followup_cases.json
+backend/data/donki_cache.json
