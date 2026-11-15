@@ -5,7 +5,6 @@ import {
   HeartPulse,
   MessageSquare,
   Orbit,
-  SlidersHorizontal,
   Sun,
   Users,
 } from "lucide-react";
@@ -22,7 +21,6 @@ export const ASTRONAUT_PAGES = [
   { id: "mind", label: "Mind", icon: Brain },
   { id: "assistant", label: "Assistant", icon: MessageSquare },
 ];
-export const TOOL_PAGES = [{ id: "simulator", label: "Simulator", icon: SlidersHorizontal }];
 
 const STATUS_DOT = {
   CRITICAL: "bg-red-500",
@@ -123,9 +121,6 @@ export default function AppSidebar({
         ))}
 
         <div className="my-4 h-px bg-white/[0.06]" />
-        {TOOL_PAGES.map((item) => (
-          <NavItem key={item.id} item={item} active={page === item.id} onClick={() => onNavigate(item.id)} />
-        ))}
         <NavItem item={{ id: "standards", label: "NASA standards", icon: BookOpen }} active={false} onClick={onOpenStandards} />
       </nav>
 
@@ -138,7 +133,7 @@ export default function AppSidebar({
 
 // Below lg the sidebar becomes a bottom tab bar (no top header on any size).
 export function MobileTabBar({ page, onNavigate, alertCount = 0 }) {
-  const items = [...MISSION_PAGES.slice(0, 1), ...ASTRONAUT_PAGES, MISSION_PAGES[1], ...TOOL_PAGES];
+  const items = [...MISSION_PAGES.slice(0, 1), ...ASTRONAUT_PAGES, MISSION_PAGES[1]];
   return (
     <nav
       aria-label="Main navigation"
