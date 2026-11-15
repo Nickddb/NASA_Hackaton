@@ -207,22 +207,30 @@ async def fetch_donki_raw(force: bool = False) -> tuple[dict[str, list[dict[str,
                 return_exceptions=True,
             )
         raw: dict[str, list[dict[str, Any]]] = {}
+        failed: list[str] = []
         for kind, resp in zip(DONKI_TYPES, responses):
             if isinstance(resp, Exception):
-                failure = f"{kind}: {type(resp).__name__}"
-                break
-            if resp.status_code == 429:
-                failure = f"{kind}: HTTP 429 rate limit"
-                break
-            if resp.status_code != 200:
-                failure = f"{kind}: HTTP {resp.status_code}"
-                break
-            body = resp.json() if resp.content else []
-            raw[kind] = body if isinstance(body, list) else []  # DONKI answers an empty body when there are no events
-        else:
+                failed.append(f"{kind}: {type(resp).__name__}")
+            elif resp.status_code != 200:
+                failed.append(f"{kind}: HTTP {resp.status_code}" + (" rate limit" if resp.status_code == 429 else ""))
+            else:
+                body = resp.json() if resp.content else []
+                raw[kind] = body if isinstance(body, list) else []  # DONKI answers an empty body when there are no events
+        if raw:
+            # one feed down at NASA (e.g. FLR 404) must not throw away the others: fill only the gaps
             fetched_at = now.isoformat()
+            filled = []
+            for kind in DONKI_TYPES:
+                if kind not in raw:
+                    if cache and kind in cache["data"]:
+                        raw[kind] = cache["data"][kind]
+                        filled.append(f"{kind} from cache")
+                    else:
+                        raw[kind] = []
             _write_cache(raw, fetched_at)
-            return raw, "live_nasa_donki", "live", fetched_at
+            status = "live" if not failed else f"live ({'; '.join(failed)}" + (f" -> {', '.join(filled)}" if filled else "") + ")"
+            return raw, "live_nasa_donki", status, fetched_at
+        failure = "; ".join(failed)
     except Exception as exc:  # network down onboard: never break the medical UI
         failure = type(exc).__name__
 
