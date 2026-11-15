@@ -1,6 +1,6 @@
 [project]
-name = "astracare-ml-backend-teste"
-version = "0.2.0"
+name = "astracare-backend"
+version = "0.3.0"
 description = "AstraCare AI — Adaptive Individual Baseline, Contextual Intelligence, Explainable ML, Closed-Loop Follow-Up & Earth Continuity Backend"
 requires-python = ">=3.11"
 dependencies = [

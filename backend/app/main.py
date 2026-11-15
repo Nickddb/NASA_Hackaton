@@ -42,8 +42,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="AstraCare AI — Real ML & Clinical Continuity Backend (Teste)",
-    version="0.2.0",
+    title="AstraCare AI — Real ML & Clinical Continuity Backend",
+    version="0.3.0",
     description=(
         "5-Pillar Aerospace Medical Backend: "
         "(1) Adaptive Individual Baseline, "
@@ -74,7 +74,7 @@ app.add_middleware(
 def health_check() -> dict[str, Any]:
     return {
         "status": "ok",
-        "service": "AstraCare AI Real ML & Clinical Continuity Engine (teste)",
+        "service": "AstraCare AI Real ML & Clinical Continuity Engine",
         "ml_models_ready": bool(state_manager.ml_predictor.classes_),
         "ml_classes": state_manager.ml_predictor.classes_,
         "ml_validation": state_manager.ml_predictor.validation_metrics.model_dump()
