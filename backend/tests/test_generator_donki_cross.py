@@ -224,3 +224,35 @@ def test_thresholds_match_spec_table():
     assert (cal.BP_SYS_CRIT_LOW, cal.BP_SYS_CRIT_HIGH) == (90, 145)
     assert cal.CTB_CRIT_MS == 390 and cal.SLEEP_CRIT_H == 4.5 and cal.SLEEP_CRIT_NIGHTS == 2
     assert cal.RADIATION_SPE_RATE_MSV_H == 0.5 and cal.CAREER_LIMIT_MSV == 600 and cal.SPE_EVENT_LIMIT_MSV == 250
+
+
+# ---------------- ML trained on the generator ----------------
+def test_ml_uses_new_features_and_states_its_data_source(client):
+    m = client.get("/api/ml/validation").json()
+    for f in ("ctb_reaction_time_ms", "personal_envelope_deviations", "donki_activity", "behavioural_symptom_flag"):
+        assert f in m["feature_names"]
+    assert "synthetic" in m["training_data_source"]
+    assert m["training_samples"] >= 900 and m["macro_f1_score"] > 90
+
+
+def test_ml_classifies_every_profile_for_every_roster_astronaut():
+    from app.main import state_manager as sm
+
+    misses = []
+    for cid in sm.crew_records:
+        sm.select_crew_member(cid)
+        for crisis in CRISIS_PROFILES:
+            got = sm.switch_scenario(crisis).ml_prediction.predicted_syndrome
+            if got != crisis:
+                misses.append((cid, crisis, got))
+    sm.select_crew_member("elena_vance")
+    assert misses == []
+
+
+def test_ml_attribution_is_clinically_plausible():
+    from app.main import state_manager as sm
+
+    top = lambda sc: [f.feature for f in sm.switch_scenario(sc).ml_prediction.feature_importances[:3]]  # noqa: E731
+    assert "ctb_reaction_time_ms" in top("behavioral_fatigue")
+    assert "radiation_msv_h" in top("solar_storm")
+    assert "glucose_mg_dl" in top("hypoglycemia")
