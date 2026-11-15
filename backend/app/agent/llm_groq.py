@@ -7,8 +7,10 @@ the model, which decides the next call (exam -> diagnosis -> central alert -> st
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
+import logging
 import re
 from typing import Any
 
@@ -16,6 +18,7 @@ import httpx
 
 from app import config
 
+log = logging.getLogger("astracare.agent")
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 THINK_BLOCK = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 JSON_TYPES = {"str": "string", "float": "number", "int": "integer", "bool": "boolean"}
@@ -63,11 +66,31 @@ async def run_groq_chat(system_prompt: str, user_message: str, tools: list[Any])
         body["reasoning_format"] = config.GROQ_REASONING_FORMAT
     headers = {"Authorization": f"Bearer {config.GROQ_API_KEY}"}
 
+    async def post(client: httpx.AsyncClient, payload: dict[str, Any]) -> httpx.Response | None:
+        """POST with short waits on 429 (free tier refills tokens every few seconds). None = still limited."""
+        for attempt in range(config.GROQ_RATE_LIMIT_RETRIES + 1):
+            resp = await client.post(GROQ_CHAT_URL, headers=headers, json=payload)
+            if resp.status_code != 429:
+                resp.raise_for_status()
+                return resp
+            try:
+                wait = float(resp.headers.get("retry-after", "2"))
+            except ValueError:
+                wait = 2.0
+            log.warning("Groq rate limit (retry-after %.1f s, attempt %d)", wait, attempt + 1)
+            if wait > config.GROQ_RATE_LIMIT_MAX_WAIT_S or attempt == config.GROQ_RATE_LIMIT_RETRIES:
+                return None
+            await asyncio.sleep(wait)
+        return None
+
     used_tools = False
     async with httpx.AsyncClient(timeout=config.LLM_TIMEOUT_S) as client:
         for _ in range(config.LLM_MAX_TOOL_ROUNDS + 1):
-            resp = await client.post(GROQ_CHAT_URL, headers=headers, json={**body, "messages": messages})
-            resp.raise_for_status()
+            resp = await post(client, {**body, "messages": messages})
+            if resp is None:
+                if not used_tools:
+                    raise RuntimeError("Groq rate limit before any tool ran")
+                return "", True  # the tools already ran; the caller answers from their trace
             msg = resp.json()["choices"][0]["message"]
             calls = msg.get("tool_calls") or []
             if not calls:
@@ -81,10 +104,11 @@ async def run_groq_chat(system_prompt: str, user_message: str, tools: list[Any])
                 except ValueError:
                     args = {}
                 result = fn.invoke(args) if fn else json.dumps({"error": f"unknown tool {call['function']['name']}"})
-                messages.append({"role": "tool", "tool_call_id": call["id"], "content": str(result)})
+                content = str(result)[: config.LLM_TOOL_RESULT_MAX_CHARS]
+                messages.append({"role": "tool", "tool_call_id": call["id"], "content": content})
         # round limit reached: ask for a final answer without tools
-        resp = await client.post(
-            GROQ_CHAT_URL, headers=headers, json={**{k: v for k, v in body.items() if k not in ("tools", "tool_choice")}, "messages": messages}
-        )
-        resp.raise_for_status()
+        final = {k: v for k, v in body.items() if k not in ("tools", "tool_choice")}
+        resp = await post(client, {**final, "messages": messages})
+        if resp is None:
+            return "", True
         return clean_reply(resp.json()["choices"][0]["message"].get("content")), used_tools
