@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.engine import nasa_calibration as cal
 from app.models.schemas import (
     AdaptiveBaselineProfile,
     AutonomyGuardrail,
@@ -156,28 +157,26 @@ def evaluate_clinical_and_explainable_rules(
             "Rest seated/anchored for 20 minutes, hydrate 300 ml PWD water, and execute confirmatory resting PPG/NIBP check."
         )
         matched_rules.append("CTX-OSD571-POST-EXERCISE-HR")
-    elif vitals.heart_rate_bpm >= 110 or vitals.heart_rate_bpm <= 44:
+    elif vitals.heart_rate_bpm > cal.HR_CRIT_HIGH or vitals.heart_rate_bpm < cal.HR_CRIT_LOW:
         sys_status["cardiovascular"] = _max_status(sys_status["cardiovascular"], "CRITICAL")
         sys_alerts["cardiovascular"].append(
             f"Heart rate out of flight rule: {vitals.heart_rate_bpm:.0f} bpm (Personal z={hr_ind_z:+.1f}σ)"
         )
         matched_rules.append("NASA-STD-3001-CV-HR-CRIT")
-    elif vitals.heart_rate_bpm >= 95 or vitals.heart_rate_bpm <= 50 or abs(hr_ind_z) >= 2.8:
+    elif vitals.heart_rate_bpm > cal.HR_WARN_HIGH or vitals.heart_rate_bpm < cal.HR_WARN_LOW or abs(hr_ind_z) >= 2.8:
         sys_status["cardiovascular"] = _max_status(sys_status["cardiovascular"], "WARNING")
         sys_alerts["cardiovascular"].append(
             f"Elevated/shifted heart rate vs personal baseline: {vitals.heart_rate_bpm:.0f} bpm (Personal baseline {adaptive_baseline.metrics['heart_rate_bpm'].rolling_ewma_baseline:.0f} bpm, z={hr_ind_z:+.1f}σ)"
         )
         matched_rules.append("NASA-STD-3001-CV-HR-WARN")
 
-    if vitals.bp_systolic <= 85 or vitals.bp_systolic >= 165:
-        sys_status["cardiovascular"] = _max_status(
-            sys_status["cardiovascular"], "CRITICAL" if vitals.bp_systolic <= 82 else "WARNING"
-        )
+    if vitals.bp_systolic < cal.BP_SYS_CRIT_LOW or vitals.bp_systolic > cal.BP_SYS_CRIT_HIGH:
+        sys_status["cardiovascular"] = _max_status(sys_status["cardiovascular"], "CRITICAL")
         sys_alerts["cardiovascular"].append(
             f"Abnormal blood pressure: {vitals.bp_systolic:.0f}/{vitals.bp_diastolic:.0f} mmHg"
         )
         matched_rules.append("NASA-STD-3001-CV-BP-ABNORMAL")
-    elif vitals.bp_systolic <= 92 or (not is_post_exercise_confounder and vitals.bp_systolic >= 130):
+    elif vitals.bp_systolic < cal.BP_SYS_WARN_LOW or (not is_post_exercise_confounder and vitals.bp_systolic > cal.BP_SYS_WARN_HIGH):
         sys_status["cardiovascular"] = _max_status(sys_status["cardiovascular"], "WARNING")
         sys_alerts["cardiovascular"].append(
             f"Blood pressure shift vs personal baseline: {vitals.bp_systolic:.0f}/{vitals.bp_diastolic:.0f} mmHg"
@@ -203,11 +202,11 @@ def evaluate_clinical_and_explainable_rules(
         matched_rules.append("OCHMO-MTB-011-PFO-DCS")
 
     # 2. Respiratory, Cabin CO2 & Thermal
-    if vitals.temperature_c >= 38.0:
+    if vitals.temperature_c >= cal.TEMP_CRIT_HIGH or vitals.temperature_c < cal.TEMP_CRIT_LOW:
         sys_status["respiratory"] = _max_status(sys_status["respiratory"], "CRITICAL")
-        sys_alerts["respiratory"].append(f"High fever detected: {vitals.temperature_c:.1f} C")
+        sys_alerts["respiratory"].append(f"Core temperature out of flight rule: {vitals.temperature_c:.1f} C")
         matched_rules.append("NASA-STD-3001-TEMP-FEVER")
-    elif (vitals.temperature_c >= 37.5 or vitals.temperature_c < 35.8) and not is_post_exercise_confounder:
+    elif (vitals.temperature_c >= cal.TEMP_WARN_HIGH or vitals.temperature_c < cal.TEMP_WARN_LOW) and not is_post_exercise_confounder:
         sys_status["respiratory"] = _max_status(sys_status["respiratory"], "WARNING")
         sys_alerts["respiratory"].append(f"Temperature outside nominal range: {vitals.temperature_c:.1f} C")
         matched_rules.append("NASA-STD-3001-TEMP-DRIFT")
@@ -236,26 +235,28 @@ def evaluate_clinical_and_explainable_rules(
         matched_rules.append("NASA-STD-3001-RESP-WARN")
 
     # 3. Nervous, Sleep, Behavioral & SANS
-    if vitals.sleep_hours < 4.5 or vitals.sleep_streak_low_days >= 3:
+    if vitals.sleep_hours < cal.SLEEP_CRIT_H or vitals.sleep_streak_low_days >= cal.SLEEP_CRIT_NIGHTS:
         sys_status["nervous_sleep"] = _max_status(
-            sys_status["nervous_sleep"], "CRITICAL" if vitals.sleep_streak_low_days >= 3 else "WARNING"
+            sys_status["nervous_sleep"],
+            "CRITICAL" if vitals.sleep_streak_low_days >= cal.SLEEP_CRIT_NIGHTS else "WARNING",
         )
         sys_alerts["nervous_sleep"].append(
             f"Sleep deficit ({vitals.sleep_hours:.1f}h; {vitals.sleep_streak_low_days} consecutive short nights; REM {vitals.rem_sleep_pct:.0f}%)"
         )
         matched_rules.append("OCHMO-MTB-009-SLEEP-DEFICIT")
-    elif vitals.sleep_hours < 6.5:
+    elif vitals.sleep_hours < cal.SLEEP_WARN_H:
         sys_status["nervous_sleep"] = _max_status(sys_status["nervous_sleep"], "WARNING")
         sys_alerts["nervous_sleep"].append(f"Sub-optimal sleep duration: {vitals.sleep_hours:.1f}h")
         matched_rules.append("OCHMO-MTB-009-SLEEP-DRIFT")
 
-    if vitals.mood_score <= 2 or vitals.stress_index >= 75:
+    ctb = vitals.ctb_reaction_time_ms
+    if vitals.mood_score <= cal.MOOD_CRIT or vitals.stress_index >= 75 or ctb > cal.CTB_WARN_MS:
         sys_status["nervous_sleep"] = _max_status(
             sys_status["nervous_sleep"],
-            "CRITICAL" if (vitals.mood_score <= 2 and vitals.sleep_streak_low_days >= 3) else "WARNING",
+            "CRITICAL" if (vitals.mood_score <= cal.MOOD_CRIT and ctb > cal.CTB_CRIT_MS) else "WARNING",
         )
         sys_alerts["nervous_sleep"].append(
-            f"Elevated behavioral strain (Mood {vitals.mood_score}/5, Stress {vitals.stress_index:.0f}%)"
+            f"Elevated behavioral strain (Mood {vitals.mood_score}/5, Stress {vitals.stress_index:.0f}%, CTB reaction {ctb:.0f} ms)"
         )
         matched_rules.append("NASA-BHP-BEHAVIORAL-STRAIN")
 
@@ -270,11 +271,11 @@ def evaluate_clinical_and_explainable_rules(
     cal_pct = (nutrition.calories_kcal / max(nutrition.goal_calories_kcal, 1)) * 100.0
     water_pct = (nutrition.water_ml / max(nutrition.goal_water_ml, 1)) * 100.0
 
-    if vitals.glucose_mg_dl < 60 or vitals.glucose_mg_dl >= 180:
+    if vitals.glucose_mg_dl < cal.GLUCOSE_CRIT_LOW or vitals.glucose_mg_dl > cal.GLUCOSE_CRIT_HIGH:
         sys_status["metabolic"] = _max_status(sys_status["metabolic"], "CRITICAL")
         sys_alerts["metabolic"].append(f"Critical blood glucose: {vitals.glucose_mg_dl:.0f} mg/dL")
         matched_rules.append("NASA-STD-3001-GLUCOSE-CRIT")
-    elif vitals.glucose_mg_dl <= 70 or vitals.glucose_mg_dl >= 140:
+    elif vitals.glucose_mg_dl <= cal.GLUCOSE_WARN_LOW or vitals.glucose_mg_dl >= cal.GLUCOSE_WARN_HIGH:
         sys_status["metabolic"] = _max_status(sys_status["metabolic"], "WARNING")
         sys_alerts["metabolic"].append(f"Glycemic excursion: {vitals.glucose_mg_dl:.0f} mg/dL")
         matched_rules.append("NASA-STD-3001-GLUCOSE-WARN")
@@ -312,16 +313,29 @@ def evaluate_clinical_and_explainable_rules(
         matched_rules.append("OCHMO-TB-043-BONE-CALCIUM")
 
     # 6. Radiation
-    if vitals.radiation_msv_h >= 0.50:
+    if vitals.radiation_msv_h > cal.RADIATION_SPE_RATE_MSV_H:
         sys_status["radiation"] = _max_status(sys_status["radiation"], "CRITICAL")
         sys_alerts["radiation"].append(
             f"Acute Solar Particle Event dose spike: {vitals.radiation_msv_h:.2f} mSv/h (>0.50 threshold)"
         )
         matched_rules.append("NASA-ALARA-SPE-CRIT")
-    elif vitals.radiation_msv_h >= 0.15:
+    elif vitals.radiation_msv_h >= cal.RADIATION_WARN_RATE_MSV_H:
         sys_status["radiation"] = _max_status(sys_status["radiation"], "WARNING")
         sys_alerts["radiation"].append(f"Elevated cosmic/solar radiation rate: {vitals.radiation_msv_h:.2f} mSv/h")
         matched_rules.append("NASA-ALARA-RAD-WARN")
+
+    if vitals.cumulative_radiation_msv >= cal.CAREER_LIMIT_MSV:
+        sys_status["radiation"] = _max_status(sys_status["radiation"], "CRITICAL")
+        sys_alerts["radiation"].append(
+            f"Career effective dose limit reached: {vitals.cumulative_radiation_msv:.0f} / {cal.CAREER_LIMIT_MSV:.0f} mSv (NASA-STD-3001)"
+        )
+        matched_rules.append("NASA-STD-3001-CAREER-DOSE")
+    elif vitals.cumulative_radiation_msv >= 0.8 * cal.CAREER_LIMIT_MSV:
+        sys_status["radiation"] = _max_status(sys_status["radiation"], "WARNING")
+        sys_alerts["radiation"].append(
+            f"Cumulative dose at {vitals.cumulative_radiation_msv / cal.CAREER_LIMIT_MSV:.0%} of the {cal.CAREER_LIMIT_MSV:.0f} mSv career limit"
+        )
+        matched_rules.append("NASA-STD-3001-CAREER-DOSE-80PCT")
 
     # --- Determine Primary Syndrome & Protocol Checklists ---
     primary_diagnosis = "Nominal Spaceflight Physiological Status"
@@ -329,7 +343,7 @@ def evaluate_clinical_and_explainable_rules(
     notify_earth = False
     notify_crew = False
 
-    if vitals.radiation_msv_h >= 0.50:
+    if vitals.radiation_msv_h > cal.RADIATION_SPE_RATE_MSV_H:
         syndrome_code = "solar_storm"
         primary_diagnosis = "Solar Particle Event (SPE) — Acute Radiation Spike"
         matched_rules.insert(0, "SYNDROME_SOLAR_PARTICLE_EVENT")
@@ -344,7 +358,8 @@ def evaluate_clinical_and_explainable_rules(
         ]
         notify_earth = True
         notify_crew = True
-    elif vitals.temperature_c >= 38.0 and (vitals.bp_systolic <= 90 or vitals.heart_rate_bpm >= 105):
+    # Spec layer 2: Temp >= 38.0 C + HR > 90 bpm + sleep < 6 h -> viral infection / immune reactivation
+    elif vitals.temperature_c >= cal.TEMP_CRIT_HIGH and vitals.heart_rate_bpm > 90 and vitals.sleep_hours < 6.0:
         syndrome_code = "systemic_infection"
         primary_diagnosis = "Systemic Infection / Acute Viral State with Dehydration Risk"
         matched_rules.insert(0, "SYNDROME_SYSTEMIC_INFECTION")
@@ -364,7 +379,8 @@ def evaluate_clinical_and_explainable_rules(
         ]
         notify_earth = True
         notify_crew = True
-    elif vitals.bp_systolic <= 90 and vitals.heart_rate_bpm >= 100 and vitals.temperature_c < 37.5:
+    # Spec layer 2: systolic < 90 mmHg + HR > 100 bpm -> orthostatic hypotension / fluid-shift dehydration
+    elif vitals.bp_systolic < cal.BP_SYS_CRIT_LOW and vitals.heart_rate_bpm > 100 and vitals.temperature_c < cal.TEMP_WARN_HIGH:
         syndrome_code = "orthostatic_intolerance"
         primary_diagnosis = "Orthostatic Intolerance / Post-EVA Fluid Shift & Hypovolemia"
         matched_rules.insert(0, "SYNDROME_ORTHOSTATIC_INTOLERANCE")
@@ -379,7 +395,9 @@ def evaluate_clinical_and_explainable_rules(
             "If post-EVA with PFO risk flag, screen with portable Ultrasound 2 for venous gas emboli (OCHMO-MTB-011).",
         ]
         notify_earth = True
-    elif vitals.sleep_hours < 4.5 and vitals.sleep_streak_low_days >= 3 and vitals.hrv_ms <= 26:
+    elif vitals.sleep_streak_low_days >= cal.SLEEP_CRIT_NIGHTS or (
+        vitals.mood_score <= cal.MOOD_CRIT and vitals.ctb_reaction_time_ms > cal.CTB_CRIT_MS
+    ):
         syndrome_code = "behavioral_fatigue"
         primary_diagnosis = "Severe Behavioral Fatigue & Circadian Desynchrony (OCHMO-MTB-009)"
         matched_rules.insert(0, "SYNDROME_BEHAVIORAL_FATIGUE")
@@ -394,7 +412,7 @@ def evaluate_clinical_and_explainable_rules(
             "Schedule private behavioral health check-in and reassess HRV RMSSD after next recovery sleep cycle.",
         ]
         notify_earth = True
-    elif vitals.glucose_mg_dl <= 70 and cal_pct < 50.0:
+    elif vitals.glucose_mg_dl < cal.GLUCOSE_CRIT_LOW or (vitals.glucose_mg_dl <= cal.GLUCOSE_WARN_LOW and cal_pct < 50.0):
         syndrome_code = "hypoglycemia"
         primary_diagnosis = "Caloric-Deficit Hypoglycemia & EVA Musculoskeletal Strain"
         matched_rules.insert(0, "SYNDROME_CALORIC_HYPOGLYCEMIA")
