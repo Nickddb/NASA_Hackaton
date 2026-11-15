@@ -553,6 +553,19 @@ class ToolTraceItem(BaseModel):
     rule_or_score: str
 
 
+class SmartwatchExamRequest(BaseModel):
+    exam_type: Literal["full_panel", "cardio", "cognitive_ctb", "dosimetry", "respiratory", "metabolic"] = "full_panel"
+    interval_minutes: float | None = Field(None, ge=1, le=1440, description="Repeat period; omit for a one-off exam")
+    trigger_now: bool = True
+
+
+class AnalyzeTelemetryRequest(BaseModel):
+    telemetry_payload: dict[str, Any] | None = Field(None, description="Vitals to ingest; omit to use the latest reading")
+    external_space_weather_context: dict[str, Any] | None = Field(
+        None, description='DONKI context, e.g. {"SEP": [{"class": "S2"}], "alert_level": "WARNING"}; omit for live DONKI'
+    )
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
     crew_id: str | None = None

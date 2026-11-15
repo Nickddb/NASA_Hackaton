@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -10,10 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app import config
+from app.agent.mission_tools import MissionAgentTools
 from app.agent.orchestrator import AstraCareOrchestrator
 from app.engine.body_regions import BODY_REGIONS
 from app.models.schemas import (
+    AnalyzeTelemetryRequest,
     PainReportRequest,
+    SmartwatchExamRequest,
     AdaptiveBaselineProfile,
     CentralPsychAlertRecord,
     ChatRequest,
@@ -41,15 +46,31 @@ from app.models.schemas import (
 from app.state_manager import MissionStateManager
 
 state_manager = MissionStateManager()
-orchestrator = AstraCareOrchestrator(state_manager)
+mission_agent = MissionAgentTools(state_manager)
+orchestrator = AstraCareOrchestrator(state_manager, mission_agent)
+log = logging.getLogger("astracare.scheduler")
+
+
+async def smartwatch_loop() -> None:
+    """Background collection: every tick, run each due smartwatch exam through the full tool chain."""
+    while True:
+        await asyncio.sleep(config.SCHEDULER_TICK_S)
+        try:
+            for result in await asyncio.to_thread(mission_agent.run_due_schedules):
+                log.info("cycle %s: %s %s -> %s", result["astronaut_id"], result["status"], result["category"], result["chain"])
+        except Exception:  # keep the loop alive; one bad cycle must not stop monitoring
+            log.exception("smartwatch cycle failed")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Pull NASA DONKI once at start-up without blocking it; offline -> cache/sample is already loaded.
-    task = asyncio.create_task(state_manager.refresh_space_weather())
+    tasks = [asyncio.create_task(state_manager.refresh_space_weather())]
+    if config.SCHEDULER_ENABLED:
+        tasks.append(asyncio.create_task(smartwatch_loop()))
     yield
-    task.cancel()
+    for task in tasks:
+        task.cancel()
 
 
 app = FastAPI(
@@ -362,6 +383,48 @@ def generate_telemedicine_dossier(crew_id: str | None = None) -> TelemedicineDos
 async def agent_chat(payload: ChatRequest) -> ChatResponse:
     """Phase 2 Agentic Chatbot & Clinical Decision-Support Orchestrator (10 Tools across 6 Pillars)."""
     return await orchestrator.handle_chat(payload.message, crew_id=payload.crew_id)
+
+
+# --- Multi-tool monitoring agent (smartwatch -> diagnosis -> central alert -> psychological stimuli) ---
+def _agent_call(fn, *args, **kwargs) -> dict[str, Any]:
+    try:
+        return fn(*args, **kwargs)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc).strip("'")) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/agent/smartwatch/{crew_id}")
+def schedule_smartwatch_exam(crew_id: str, payload: SmartwatchExamRequest) -> dict[str, Any]:
+    """Tool 1: schedule a periodic exam (interval_minutes) and/or collect one now (trigger_now)."""
+    return _agent_call(
+        mission_agent.schedule_smartwatch_exam, crew_id, payload.exam_type, payload.interval_minutes, payload.trigger_now
+    )
+
+
+@app.get("/api/agent/smartwatch")
+def list_smartwatch_schedules(crew_id: str | None = None) -> list[dict[str, Any]]:
+    return mission_agent.scheduler.list_schedules(crew_id)
+
+
+@app.delete("/api/agent/smartwatch/{crew_id}/{exam_type}")
+def cancel_smartwatch_schedule(crew_id: str, exam_type: str) -> dict[str, bool]:
+    return {"cancelled": mission_agent.scheduler.cancel(crew_id, exam_type)}
+
+
+@app.post("/api/agent/analyze/{crew_id}")
+def analyze_telemetry(crew_id: str, payload: AnalyzeTelemetryRequest) -> dict[str, Any]:
+    """Tool 2: diagnosis (status / category / probable_diagnosis / confidence_score) without side effects on alerts."""
+    return _agent_call(
+        mission_agent.analyze_telemetry_and_diagnose, crew_id, payload.telemetry_payload, payload.external_space_weather_context
+    )
+
+
+@app.post("/api/agent/cycle/{crew_id}")
+def run_monitoring_cycle(crew_id: str, exam_type: str = "full_panel") -> dict[str, Any]:
+    """Full chain: exam -> diagnosis -> central alert (if severe) -> psychological stimuli (if psychological)."""
+    return _agent_call(mission_agent.run_monitoring_cycle, crew_id, exam_type)
 
 
 # --- Optional Static Frontend Hosting (SPA) ---
