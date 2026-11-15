@@ -6,25 +6,36 @@ from uuid import uuid4
 
 import numpy as np
 
-from app.engine.clinical_rules import evaluate_clinical_and_explainable_rules, load_scenarios_catalog
+from app.engine.clinical_rules import (
+    build_personal_baseline_from_profile,
+    evaluate_clinical_and_explainable_rules,
+    evaluate_personal_baseline,
+    load_scenarios_catalog,
+    max_severity,
+)
 from app.engine.cross_diagnosis import SEVERE_PSYCH, evaluate_cross_diagnosis
 from app.engine.earth_sync import FOLLOWUP_STORE_PATH, EarthSyncManager
 from app.engine.followup_loop import FollowUpCaseManager
-from app.engine.telemetry_generator import CRISIS_PROFILES, TelemetryGenerator
 from app.engine.nasa_feeds import (
     fetch_nasa_space_weather,
     load_sample_donki,
     load_sample_horizons,
 )
+from app.engine.telemetry_generator import CRISIS_PROFILES, TelemetryGenerator
 from app.ml.adaptive_baseline import AdaptiveBaselineEngine
 from app.ml.contextual_intelligence import ContextualIntelligenceEngine
 from app.ml.predictor import AstraCareRealMLEngine
 from app.ml.psych_biofeedback import PsychBiofeedbackEngine
 from app.models.schemas import (
     CentralPsychAlertRecord,
+    ClinicalEvaluationResult,
     ClinicalFollowUpCase,
     CompleteReassessmentRequest,
     ContextUpdateRequest,
+    CrewAlertRecord,
+    CrewMemberSummary,
+    CrewRosterResponse,
+    DispatchAlertRequest,
     EarthSyncPackage,
     EscalateCaseRequest,
     HorizonsLinkStatus,
@@ -34,13 +45,121 @@ from app.models.schemas import (
     MissionContext,
     MissionState,
     NutritionHydrationState,
+    PersonalBaseline,
     PsychBiofeedbackEvaluation,
     RecordActionRequest,
     RecordConfirmationRequest,
+    SeverityStatus,
     SpaceWeatherSummary,
+    StabilizeRequest,
     TelemedicineDossier,
     VitalSigns,
 )
+
+DEFAULT_CREW_META: dict[str, dict[str, Any]] = {
+    "elena_vance": {
+        "callsign": "EVA-1",
+        "role": "Mission Commander & Lead EVA Specialist",
+        "mission_group": "EVA",
+        "location_module": "ISS Quest Airlock (EVA)",
+        "suit_variant": "MERCURY_EVA_SILVER",
+        "environment_id": "transit",
+        "initial_scenario_id": "nominal",
+    },
+    "lucas_ferreira": {
+        "callsign": "MS-1",
+        "role": "Mission Specialist & Biomedical Payload Officer",
+        "mission_group": "INTERNAL",
+        "location_module": "Columbus Bio-Lab",
+        "suit_variant": "IVA_FLIGHT_BLUE",
+        "environment_id": "orbital_station",
+        "initial_scenario_id": "hypoglycemia",
+    },
+    "kenji_sato": {
+        "callsign": "PLT-1",
+        "role": "Spacecraft Pilot & Systems Engineer",
+        "mission_group": "EVA",
+        "location_module": "Orion Flight Deck",
+        "suit_variant": "MERCURY_IVA_SLATE",
+        "environment_id": "transit",
+        "initial_scenario_id": "nominal",
+    },
+    "amara_okafor": {
+        "callsign": "MED-2",
+        "role": "Crew Medical Officer",
+        "mission_group": "INTERNAL",
+        "location_module": "ISS Harmony Medical Bay",
+        "suit_variant": "MERCURY_EVA_CYAN",
+        "environment_id": "orbital_station",
+        "initial_scenario_id": "nominal",
+    },
+    "liam_soren": {
+        "callsign": "MS-3",
+        "role": "Propulsion & Habitat Environmental Specialist",
+        "mission_group": "INTERNAL",
+        "location_module": "Zvezda Habitation Core",
+        "suit_variant": "IVA_OPS_AMBER",
+        "environment_id": "transit",
+        "initial_scenario_id": "systemic_infection",
+    },
+}
+
+SYNDROME_TO_SYSTEM: dict[str, str] = {
+    "nominal": "cardiovascular",
+    "post_exercise_physiological": "cardiovascular",
+    "orthostatic_intolerance": "cardiovascular",
+    "decompression_sickness": "respiratory",
+    "cabin_co2_pocket": "respiratory",
+    "hypoglycemia": "metabolic",
+    "systemic_infection": "respiratory",
+    "behavioral_fatigue": "nervous_sleep",
+    "solar_storm": "radiation",
+    "external_medical_alert": "cardiovascular",
+}
+
+
+class CrewMemberRecord:
+    """Isolated runtime state for a single astronaut on the mission roster."""
+
+    def __init__(
+        self,
+        crew_id: str,
+        profile: dict[str, Any],
+        meta: dict[str, Any],
+        scenario: dict[str, Any],
+        mission_day: int,
+    ) -> None:
+        self.crew_id: str = crew_id
+        self.profile: dict[str, Any] = profile
+        self.name: str = profile.get("name", crew_id)
+        self.callsign: str = profile.get("callsign", meta.get("callsign", crew_id.upper()))
+        self.role: str = profile.get("role", meta.get("role", "Crew Specialist"))
+        self.mission_group: str = meta.get("mission_group", profile.get("mission_group", "INTERNAL"))
+        self.location_module: str = meta.get("location_module", profile.get("location_module", "Habitat Module"))
+        self.suit_variant: str = meta.get("suit_variant", profile.get("suit_variant", "IVA_STANDARD"))
+        self.environment_id: str = meta.get("environment_id", profile.get("environment_id", "transit"))
+
+        self.scenario_id: str = scenario["id"]
+        self.mission_day: int = int(scenario.get("mission_day", mission_day))
+        self.mission_context: MissionContext = MissionContext(**scenario.get("mission_context", {}))
+        self.measurement_quality: MeasurementQualityProfile = MeasurementQualityProfile(
+            **scenario.get("measurement_quality", {})
+        )
+        self.nutrition: NutritionHydrationState = NutritionHydrationState(**scenario["nutrition"])
+
+        gen = TelemetryGenerator(self.profile, self.mission_context.mission_phase)
+        vitals_dict, series = gen.generate(scenario.get("crisis_profile", self.scenario_id), self.mission_day)
+        vitals_dict["reported_symptoms"] = list(scenario.get("reported_symptoms", []))
+        self.vitals: VitalSigns = VitalSigns(**vitals_dict)
+        self.longitudinal_series: list[dict[str, Any]] = series
+
+        self.personal_baseline: PersonalBaseline = build_personal_baseline_from_profile(profile)
+        self.active_alert: CrewAlertRecord | None = None
+        self.pending_verification_measurement: bool = False
+        now_iso = datetime.now(timezone.utc).isoformat()
+        self.last_measured_at: str = now_iso
+        self.last_updated: str = now_iso
+        self.horizons_link: HorizonsLinkStatus = load_sample_horizons(self.environment_id)
 
 
 class MissionStateManager:
@@ -52,6 +171,7 @@ class MissionStateManager:
       4. Explainable & Auditable Real ML (Calibrated HGB+RF Ensemble, Epistemic/Aleatoric Uncertainty, 72h Forecast)
       5. Spacecraft-Earth Store-and-Forward Continuity (SHA-256 Offline Ledger & MCC Sync Bundles)
       6. Individual-Weighted Psychophysiological Biofeedback Countermeasure & Central BHP Alert Dispatch
+      + Multi-Crew Roster & Alert/Stabilization/Confirmatory Measurement Hub
     """
 
     def __init__(self) -> None:
@@ -73,56 +193,160 @@ class MissionStateManager:
             e["id"]: e for e in self.catalog.get("environments", [])
         }
 
-        self.astronaut_id: str = "elena_vance"
-        self.scenario_id: str = "nominal"
-        self.environment_id: str = "transit"
-        self.mission_day: int = 142
-        self.mission_context: MissionContext = MissionContext(
-            **self.scenarios_by_id["nominal"].get("mission_context", {})
-        )
-        self.measurement_quality: MeasurementQualityProfile = MeasurementQualityProfile(
-            **self.scenarios_by_id["nominal"].get("measurement_quality", {})
-        )
-        self.nutrition: NutritionHydrationState = NutritionHydrationState(
-            **self.scenarios_by_id["nominal"]["nutrition"]
-        )
         self.telemetry_rng = np.random.default_rng()
-        self.vitals: VitalSigns
-        self.longitudinal_series: list[dict[str, Any]] = []
-        self._generate_telemetry()
-        self.space_weather: SpaceWeatherSummary = load_sample_donki(simulated=self._scenario_donki())
-        self.horizons_link: HorizonsLinkStatus = load_sample_horizons(self.environment_id)
-        self.last_updated: str = datetime.now(timezone.utc).isoformat()
+        self.active_crew_id: str = "elena_vance"
+        self.crew_records: dict[str, CrewMemberRecord] = {}
+        self.space_weather: SpaceWeatherSummary = load_sample_donki(simulated={})
+        self._bootstrap_crew_records()
+        self.space_weather = load_sample_donki(simulated=self._scenario_donki())
+
+    def _bootstrap_crew_records(self) -> None:
+        default_sc = self.scenarios_by_id["nominal"]
+        for astro_id, profile in self.astronauts_by_id.items():
+            meta = DEFAULT_CREW_META.get(astro_id, {})
+            sc_id = meta.get("initial_scenario_id", profile.get("initial_scenario_id", "nominal"))
+            sc = self.scenarios_by_id.get(sc_id, default_sc)
+            record = CrewMemberRecord(
+                crew_id=astro_id,
+                profile=profile,
+                meta=meta,
+                scenario=sc,
+                mission_day=int(sc.get("mission_day", 142)),
+            )
+            self.crew_records[astro_id] = record
+            if sc_id != "nominal":
+                self._evaluate_record(record, sync_followup=False)
+
+    def _member(self, crew_id: str | None = None) -> CrewMemberRecord:
+        target_id = crew_id or self.active_crew_id
+        if target_id not in self.crew_records:
+            target_id = self.active_crew_id
+        return self.crew_records[target_id]
+
+    # --- Backward-compatible properties delegating to the active crew member ---
+    @property
+    def astronaut_id(self) -> str:
+        return self.active_crew_id
+
+    @astronaut_id.setter
+    def astronaut_id(self, value: str) -> None:
+        if value in self.crew_records:
+            self.active_crew_id = value
+
+    @property
+    def scenario_id(self) -> str:
+        return self._member().scenario_id
+
+    @scenario_id.setter
+    def scenario_id(self, value: str) -> None:
+        self._member().scenario_id = value
+
+    @property
+    def environment_id(self) -> str:
+        return self._member().environment_id
+
+    @environment_id.setter
+    def environment_id(self, value: str) -> None:
+        self._member().environment_id = value
+
+    @property
+    def mission_day(self) -> int:
+        return self._member().mission_day
+
+    @mission_day.setter
+    def mission_day(self, value: int) -> None:
+        self._member().mission_day = value
+
+    @property
+    def mission_context(self) -> MissionContext:
+        return self._member().mission_context
+
+    @mission_context.setter
+    def mission_context(self, value: MissionContext) -> None:
+        self._member().mission_context = value
+
+    @property
+    def measurement_quality(self) -> MeasurementQualityProfile:
+        return self._member().measurement_quality
+
+    @measurement_quality.setter
+    def measurement_quality(self, value: MeasurementQualityProfile) -> None:
+        self._member().measurement_quality = value
+
+    @property
+    def nutrition(self) -> NutritionHydrationState:
+        return self._member().nutrition
+
+    @nutrition.setter
+    def nutrition(self, value: NutritionHydrationState) -> None:
+        self._member().nutrition = value
+
+    @property
+    def vitals(self) -> VitalSigns:
+        return self._member().vitals
+
+    @vitals.setter
+    def vitals(self, value: VitalSigns) -> None:
+        self._member().vitals = value
+
+    @property
+    def longitudinal_series(self) -> list[dict[str, Any]]:
+        return self._member().longitudinal_series
+
+    @longitudinal_series.setter
+    def longitudinal_series(self, value: list[dict[str, Any]]) -> None:
+        self._member().longitudinal_series = value
+
+    @property
+    def horizons_link(self) -> HorizonsLinkStatus:
+        return self._member().horizons_link
+
+    @horizons_link.setter
+    def horizons_link(self, value: HorizonsLinkStatus) -> None:
+        self._member().horizons_link = value
+
+    @property
+    def last_updated(self) -> str:
+        return self._member().last_updated
+
+    @last_updated.setter
+    def last_updated(self, value: str) -> None:
+        self._member().last_updated = value
 
     # ---------- Stochastic telemetry (replaces static scenario vitals) ----------
-    def record_reported_symptom(self, text: str) -> None:
+    def record_reported_symptom(self, text: str, crew_id: str | None = None) -> None:
         """Keep crew-reported symptoms (from chat) so the cross-diagnosis tree and the dashboard see them."""
+        member = self._member(crew_id)
         text = text.strip()
-        if text and text not in self.vitals.reported_symptoms:
-            self.vitals.reported_symptoms = (self.vitals.reported_symptoms + [text])[-8:]
+        if text and text not in member.vitals.reported_symptoms:
+            member.vitals.reported_symptoms = (member.vitals.reported_symptoms + [text])[-8:]
             self.earth_sync.record_audit_event(
-                event_type="CREW_SYMPTOM_REPORTED", astronaut_id=self.astronaut_id, summary=f"Crew report: {text[:160]}"
+                event_type="CREW_SYMPTOM_REPORTED",
+                astronaut_id=member.crew_id,
+                summary=f"Crew report: {text[:160]}",
             )
-            self._touch()
+            self._touch(member)
 
-    def escalate_psych_priority(self, reason: str) -> EarthSyncPackage:
+    def escalate_psych_priority(self, reason: str, crew_id: str | None = None) -> EarthSyncPackage:
         """Immediate Earth alert for severe psychological risk: audit entry + a store-and-forward package
         that goes first in the next communication window."""
+        member = self._member(crew_id)
         self.earth_sync.record_audit_event(
             event_type="PSYCH_CRITICAL_ESCALATION",
-            astronaut_id=self.astronaut_id,
+            astronaut_id=member.crew_id,
             summary=f"IMMEDIATE behavioral-health alert to Earth Flight Surgeon: {reason}",
             metadata={"priority": "IMMEDIATE"},
         )
         pkg = self.create_earth_sync_package()
-        if self.horizons_link.comms_available:
+        if member.horizons_link.comms_available:
             self.earth_sync.synchronize_queued_packages(comms_available=True)
         return pkg
 
-    def _scenario_donki(self) -> dict[str, list[dict[str, Any]]]:
+    def _scenario_donki(self, scenario_id: str | None = None) -> dict[str, list[dict[str, Any]]]:
         """Scenario-only DONKI events (e.g. the solar-storm drill), stamped relative to now so they are active.
         Kept separate from real NASA data and labelled origin='scenario_simulation' downstream."""
-        sim = self.scenarios_by_id.get(self.scenario_id, {}).get("donki_simulation") or {}
+        sc_id = scenario_id or self.scenario_id
+        sim = self.scenarios_by_id.get(sc_id, {}).get("donki_simulation") or {}
         now = datetime.now(timezone.utc)
         out: dict[str, list[dict[str, Any]]] = {}
         for kind, items in sim.items():
@@ -137,190 +361,414 @@ class MissionStateManager:
             out[kind] = stamped
         return out
 
-    def _generator(self) -> TelemetryGenerator:
-        return TelemetryGenerator(self.astronauts_by_id[self.astronaut_id], self.mission_context.mission_phase)
+    def _generator(self, member: CrewMemberRecord | None = None) -> TelemetryGenerator:
+        m = member or self._member()
+        return TelemetryGenerator(self.astronauts_by_id[m.crew_id], m.mission_context.mission_phase)
 
-    def _generate_telemetry(self) -> None:
-        sc = self.scenarios_by_id[self.scenario_id]
-        vitals, series = self._generator().generate(sc.get("crisis_profile", self.scenario_id), self.mission_day)
+    def _generate_telemetry(self, member: CrewMemberRecord | None = None) -> None:
+        m = member or self._member()
+        sc = self.scenarios_by_id[m.scenario_id]
+        vitals, series = self._generator(m).generate(sc.get("crisis_profile", m.scenario_id), m.mission_day)
         vitals["reported_symptoms"] = list(sc.get("reported_symptoms", []))
-        self.vitals = VitalSigns(**vitals)
-        self.longitudinal_series = series
+        m.vitals = VitalSigns(**vitals)
+        m.longitudinal_series = series
 
-    def next_telemetry_reading(self, crisis_probability: float = 0.0) -> MissionState:
+    def next_telemetry_reading(
+        self, crisis_probability: float = 0.0, crew_id: str | None = None
+    ) -> MissionState:
         """New noisy reading from the generator. With crisis_probability > 0 a nominal mission can
         stochastically enter one of the crisis profiles (demo of unplanned events)."""
-        if self.scenario_id == "nominal" and crisis_probability > 0 and self.telemetry_rng.random() < crisis_probability:
+        member = self._member(crew_id)
+        if (
+            member.scenario_id == "nominal"
+            and crisis_probability > 0
+            and self.telemetry_rng.random() < crisis_probability
+        ):
             crises = [k for k in CRISIS_PROFILES if k != "nominal" and k in self.scenarios_by_id]
-            return self.switch_scenario(str(self.telemetry_rng.choice(crises)))
+            return self.switch_scenario(str(self.telemetry_rng.choice(crises)), crew_id=member.crew_id)
 
-        sc = self.scenarios_by_id[self.scenario_id]
-        reading = self._generator().next_reading(
-            sc.get("crisis_profile", self.scenario_id), self.vitals.model_dump(), self.telemetry_rng
+        sc = self.scenarios_by_id[member.scenario_id]
+        reading = self._generator(member).next_reading(
+            sc.get("crisis_profile", member.scenario_id), member.vitals.model_dump(), self.telemetry_rng
         )
-        self.vitals = VitalSigns(**reading)
-        today = self.longitudinal_series[-1] if self.longitudinal_series else None
+        member.vitals = VitalSigns(**reading)
+        today = member.longitudinal_series[-1] if member.longitudinal_series else None
         if today is not None:
-            for metric, key in (("heart_rate_bpm", "hr"), ("hrv_ms", "hrv"), ("temperature_c", "temp"),
-                                ("bp_systolic", "bp_sys"), ("bp_diastolic", "bp_dia"), ("radiation_msv_h", "radiation"),
-                                ("glucose_mg_dl", "glucose"), ("spo2_pct", "spo2"), ("respiration_rpm", "rr")):
+            for metric, key in (
+                ("heart_rate_bpm", "hr"),
+                ("hrv_ms", "hrv"),
+                ("temperature_c", "temp"),
+                ("bp_systolic", "bp_sys"),
+                ("bp_diastolic", "bp_dia"),
+                ("radiation_msv_h", "radiation"),
+                ("glucose_mg_dl", "glucose"),
+                ("spo2_pct", "spo2"),
+                ("respiration_rpm", "rr"),
+            ):
                 today[key] = reading[metric]
-        self._touch()
-        return self.get_state()
+        self._touch(member)
+        return self.get_state(crew_id=member.crew_id)
 
-    def _touch(self) -> None:
-        self.last_updated = datetime.now(timezone.utc).isoformat()
+    def _touch(self, member: CrewMemberRecord | None = None) -> None:
+        m = member or self._member()
+        m.last_updated = datetime.now(timezone.utc).isoformat()
+
+    def select_crew_member(self, crew_id: str) -> MissionState:
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        self.active_crew_id = crew_id
+        return self.get_state(crew_id=crew_id)
 
     def switch_astronaut(self, astronaut_id: str) -> MissionState:
         if astronaut_id not in self.astronauts_by_id:
             raise KeyError(f"Unknown astronaut_id: {astronaut_id}")
-        self.astronaut_id = astronaut_id
-        self._generate_telemetry()  # vitals are drawn around this astronaut's own baseline
+        current_sc = self.scenario_id
+        self.active_crew_id = astronaut_id
+        member = self._member(astronaut_id)
+        member.scenario_id = current_sc
+        member.active_alert = None
+        member.pending_verification_measurement = False
+        self._generate_telemetry(member)  # vitals are drawn around this astronaut's own baseline
         self.earth_sync.record_audit_event(
             event_type="ASTRONAUT_PROFILE_SWITCHED",
             astronaut_id=astronaut_id,
             summary=f"Switched active personal baseline profile to {self.astronauts_by_id[astronaut_id]['name']}.",
         )
-        self._touch()
-        return self.get_state()
+        self._touch(member)
+        return self.get_state(crew_id=astronaut_id)
 
-    def switch_scenario(self, scenario_id: str) -> MissionState:
+    def switch_scenario(self, scenario_id: str, crew_id: str | None = None) -> MissionState:
         if scenario_id not in self.scenarios_by_id:
             raise KeyError(f"Unknown scenario_id: {scenario_id}")
+        member = self._member(crew_id)
         sc = self.scenarios_by_id[scenario_id]
-        self.scenario_id = scenario_id
-        self.mission_day = int(sc.get("mission_day", 142))
-        self.mission_context = MissionContext(**sc.get("mission_context", {}))
-        self.measurement_quality = MeasurementQualityProfile(**sc.get("measurement_quality", {}))
-        self.nutrition = NutritionHydrationState(**sc["nutrition"])
-        self._generate_telemetry()
-        self.space_weather = load_sample_donki(simulated=self._scenario_donki())
+        member.scenario_id = scenario_id
+        member.mission_day = int(sc.get("mission_day", 142))
+        member.mission_context = MissionContext(**sc.get("mission_context", {}))
+        member.measurement_quality = MeasurementQualityProfile(**sc.get("measurement_quality", {}))
+        member.nutrition = NutritionHydrationState(**sc["nutrition"])
+        member.active_alert = None
+        member.pending_verification_measurement = False
+        self._generate_telemetry(member)
+        if member.crew_id == self.active_crew_id:
+            self.space_weather = load_sample_donki(simulated=self._scenario_donki(scenario_id))
         self.earth_sync.record_audit_event(
             event_type="SCENARIO_LOADED",
-            astronaut_id=self.astronaut_id,
-            summary=f"Loaded scenario '{sc['name']}' (Day {self.mission_day}).",
+            astronaut_id=member.crew_id,
+            summary=f"Loaded scenario '{sc['name']}' (Day {member.mission_day}).",
             metadata={"scenario_id": scenario_id},
         )
-        self._touch()
-        return self.get_state()
+        self._touch(member)
+        return self.get_state(crew_id=member.crew_id)
 
-    def switch_environment(self, env_id: str) -> MissionState:
+    def switch_environment(self, env_id: str, crew_id: str | None = None) -> MissionState:
         if env_id not in self.environments_by_id:
             raise KeyError(f"Unknown environment_id: {env_id}")
-        self.environment_id = env_id
+        member = self._member(crew_id)
+        member.environment_id = env_id
         env_info = self.environments_by_id[env_id]
-        self.mission_context.gravitational_g = float(env_info.get("gravitational_g", 0.0))
+        member.mission_context.gravitational_g = float(env_info.get("gravitational_g", 0.0))
         if "mission_phase" in env_info:
-            self.mission_context.mission_phase = env_info["mission_phase"]
-        self.horizons_link = load_sample_horizons(env_id)
-        self._generate_telemetry()  # gravity phase shifts the nominal centre
+            member.mission_context.mission_phase = env_info["mission_phase"]
+        member.horizons_link = load_sample_horizons(env_id)
+        self._generate_telemetry(member)  # gravity phase shifts the nominal centre
         self.earth_sync.record_audit_event(
             event_type="ENVIRONMENT_CALIBRATION_CHANGED",
-            astronaut_id=self.astronaut_id,
-            summary=f"Updated mission environment to {env_info['name']} ({self.mission_context.gravitational_g:.2f}g).",
+            astronaut_id=member.crew_id,
+            summary=f"Updated mission environment to {env_info['name']} ({member.mission_context.gravitational_g:.2f}g).",
             metadata={"environment_id": env_id},
         )
-        self._touch()
-        return self.get_state()
+        self._touch(member)
+        return self.get_state(crew_id=member.crew_id)
 
-    def update_context(self, req: ContextUpdateRequest) -> MissionState:
+    def update_context(self, req: ContextUpdateRequest, crew_id: str | None = None) -> MissionState:
+        member = self._member(crew_id)
         if req.exercise_minutes_24h is not None:
-            self.mission_context.exercise_minutes_24h = req.exercise_minutes_24h
+            member.mission_context.exercise_minutes_24h = req.exercise_minutes_24h
         if req.exercise_modality is not None:
-            self.mission_context.exercise_modality = req.exercise_modality
+            member.mission_context.exercise_modality = req.exercise_modality
         if req.minutes_since_last_exercise is not None:
-            self.mission_context.minutes_since_last_exercise = req.minutes_since_last_exercise
+            member.mission_context.minutes_since_last_exercise = req.minutes_since_last_exercise
         if req.eva_status is not None:
-            self.mission_context.eva_status = req.eva_status
+            member.mission_context.eva_status = req.eva_status
         if req.hours_since_last_eva is not None:
-            self.mission_context.hours_since_last_eva = req.hours_since_last_eva
+            member.mission_context.hours_since_last_eva = req.hours_since_last_eva
         if req.cabin_co2_mmhg is not None:
-            self.mission_context.cabin_co2_mmhg = req.cabin_co2_mmhg
+            member.mission_context.cabin_co2_mmhg = req.cabin_co2_mmhg
         if req.cabin_o2_pct is not None:
-            self.mission_context.cabin_o2_pct = req.cabin_o2_pct
+            member.mission_context.cabin_o2_pct = req.cabin_o2_pct
         if req.cabin_temp_c is not None:
-            self.mission_context.cabin_temp_c = req.cabin_temp_c
+            member.mission_context.cabin_temp_c = req.cabin_temp_c
         if req.signal_quality_pct is not None:
-            self.measurement_quality.overall_quality_pct = req.signal_quality_pct
-            self.measurement_quality.wearable_ppg_quality_pct = req.signal_quality_pct
+            member.measurement_quality.overall_quality_pct = req.signal_quality_pct
+            member.measurement_quality.wearable_ppg_quality_pct = req.signal_quality_pct
         if req.motion_artifact_detected is not None:
-            self.measurement_quality.motion_artifact_detected = req.motion_artifact_detected
+            member.measurement_quality.motion_artifact_detected = req.motion_artifact_detected
         if req.nibp_cuff_verified is not None:
-            self.measurement_quality.nibp_cuff_verified = req.nibp_cuff_verified
+            member.measurement_quality.nibp_cuff_verified = req.nibp_cuff_verified
 
         self.earth_sync.record_audit_event(
             event_type="CONTEXT_COVARIATES_UPDATED",
-            astronaut_id=self.astronaut_id,
+            astronaut_id=member.crew_id,
             summary="Updated operational/environmental context covariates.",
             metadata=req.model_dump(exclude_none=True),
         )
-        self._touch()
-        return self.get_state()
+        self._touch(member)
+        return self.get_state(crew_id=member.crew_id)
 
-    def trigger_measurement(self, system_id: str) -> MeasurementResponse:
-        state_before = self.get_state()
-        if system_id not in state_before.clinical_evaluation.systems:
+    # --- Multi-Crew Alert & Stabilization Workflow ---
+    def dispatch_alert(self, crew_id: str, payload: DispatchAlertRequest) -> MissionState:
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        member = self._member(crew_id)
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        if payload.simulate_vitals_drift:
+            v = member.vitals.model_dump()
+            pb = member.personal_baseline
+            sys_id = payload.target_system_id
+            if sys_id == "cardiovascular":
+                v["heart_rate_bpm"] = round(pb.hr_max + (24.0 if payload.severity == "CRITICAL" else 14.0), 1)
+                v["bp_systolic"] = round(pb.bp_sys_max + (18.0 if payload.severity == "CRITICAL" else 10.0), 1)
+                v["hrv_ms"] = round(max(18.0, pb.hrv_min - 12.0), 1)
+            elif sys_id in ("respiratory_atmospheric", "respiratory"):
+                v["spo2_pct"] = round(pb.spo2_min - (4.0 if payload.severity == "CRITICAL" else 2.0), 1)
+                v["respiration_rpm"] = round(pb.resp_max + 4.5, 1)
+                member.mission_context.cabin_co2_mmhg = 6.2 if payload.severity == "CRITICAL" else 4.9
+                if payload.syndrome_code == "decompression_sickness":
+                    member.mission_context.suit_pressure_psi = 4.1
+                    member.mission_context.eva_status = "active_eva"
+            elif sys_id in ("metabolic_endocrine", "metabolic"):
+                v["glucose_mg_dl"] = round(pb.glucose_min - (18.0 if payload.severity == "CRITICAL" else 11.0), 1)
+                v["heart_rate_bpm"] = round(pb.hr_max + 9.0, 1)
+            elif sys_id in ("thermal_immunological", "thermal"):
+                v["temperature_c"] = round(pb.temp_max + (1.2 if payload.severity == "CRITICAL" else 0.7), 1)
+                v["heart_rate_bpm"] = round(pb.hr_max + 15.0, 1)
+                v["hrv_ms"] = round(max(19.0, pb.hrv_min - 11.0), 1)
+            elif sys_id in ("neuro_behavioral_sleep", "nervous_sleep"):
+                v["sleep_hours"] = round(max(3.5, pb.sleep_min - 2.1), 1)
+                v["stress_index"] = round(min(92.0, pb.stress_max + 32.0), 1)
+                v["mood_score"] = 2 if payload.severity == "CRITICAL" else 3
+            elif sys_id in ("radiation_space_weather", "radiation"):
+                v["radiation_msv_h"] = 0.85 if payload.severity == "CRITICAL" else 0.25
+                v["stress_index"] = round(min(85.0, pb.stress_max + 20.0), 1)
+            member.vitals = VitalSigns(**v)
+
+        _, deviations, _ = evaluate_personal_baseline(member.vitals, member.personal_baseline)
+        default_actions = payload.recommended_actions or [
+            "Realizar aferição confirmatória em repouso com dispositivo de bordo.",
+            "Aplicar protocolo de estabilização clínica sob supervisão do CMO.",
+            "Repetir aferição completa após estabilização para autorizar retorno ao status NORMAL.",
+        ]
+
+        member.active_alert = CrewAlertRecord(
+            alert_id=f"CREW-ALT-{member.crew_id[:5].upper()}-{uuid4().hex[:6].upper()}",
+            crew_id=member.crew_id,
+            severity=payload.severity,
+            syndrome_code=payload.syndrome_code,
+            title=payload.title,
+            summary=payload.summary,
+            deviations=deviations or [payload.summary],
+            recommended_actions=default_actions,
+            target_system_id=payload.target_system_id,
+            status="OPEN",
+            stabilization_applied=False,
+            verification_measurement_completed=False,
+            created_at=now_iso,
+            updated_at=now_iso,
+            origin="EXTERNAL_ALERT",
+        )
+        member.pending_verification_measurement = True
+        member.last_updated = now_iso
+        return self._evaluate_record(member)
+
+    def acknowledge_alert(self, crew_id: str) -> MissionState:
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        member = self._member(crew_id)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        if member.active_alert and member.active_alert.status == "OPEN":
+            member.active_alert.status = "ACKNOWLEDGED"
+            member.active_alert.updated_at = now_iso
+        member.last_updated = now_iso
+        return self._evaluate_record(member)
+
+    def stabilize_crew_member(self, crew_id: str, payload: StabilizeRequest) -> MissionState:
+        """Apply clinical stabilization and restore vitals toward the astronaut's personal nominal range.
+        IMPORTANT: The astronaut does NOT return to NOMINAL status until a confirmatory measurement is performed."""
+        if crew_id not in self.crew_records:
+            raise KeyError(f"Unknown crew_id: {crew_id}")
+        member = self._member(crew_id)
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        nominal_sc = self.scenarios_by_id["nominal"]
+        member.scenario_id = "nominal"
+        member.mission_context = MissionContext(**nominal_sc.get("mission_context", {}))
+        if member.environment_id == "lunar_eva":
+            member.mission_context.eva_status = "post_eva_recovery"
+            member.mission_context.suit_pressure_psi = 14.7
+
+        self._generate_telemetry(member)
+        member.measurement_quality = MeasurementQualityProfile(
+            overall_quality_pct=98.0,
+            wearable_ppg_quality_pct=98.0,
+            nibp_cuff_verified=True,
+            cgm_calibration_age_hours=1.0,
+            motion_artifact_detected=False,
+            ambient_temp_compensated=True,
+            reliability_grade="HIGH",
+            sensor_notes="Post-stabilization telemetry calibrated; awaiting confirmatory measurement.",
+        )
+
+        if member.active_alert is None:
+            member.active_alert = CrewAlertRecord(
+                alert_id=f"CREW-ALT-{member.crew_id[:5].upper()}-{uuid4().hex[:6].upper()}",
+                crew_id=member.crew_id,
+                severity="ATTENTION",
+                syndrome_code="post_stabilization_verification",
+                title="Estabilização Aplicada — Aguardando Aferição Confirmatória",
+                summary=payload.intervention_note,
+                deviations=[],
+                recommended_actions=["Executar aferição confirmatória para liberar retorno ao status NORMAL."],
+                target_system_id=payload.target_system_id or "cardiovascular",
+                status="STABILIZING",
+                stabilization_applied=True,
+                stabilization_note=payload.intervention_note,
+                verification_measurement_completed=False,
+                created_at=now_iso,
+                updated_at=now_iso,
+                origin="STABILIZATION_FLOW",
+            )
+        else:
+            if member.active_alert.severity == "CRITICAL":
+                member.active_alert.severity = "WARNING"
+            elif member.active_alert.severity == "WARNING":
+                member.active_alert.severity = "ATTENTION"
+            member.active_alert.status = "STABILIZING"
+            member.active_alert.stabilization_applied = True
+            member.active_alert.stabilization_note = payload.intervention_note
+            member.active_alert.verification_measurement_completed = False
+            member.active_alert.updated_at = now_iso
+
+        member.pending_verification_measurement = True
+        member.last_updated = now_iso
+        return self._evaluate_record(member)
+
+    def trigger_measurement(self, system_id: str, crew_id: str | None = None) -> MeasurementResponse:
+        member = self._member(crew_id)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        state_before = self.get_state(crew_id=member.crew_id)
+
+        # Map legacy / CrewHub system IDs smoothly
+        alias_map = {
+            "respiratory_atmospheric": "respiratory",
+            "metabolic_endocrine": "metabolic",
+            "thermal_immunological": "respiratory",
+            "neuro_behavioral_sleep": "nervous_sleep",
+            "radiation_space_weather": "radiation",
+        }
+        canonical_sys_id = alias_map.get(system_id, system_id)
+
+        if canonical_sys_id != "full_body" and canonical_sys_id not in state_before.clinical_evaluation.systems:
             raise KeyError(f"Unknown system_id: {system_id}")
 
         # Active confirmation measurement improves sensor quality & NIBP verification
-        self.measurement_quality.overall_quality_pct = min(99.0, max(94.0, self.measurement_quality.overall_quality_pct + 4.0))
-        self.measurement_quality.motion_artifact_detected = False
+        member.measurement_quality.overall_quality_pct = min(
+            99.0, max(94.0, member.measurement_quality.overall_quality_pct + 4.0)
+        )
+        member.measurement_quality.motion_artifact_detected = False
+        member.last_measured_at = now_iso
 
-        if system_id == "cardiovascular":
-            self.measurement_quality.nibp_cuff_verified = True
+        if canonical_sys_id == "full_body":
+            member.measurement_quality.nibp_cuff_verified = True
+            member.measurement_quality.ambient_temp_compensated = True
             reading = (
-                f"Anchored NIBP + Astroskin ECG Sync: {self.vitals.heart_rate_bpm:.0f} bpm, "
-                f"HRV {self.vitals.hrv_ms:.0f} ms, BP {self.vitals.bp_systolic:.0f}/{self.vitals.bp_diastolic:.0f} mmHg "
-                f"(SNR {self.measurement_quality.overall_quality_pct:.0f}%)"
+                f"Varredura Completa CHeCS: FC {member.vitals.heart_rate_bpm:.0f} bpm, "
+                f"PA {member.vitals.bp_systolic:.0f}/{member.vitals.bp_diastolic:.0f} mmHg, "
+                f"SpO2 {member.vitals.spo2_pct:.1f}%, Temp {member.vitals.temperature_c:.1f} C, "
+                f"Glicose {member.vitals.glucose_mg_dl:.0f} mg/dL (SNR {member.measurement_quality.overall_quality_pct:.0f}%)"
             )
-        elif system_id == "nervous_sleep":
+        elif canonical_sys_id == "cardiovascular":
+            member.measurement_quality.nibp_cuff_verified = True
             reading = (
-                f"EEG/Actigraphy + Tonometry: Sleep {self.vitals.sleep_hours:.1f}h (REM {self.vitals.rem_sleep_pct:.0f}%), "
-                f"Mood {self.vitals.mood_score}/5, IOP {self.vitals.intraocular_pressure_mmhg:.1f} mmHg"
+                f"Anchored NIBP + Astroskin ECG Sync: {member.vitals.heart_rate_bpm:.0f} bpm, "
+                f"HRV {member.vitals.hrv_ms:.0f} ms, BP {member.vitals.bp_systolic:.0f}/{member.vitals.bp_diastolic:.0f} mmHg "
+                f"(SNR {member.measurement_quality.overall_quality_pct:.0f}%)"
             )
-        elif system_id == "respiratory":
-            self.measurement_quality.ambient_temp_compensated = True
+        elif canonical_sys_id == "nervous_sleep":
             reading = (
-                f"Tempus Pro Capnography/IR: SpO2 {self.vitals.spo2_pct:.1f}%, RR {self.vitals.respiration_rpm:.0f} rpm, "
-                f"Core Temp {self.vitals.temperature_c:.1f} C, Cabin CO2 {self.mission_context.cabin_co2_mmhg:.1f} mmHg"
+                f"EEG/Actigraphy + Tonometry: Sleep {member.vitals.sleep_hours:.1f}h (REM {member.vitals.rem_sleep_pct:.0f}%), "
+                f"Mood {member.vitals.mood_score}/5, IOP {member.vitals.intraocular_pressure_mmhg:.1f} mmHg"
             )
-        elif system_id == "metabolic":
-            self.measurement_quality.cgm_calibration_age_hours = 0.5
+        elif canonical_sys_id == "respiratory":
+            member.measurement_quality.ambient_temp_compensated = True
             reading = (
-                f"i-STAT / Shielded Capillary Check: Glucose {self.vitals.glucose_mg_dl:.0f} mg/dL | "
-                f"Intake {self.nutrition.calories_kcal:.0f}/{self.nutrition.goal_calories_kcal:.0f} kcal, {self.nutrition.water_ml:.0f} ml H2O"
+                f"Tempus Pro Capnography/IR: SpO2 {member.vitals.spo2_pct:.1f}%, RR {member.vitals.respiration_rpm:.0f} rpm, "
+                f"Core Temp {member.vitals.temperature_c:.1f} C, Cabin CO2 {member.mission_context.cabin_co2_mmhg:.1f} mmHg"
             )
-        elif system_id == "musculoskeletal":
+        elif canonical_sys_id == "metabolic":
+            member.measurement_quality.cgm_calibration_age_hours = 0.5
             reading = (
-                f"Ultrasound 2 & Urolux Scan: Shoulder VAS {self.vitals.shoulder_pain_score}/10, "
-                f"Urinary Ca {self.vitals.urinary_calcium_mg_d:.0f} mg/day"
+                f"i-STAT / Shielded Capillary Check: Glucose {member.vitals.glucose_mg_dl:.0f} mg/dL | "
+                f"Intake {member.nutrition.calories_kcal:.0f}/{member.nutrition.goal_calories_kcal:.0f} kcal, {member.nutrition.water_ml:.0f} ml H2O"
+            )
+        elif canonical_sys_id == "musculoskeletal":
+            reading = (
+                f"Ultrasound 2 & Urolux Scan: Shoulder VAS {member.vitals.shoulder_pain_score}/10, "
+                f"Urinary Ca {member.vitals.urinary_calcium_mg_d:.0f} mg/day"
             )
         else:
             reading = (
-                f"BLE Dosimeter Sync: {self.vitals.radiation_msv_h:.2f} mSv/h instantaneous | "
-                f"{self.vitals.cumulative_radiation_msv:.1f} mSv cumulative"
+                f"BLE Dosimeter Sync: {member.vitals.radiation_msv_h:.2f} mSv/h instantaneous | "
+                f"{member.vitals.cumulative_radiation_msv:.1f} mSv cumulative"
             )
 
-        self._touch()
-        updated_state = self.get_state()
-        sys_eval = updated_state.clinical_evaluation.systems[system_id]
+        within_baseline, _, _ = evaluate_personal_baseline(member.vitals, member.personal_baseline)
+        if member.active_alert and member.active_alert.stabilization_applied and within_baseline and member.scenario_id == "nominal":
+            member.active_alert.status = "RESOLVED"
+            member.active_alert.verification_measurement_completed = True
+            member.active_alert.updated_at = now_iso
+            member.active_alert = None
+            member.pending_verification_measurement = False
+        elif within_baseline and member.scenario_id == "nominal":
+            member.active_alert = None
+            member.pending_verification_measurement = False
+
+        self._touch(member)
+        updated_state = self.get_state(crew_id=member.crew_id)
+
+        if canonical_sys_id == "full_body":
+            status = updated_state.clinical_evaluation.overall_status
+            sys_name = "Varredura Biomédica Completa (Full-Body Scan)"
+            device_used = "Tempus Pro + Astroskin Bio-Monitor + i-STAT"
+            guidance = (
+                "Sinais vitais confirmados dentro da linha de base individual. Status normalizado com segurança."
+                if status == "NOMINAL"
+                else "Alterações persistem fora do basal individual; manter protocolo de estabilização e vigilância."
+            )
+        else:
+            sys_eval = updated_state.clinical_evaluation.systems[canonical_sys_id]
+            status = sys_eval.status
+            sys_name = sys_eval.name
+            device_used = sys_eval.checs_device
+            guidance = sys_eval.recommended_action
 
         self.earth_sync.record_audit_event(
             event_type="ACTIVE_MEASUREMENT_TRIGGERED",
-            astronaut_id=self.astronaut_id,
-            summary=f"[{sys_eval.name}] {reading}",
-            metadata={"system_id": system_id, "status": sys_eval.status},
+            astronaut_id=member.crew_id,
+            summary=f"[{sys_name}] {reading}",
+            metadata={"system_id": system_id, "status": status},
         )
 
         return MeasurementResponse(
             system_id=system_id,
-            system_name=sys_eval.name,
-            device_used=sys_eval.checs_device,
+            system_name=sys_name,
+            device_used=device_used,
             decontamination_required=updated_state.clinical_evaluation.decontamination_required,
             decontamination_checklist=updated_state.clinical_evaluation.decontamination_checklist,
             reading_summary=reading,
-            status=sys_eval.status,
-            guidance=sys_eval.recommended_action,
+            status=status,
+            guidance=guidance,
             state=updated_state,
         )
 
@@ -494,10 +942,10 @@ class MissionStateManager:
         self._touch()
         return self.space_weather
 
-    def create_earth_sync_package(self) -> EarthSyncPackage:
-        state = self.get_state()
+    def create_earth_sync_package(self, crew_id: str | None = None) -> EarthSyncPackage:
+        state = self.get_state(crew_id=crew_id)
         return self.earth_sync.build_and_queue_package(
-            astronaut_id=self.astronaut_id,
+            astronaut_id=state.astronaut_id,
             crew_member=state.crew_member,
             mission_day=state.mission_day,
             environment_id=state.environment_id,
@@ -513,10 +961,10 @@ class MissionStateManager:
             auto_sync_if_low_latency=(state.one_way_latency_seconds <= 10),
         )
 
-    def compile_dossier(self) -> TelemedicineDossier:
-        pkg = self.create_earth_sync_package()
-        state = self.get_state()
-        env = self.environments_by_id[self.environment_id]
+    def compile_dossier(self, crew_id: str | None = None) -> TelemedicineDossier:
+        pkg = self.create_earth_sync_package(crew_id=crew_id)
+        state = self.get_state(crew_id=crew_id)
+        env = self.environments_by_id[state.environment_id]
         latency = int(env.get("one_way_latency_seconds", 720))
         tx_mode = (
             "Asynchronous Store-and-Forward Telemetry + Audit Bundle (Deep Space Delay)"
@@ -591,11 +1039,7 @@ class MissionStateManager:
         self, reason: str = "Automated biometric threshold or crew wellness intervention"
     ) -> CentralPsychAlertRecord:
         """
-        Pillar 6: Triggers the Personalized Psychophysiological Biofeedback Countermeasure:
-          - Evaluates individual-baseline-weighted psychological scores & selects Personal Crew Vault media
-          - Applies closed-loop vagal & affective normalization toward the astronaut's personal baseline
-          - Logs the intervention in the Closed-Loop Follow-Up Case with a T+15 min reassessment
-          - Dispatches a mandatory alert + SHA-256 EarthSyncPackage to Central (MCC-Houston BHP & Flight Surgeon)
+        Pillar 6: Triggers the Personalized Psychophysiological Biofeedback Countermeasure.
         """
         state_before = self.get_state()
         psych_eval = state_before.psych_biofeedback
@@ -647,7 +1091,6 @@ class MissionStateManager:
             )
 
         self._touch()
-        # Automatically compile & queue SHA-256 Store-and-Forward package to Central (MCC-Houston)
         sync_pkg = self.create_earth_sync_package()
         alert_rec.earth_sync_package_id = sync_pkg.package_id
 
@@ -669,98 +1112,222 @@ class MissionStateManager:
         )
         return alert_rec
 
-    def get_state(self) -> MissionState:
-        astro_profile = self.astronauts_by_id[self.astronaut_id]
-        sc = self.scenarios_by_id[self.scenario_id]
-        env = self.environments_by_id[self.environment_id]
+    def _sync_alert_for_member(
+        self,
+        member: CrewMemberRecord,
+        clinical_eval: ClinicalEvaluationResult,
+        within_baseline: bool,
+        deviations: list[str],
+        baseline_severity: SeverityStatus,
+    ) -> None:
+        effective_severity = max_severity(clinical_eval.overall_status, baseline_severity)
+        if effective_severity == "NOMINAL" and within_baseline:
+            if (
+                member.active_alert
+                and member.active_alert.stabilization_applied
+                and not member.pending_verification_measurement
+            ):
+                member.active_alert = None
+            return
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        syndrome_code = (
+            clinical_eval.syndrome_code
+            if clinical_eval.syndrome_code != "nominal"
+            else "personal_baseline_deviation"
+        )
+        target_sys = SYNDROME_TO_SYSTEM.get(syndrome_code, "cardiovascular")
+        title = (
+            clinical_eval.primary_diagnosis
+            if clinical_eval.syndrome_code != "nominal"
+            else "Desvio da Linha de Base Individual"
+        )
+        summary = (
+            deviations[0]
+            if deviations
+            else f"Alteração fisiológica detectada ({clinical_eval.primary_diagnosis})."
+        )
+        actions = clinical_eval.stabilization_checklist[:4] or [
+            "Realizar aferição confirmatória em repouso com dispositivo de bordo.",
+            "Aplicar protocolo de estabilização clínica sob supervisão do CMO.",
+        ]
+
+        if member.active_alert is None or member.active_alert.status == "RESOLVED":
+            member.active_alert = CrewAlertRecord(
+                alert_id=f"CREW-ALT-{member.crew_id[:5].upper()}-D{member.mission_day}-{syndrome_code[:5].upper()}",
+                crew_id=member.crew_id,
+                severity=effective_severity,
+                syndrome_code=syndrome_code,
+                title=title,
+                summary=summary,
+                deviations=deviations,
+                recommended_actions=actions,
+                target_system_id=target_sys,
+                status="OPEN",
+                stabilization_applied=False,
+                verification_measurement_completed=False,
+                created_at=now_iso,
+                updated_at=now_iso,
+                origin="SCENARIO_AUTO",
+            )
+            member.pending_verification_measurement = True
+        elif not member.active_alert.stabilization_applied:
+            member.active_alert.severity = effective_severity
+            member.active_alert.syndrome_code = syndrome_code
+            member.active_alert.title = title
+            member.active_alert.summary = summary
+            member.active_alert.deviations = deviations
+            member.active_alert.recommended_actions = actions
+            member.active_alert.target_system_id = target_sys
+            member.active_alert.updated_at = now_iso
+
+    def _evaluate_record(
+        self, member: CrewMemberRecord, sync_followup: bool = True
+    ) -> MissionState:
+        astro_profile = self.astronauts_by_id[member.crew_id]
+        sc = self.scenarios_by_id[member.scenario_id]
+        env = self.environments_by_id[member.environment_id]
         latency_sec = int(env.get("one_way_latency_seconds", 720))
 
         # 1. Pillar 1: Adaptive Individual Baseline
         adaptive_base = self.baseline_engine.evaluate(
             astronaut_profile=astro_profile,
-            vitals=self.vitals,
-            context=self.mission_context,
-            longitudinal_series=self.longitudinal_series,
-            mission_day=self.mission_day,
+            vitals=member.vitals,
+            context=member.mission_context,
+            longitudinal_series=member.longitudinal_series,
+            mission_day=member.mission_day,
         )
 
         # 2. Pillar 2: Contextual Mission Intelligence
         contextual_report = self.context_engine.evaluate(
-            vitals=self.vitals,
-            nutrition=self.nutrition,
-            context=self.mission_context,
+            vitals=member.vitals,
+            nutrition=member.nutrition,
+            context=member.mission_context,
             adaptive_baseline=adaptive_base,
         )
 
         # 3. Pillar 4 (ML): Calibrated Real ML + Uncertainty + 72h Trajectory Forecast
         ml_pred = self.ml_predictor.predict(
-            vitals=self.vitals,
-            nutrition=self.nutrition,
-            context=self.mission_context,
-            quality=self.measurement_quality,
+            vitals=member.vitals,
+            nutrition=member.nutrition,
+            context=member.mission_context,
+            quality=member.measurement_quality,
             adaptive_baseline=adaptive_base,
             contextual_report=contextual_report,
-            longitudinal_series=self.longitudinal_series,
+            longitudinal_series=member.longitudinal_series,
         )
-        self.measurement_quality.reliability_grade = ml_pred.uncertainty.reliability_grade
+        member.measurement_quality.reliability_grade = ml_pred.uncertainty.reliability_grade
 
         # 4. Pillar 6: Individual-Baseline-Weighted Psychophysiological Biofeedback Evaluation
         psych_eval = self.psych_engine.evaluate(
             astronaut_profile=astro_profile,
-            vitals=self.vitals,
-            nutrition=self.nutrition,
-            context=self.mission_context,
+            vitals=member.vitals,
+            nutrition=member.nutrition,
+            context=member.mission_context,
             adaptive_baseline=adaptive_base,
             one_way_latency_seconds=latency_sec,
         )
 
         # 5. Pillar 4 (Explainable & Auditable Alerts) + NASA-STD-3001 / OCHMO Rules
         clin_eval = evaluate_clinical_and_explainable_rules(
-            vitals=self.vitals,
-            nutrition=self.nutrition,
-            environment_id=self.environment_id,
-            context=self.mission_context,
-            quality=self.measurement_quality,
+            vitals=member.vitals,
+            nutrition=member.nutrition,
+            environment_id=member.environment_id,
+            context=member.mission_context,
+            quality=member.measurement_quality,
             adaptive_baseline=adaptive_base,
             contextual_report=contextual_report,
             ml_prediction=ml_pred,
             catalog=self.catalog,
         )
 
+        # Personal Baseline Envelope Evaluation
+        within_baseline, baseline_deviations, baseline_severity = evaluate_personal_baseline(
+            member.vitals, member.personal_baseline
+        )
+        self._sync_alert_for_member(
+            member, clin_eval, within_baseline, baseline_deviations, baseline_severity
+        )
+
+        # Strict normalization rule:
+        # Astronaut status only returns to NORMAL after stabilization AND a confirmatory measurement.
+        if (
+            member.active_alert is not None
+            and member.active_alert.status != "RESOLVED"
+            and (
+                member.pending_verification_measurement
+                or member.active_alert.origin in ("EXTERNAL_ALERT", "STABILIZATION_FLOW")
+                or member.scenario_id != "nominal"
+            )
+            and clin_eval.overall_status == "NOMINAL"
+        ):
+            clin_eval = clin_eval.model_copy(
+                update={
+                    "overall_status": member.active_alert.severity,
+                    "syndrome_code": member.active_alert.syndrome_code,
+                    "primary_diagnosis": (
+                        f"{member.active_alert.title} (Aguardando Aferição Confirmatória)"
+                        if member.active_alert.stabilization_applied
+                        else member.active_alert.title
+                    ),
+                    "stabilization_checklist": member.active_alert.recommended_actions,
+                    "notify_crew_onboard": True,
+                }
+            )
+
         # 5b. Cross diagnosis: physical vs. NASA DONKI space weather vs. psychological
+        sw_for_member = (
+            self.space_weather
+            if member.crew_id == self.active_crew_id
+            else load_sample_donki(simulated=self._scenario_donki(member.scenario_id))
+        )
         cross = evaluate_cross_diagnosis(
-            vitals=self.vitals,
-            context=self.mission_context,
-            space_weather=self.space_weather,
+            vitals=member.vitals,
+            context=member.mission_context,
+            space_weather=sw_for_member,
             contextual_report=contextual_report,
             clinical=clin_eval,
         )
 
         # 6. Pillar 3: Sync Explainable Alerts into Closed-Loop Follow-Up Cases
-        active_cases = self.followup_manager.sync_alerts(
-            alerts=clin_eval.explainable_alerts,
-            astronaut_id=self.astronaut_id,
-            astronaut_name=astro_profile["name"],
-            mission_day=self.mission_day,
-            stabilization_checklist=clin_eval.stabilization_checklist,
-        )
+        if sync_followup:
+            active_cases = self.followup_manager.sync_alerts(
+                alerts=clin_eval.explainable_alerts,
+                astronaut_id=member.crew_id,
+                astronaut_name=astro_profile["name"],
+                mission_day=member.mission_day,
+                stabilization_checklist=clin_eval.stabilization_checklist,
+            )
+        else:
+            active_cases = self.followup_manager.list_cases_for_astronaut(member.crew_id)
 
         last_pkg_id = self.earth_sync.packages[-1].package_id if self.earth_sync.packages else None
 
         return MissionState(
-            mission_day=self.mission_day,
-            astronaut_id=self.astronaut_id,
+            mission_day=member.mission_day,
+            astronaut_id=member.crew_id,
+            crew_id=member.crew_id,
             crew_member=astro_profile["name"],
-            scenario_id=self.scenario_id,
+            crew_role=member.role,
+            mission_group=member.mission_group,
+            location_module=member.location_module,
+            suit_variant=member.suit_variant,
+            scenario_id=member.scenario_id,
             scenario_name=sc["name"],
             scenario_description=sc["description"],
-            environment_id=self.environment_id,
+            environment_id=member.environment_id,
             environment_name=env["name"],
             one_way_latency_seconds=latency_sec,
-            vitals=self.vitals,
-            measurement_quality=self.measurement_quality,
-            mission_context=self.mission_context,
-            nutrition=self.nutrition,
+            vitals=member.vitals,
+            personal_baseline=member.personal_baseline,
+            within_personal_baseline=within_baseline,
+            baseline_deviations=baseline_deviations,
+            active_alert=member.active_alert,
+            pending_verification_measurement=member.pending_verification_measurement,
+            last_measured_at=member.last_measured_at,
+            measurement_quality=member.measurement_quality,
+            mission_context=member.mission_context,
+            nutrition=member.nutrition,
             adaptive_baseline=adaptive_base,
             contextual_intelligence=contextual_report,
             clinical_evaluation=clin_eval,
@@ -769,21 +1336,31 @@ class MissionStateManager:
             central_psych_alerts=list(reversed(self.psych_engine.central_alerts_history[-10:])),
             explainable_alerts=clin_eval.explainable_alerts,
             followup_cases=active_cases,
-            space_weather=self.space_weather,
+            space_weather=sw_for_member,
             cross_diagnosis=cross,
-            horizons_link=self.horizons_link,
+            horizons_link=member.horizons_link,
             earth_sync_queue_count=self.earth_sync.pending_count(),
             earth_sync_last_package_id=last_pkg_id,
             astronauts_catalog=[
                 {
                     "astronaut_id": a["astronaut_id"],
                     "name": a["name"],
+                    "callsign": a.get(
+                        "callsign",
+                        DEFAULT_CREW_META.get(a["astronaut_id"], {}).get("callsign", a["astronaut_id"].upper()),
+                    ),
                     "role": a["role"],
                     "agency": a["agency"],
+                    "mission_group": DEFAULT_CREW_META.get(a["astronaut_id"], {}).get(
+                        "mission_group", a.get("mission_group", "INTERNAL")
+                    ),
+                    "location_module": DEFAULT_CREW_META.get(a["astronaut_id"], {}).get(
+                        "location_module", a.get("location_module", "Habitat")
+                    ),
                 }
                 for a in self.catalog.get("astronaut_profiles", [])
             ],
-            longitudinal_series=self.longitudinal_series,
+            longitudinal_series=member.longitudinal_series,
             scenarios_catalog=[
                 {
                     "id": s["id"],
@@ -797,5 +1374,62 @@ class MissionStateManager:
             environments_catalog=self.catalog.get("environments", []),
             indicators_guide=self.catalog.get("indicators_guide", []),
             systems_guide=self.catalog.get("systems_guide", {}),
-            last_updated=self.last_updated,
+            last_updated=member.last_updated,
+        )
+
+    def get_state(self, crew_id: str | None = None) -> MissionState:
+        member = self._member(crew_id)
+        return self._evaluate_record(member)
+
+    def get_crew_roster(self) -> CrewRosterResponse:
+        summaries: list[CrewMemberSummary] = []
+        counts: dict[SeverityStatus, int] = {
+            "NOMINAL": 0,
+            "ATTENTION": 0,
+            "WARNING": 0,
+            "CRITICAL": 0,
+        }
+
+        for crew_id, member in self.crew_records.items():
+            state = self._evaluate_record(member, sync_followup=False)
+            status = state.clinical_evaluation.overall_status
+            counts[status] = counts.get(status, 0) + 1
+            summaries.append(
+                CrewMemberSummary(
+                    crew_id=crew_id,
+                    name=member.name,
+                    callsign=member.callsign,
+                    role=member.role,
+                    mission_group=member.mission_group,
+                    location_module=member.location_module,
+                    suit_variant=member.suit_variant,
+                    environment_id=member.environment_id,
+                    environment_name=state.environment_name,
+                    scenario_id=member.scenario_id,
+                    scenario_name=state.scenario_name,
+                    overall_status=status,
+                    syndrome_code=state.clinical_evaluation.syndrome_code,
+                    within_personal_baseline=state.within_personal_baseline,
+                    baseline_deviations=state.baseline_deviations,
+                    risk_score=state.ml_prediction.anomaly_score,
+                    confidence_pct=state.ml_prediction.confidence_pct,
+                    vitals=member.vitals,
+                    personal_baseline=member.personal_baseline,
+                    active_alert=member.active_alert,
+                    pending_verification_measurement=member.pending_verification_measurement,
+                    last_measured_at=member.last_measured_at,
+                    last_updated=member.last_updated,
+                )
+            )
+
+        return CrewRosterResponse(
+            mission_day=self.mission_day,
+            active_crew_id=self.active_crew_id,
+            total_crew=len(summaries),
+            nominal_count=counts["NOMINAL"],
+            attention_count=counts["ATTENTION"],
+            warning_count=counts["WARNING"],
+            critical_count=counts["CRITICAL"],
+            crew=summaries,
+            last_updated=datetime.now(timezone.utc).isoformat(),
         )
