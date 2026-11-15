@@ -3,8 +3,9 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.agent.orchestrator import AstraCareOrchestrator
 from app.models.schemas import (
@@ -17,6 +18,7 @@ from app.models.schemas import (
     ContextualIntelligenceReport,
     ContextUpdateRequest,
     EarthSyncPackage,
+    EscalateCaseRequest,
     ExplainableAlert,
     MeasurementResponse,
     MissionState,
@@ -52,6 +54,12 @@ app = FastAPI(
     ),
     lifespan=lifespan,
 )
+
+@app.exception_handler(ValueError)
+async def invalid_transition_handler(_: Request, exc: ValueError) -> JSONResponse:
+    # e.g. trying to modify a follow-up case that is already RESOLVED
+    return JSONResponse(status_code=409, content={"detail": str(exc)})
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -135,6 +143,15 @@ def record_protocol_action(case_id: str, payload: RecordActionRequest) -> Clinic
 def complete_reassessment(case_id: str, payload: CompleteReassessmentRequest) -> ClinicalFollowUpCase:
     try:
         return state_manager.complete_followup_reassessment(case_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/followup/{case_id}/escalate", response_model=ClinicalFollowUpCase)
+def escalate_case(case_id: str, payload: EscalateCaseRequest | None = None) -> ClinicalFollowUpCase:
+    """Human-requested escalation to the Earth Flight Surgeon (the AI never escalates on its own)."""
+    try:
+        return state_manager.escalate_followup_case(case_id, payload or EscalateCaseRequest())
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

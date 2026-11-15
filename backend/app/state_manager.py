@@ -5,7 +5,7 @@ from typing import Any
 from uuid import uuid4
 
 from app.engine.clinical_rules import evaluate_clinical_and_explainable_rules, load_scenarios_catalog
-from app.engine.earth_sync import EarthSyncManager
+from app.engine.earth_sync import FOLLOWUP_STORE_PATH, EarthSyncManager
 from app.engine.followup_loop import FollowUpCaseManager
 from app.engine.nasa_feeds import (
     fetch_nasa_space_weather,
@@ -22,6 +22,7 @@ from app.models.schemas import (
     CompleteReassessmentRequest,
     ContextUpdateRequest,
     EarthSyncPackage,
+    EscalateCaseRequest,
     HorizonsLinkStatus,
     LoggedFoodItem,
     MeasurementQualityProfile,
@@ -55,7 +56,7 @@ class MissionStateManager:
         self.context_engine = ContextualIntelligenceEngine()
         self.ml_predictor = AstraCareRealMLEngine()
         self.psych_engine = PsychBiofeedbackEngine()
-        self.followup_manager = FollowUpCaseManager()
+        self.followup_manager = FollowUpCaseManager(store_path=FOLLOWUP_STORE_PATH)
         self.earth_sync = EarthSyncManager()
 
         self.astronauts_by_id: dict[str, dict[str, Any]] = {
@@ -387,6 +388,17 @@ class MissionStateManager:
             astronaut_id=self.astronaut_id,
             summary=f"Case {case_id}: Reassessment {req.reassessment_id} completed (status -> {case.status}).",
             metadata={"case_id": case_id, "resolved": req.resolve_case},
+        )
+        self._touch()
+        return case
+
+    def escalate_followup_case(self, case_id: str, req: EscalateCaseRequest) -> ClinicalFollowUpCase:
+        case = self.followup_manager.escalate(case_id, req)
+        self.earth_sync.record_audit_event(
+            event_type="FOLLOWUP_ESCALATED_TO_EARTH",
+            astronaut_id=self.astronaut_id,
+            summary=f"Case {case_id} escalated to Earth Flight Surgeon by {req.requested_by}: {req.reason}",
+            metadata={"case_id": case_id},
         )
         self._touch()
         return case
