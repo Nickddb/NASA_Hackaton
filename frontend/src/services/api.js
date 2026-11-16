@@ -1058,15 +1058,30 @@ function setConnectionMode(mode) {
   connectionListeners.forEach((fn) => fn(mode));
 }
 
+/** Lightweight probe used to leave simulation once the backend answers again (e.g. a hosted backend waking up). */
+export async function pingBackend() {
+  try {
+    await tryFetch("/api/health", { timeoutMs: 10000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function subscribeConnectionMode(fn) {
   connectionListeners.add(fn);
   fn(connectionMode);
   return () => connectionListeners.delete(fn);
 }
 
+// A hosted backend on a free tier (e.g. Render) runs the ML on every state read with a small CPU share, so a
+// healthy answer can take several seconds; a short timeout would flip the app to simulation while it works.
+const DEFAULT_TIMEOUT_MS = 15000;
+const CHAT_TIMEOUT_MS = 60000; // chained LLM tool calls + provider rate-limit waits
+
 async function tryFetch(url, options = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 3500);
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   try {
     const res = await fetch(`${API_BASE}${url}`, {
       ...options,
@@ -1612,7 +1627,7 @@ export async function sendAgentChat(message, crewId = null) {
       const res = await tryFetch("/api/agent/chat", {
         method: "POST",
         body: JSON.stringify({ message }),
-        timeoutMs: 15000,
+        timeoutMs: CHAT_TIMEOUT_MS,
       });
       if (res?.state) {
         lastLiveState = res.state;
