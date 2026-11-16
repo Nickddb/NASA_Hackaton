@@ -127,6 +127,27 @@ def test_donki_rate_limit_falls_back_then_uses_cache(tmp_path, monkeypatch):
     assert s.source == "cached_nasa_donki" and "X1.0" in s.status_label
 
 
+def test_one_donki_feed_down_keeps_the_others_live(tmp_path, monkeypatch):
+    """NASA's FLR endpoint answering 404 must not discard live SEP/RBE data; FLR comes from the last cache."""
+    monkeypatch.setattr(nasa_feeds, "DONKI_CACHE_PATH", tmp_path / "donki_cache.json")
+
+    async def all_live(self, url, params=None):
+        return _Resp(200, [{"flrID": "f", "beginTime": _now_str(1), "classType": "M2.0"}] if url.endswith("FLR") else [])
+
+    async def flr_down(self, url, params=None):
+        if url.endswith("FLR"):
+            return _Resp(404, {})
+        return _Resp(200, [{"sepID": "s", "eventTime": _now_str(2)}] if url.endswith("SEP") else [])
+
+    with mock.patch.object(httpx.AsyncClient, "get", all_live):
+        asyncio.run(nasa_feeds.fetch_nasa_space_weather(force=True))
+    with mock.patch.object(httpx.AsyncClient, "get", flr_down):
+        s = asyncio.run(nasa_feeds.fetch_nasa_space_weather(force=True))
+    assert s.source == "live_nasa_donki"
+    assert "FLR: HTTP 404" in s.fetch_status and "FLR from cache" in s.fetch_status
+    assert s.active_sep_count == 1 and s.active_flare_count == 1
+
+
 def test_curated_fallback_is_in_donki_schema_and_never_active():
     raw = nasa_feeds.load_sample_donki_raw()
     assert set(raw) == {"SEP", "FLR", "RBE"}

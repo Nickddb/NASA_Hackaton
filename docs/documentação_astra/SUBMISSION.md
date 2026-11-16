@@ -1,6 +1,6 @@
 # NASA Space Apps Challenge 2026 — Official Submission Form (`SUBMISSION.md`)
 
-> Copy each section below into the corresponding field on the NASA Space Apps Challenge 2026 submission page. Ensure **Link to Demo** and **Link to Final Project** are pasted after final hosting verification in an incognito browser window.
+> Copy each section below into the matching field of the Space Apps 2026 submission page. Paste **Link to Demo** and **Link to Final Project** only after opening both in an incognito window, without login.
 
 ---
 
@@ -10,70 +10,75 @@
 ---
 
 ## High-Level Summary
-AstraCare AI is an autonomous, offline-first onboard medical officer that monitors astronaut physical, behavioral, nutritional, and radiation health during deep-space missions where up to 20-minute Earth communication delays prevent real-time medical care. Combining deterministic `NASA-STD-3001` & `OCHMO` clinical safety rules, local `scikit-learn` predictive anomaly detection (`IsolationForest` + `RandomForest`), an interactive 3D anatomical holo-scanner, and a LangChain tool-calling conversational agent, AstraCare empowers non-medical crew members to detect multi-variable syndromes early, execute step-by-step countermeasures, and transmit structured telemedicine dossiers to Earth Flight Surgeons. Built with NASA HRP 5 Hazards data, NASA OCHMO Technical Briefs, CHeCS protocols, and live NASA DONKI solar weather feeds.
+AstraCare AI is an offline-first onboard medical officer for long-duration missions, where a message to Earth can take up to 22 minutes each way. It compares every astronaut against their own adaptive baseline, checks live NASA DONKI space weather before blaming the body, explains each alert, and walks non-medical crew through NASA-STD-3001 / OCHMO checklists. A tool-calling AI agent chains smartwatch exams, diagnosis, central alerts and psychological countermeasures, while hash-chained packages wait for the communication window computed from live NASA JPL Horizons data.
 
 ---
 
 ## Link to Demo
-`[Paste public/unlisted 30-second YouTube video URL or 7-slide PDF link here — verified in incognito window]`
+`[Paste the public/unlisted 30-second video URL or the 7-slide PDF link — verified in an incognito window]`
 
 ---
 
 ## Link to Final Project
-`[Paste deployed public production URL here (e.g., Vercel / Render) — verified without login in incognito window]`  
-*(Public GitHub Repository: https://github.com/Nickddb/NASA_Hackaton)*
+`[Paste the deployed public URL — verified without login in an incognito window]`
+*(Public GitHub repository: https://github.com/Nickddb/NASA_Hackaton)*
 
 ---
 
 ## Detailed Description
 
-**What it does & how it works:**  
-AstraCare AI replaces fragmented spreadsheets with a unified *Deep Space Medical Cockpit* linking a simulated edge biometric smartwatch, an interactive 3D holographic human body (`Three.js` / React Three Fiber), longitudinal trend charts (`Recharts`), and a conversational AI Medical Officer (`LangChain`). Crew members can switch across 6 mission scenarios (*Nominal*, *Systemic Infection*, *Orthostatic Intolerance*, *Severe Behavioral Fatigue*, *Caloric-Deficit Hypoglycemia*, and *Solar Particle Event*) and 3 operational environments (*Deep Space Transit 0g*, *Orbital Station*, and *Planetary Surface*), log meals or sleep in natural language (e.g., *"I ate 2 apples and drank 500ml of water"*), and click any of 6 anatomical regions to inspect CHeCS measurement procedures and trigger manual sensor scans.
+**What it does.** AstraCare AI is a mission cockpit for a crew of five (ISS orbit and deep-space transit). Each astronaut has screens for **Vitals** (personal-baseline readings and a realistic 3D anatomical body split into 25 selectable parts, where the crew taps where it hurts), **Diagnosis** (cause tree, explainable alerts, follow-up cases and the Ship ↔ Earth link), **Mind** (behavioural readiness and countermeasures) and an **Assistant** (AI medical officer in English or Portuguese). Alerts cannot be silenced: they clear only after stabilisation and a new reading back inside the personal baseline.
 
-**3-Layer Hybrid Edge AI & Science Validity:**  
-Because pure black-box LLMs risk clinical hallucinations in spaceflight, AstraCare enforces a 3-layer architecture:
-1. **Layer 1 (Deterministic Safety):** `NASA-STD-3001` and NASA OCHMO Technical Brief rules evaluate 8 core biomarkers, spaceflight nutrition safety limits (`Sodium <= 3500 mg/day`, `Iron <= 10 mg/day`), EVA shoulder impingement (`OCHMO-MTB-006`), circadian desynchrony (`OCHMO-MTB-009`), Patent Foramen Ovale decompression risk (`OCHMO-MTB-011`), and mandatory lunar/Martian regolith decontamination prior to surface exams.
-2. **Layer 2 (Predictive ML):** Startup-trained `IsolationForest` generates a continuous 0–100% anomaly score while `RandomForestClassifier` computes syndrome probabilities and feature drivers from synthetic physiological cohorts calibrated to NASA Standard Measures.
-3. **Layer 3 (LangChain Agent + Telemetry Downlink):** Six `@tool` functions execute rule checks, ML scoring, NASA DONKI (`FLR`/`SEP`) solar storm correlation, natural-language nutrition/sleep updates, and `OCHMO-TB-044` MORD telemedicine dossier compilation—working seamlessly offline-first when no LLM API key or Earth link is available.
+**How it works.**
+1. **Adaptive individual baseline:** EWMA + MAD per astronaut, Ledoit-Wolf Mahalanobis distance and NASA OSDR gravity-phase priors; anomalous readings are quarantined so a slow drift is never learned as normal.
+2. **Contextual mission intelligence:** exercise (ARED/T2/CEVIS), EVA, sleep, cabin CO₂ and gravity phase explain benign deviations, and are reported as correlations, not causes.
+3. **Calibrated, explainable machine learning:** a Platt-calibrated HistGradientBoosting + RandomForest ensemble plus IsolationForest uses 26 features (vitals, context, DONKI activity, crew-reported pain and symptoms, personal z-scores) to rank 8 syndromes. It reports epistemic and sensor uncertainty, counterfactual drivers and a 72-hour forecast.
+4. **Cross-diagnosis cause tree:** first checks live NASA DONKI events (SEP, FLR, RBE), then onboard environment and physiology. A behavioural change is labelled psychological only when nothing physical or external explains it, and self-harm language always escalates to Earth.
+5. **Closed-loop follow-up:** every alert opens a case: confirmation measurement → crew action → timed reassessment → resolved, or escalated to Earth by a human.
+6. **Spacecraft–Earth continuity:** SHA-256 hash-chained store-and-forward packages and audit log. The one-way delay is computed from the live Earth–Mars range in NASA JPL Horizons (about 11 minutes on submission day).
 
-**Impact & Challenge Alignment:**  
-AstraCare directly fulfills Challenge 05's objective to *"create a visual tool that helps astronauts evaluate their own health during space missions and provides guidance on treatments and health improvements"* without assuming medical training. In-app *"How to Measure"* and *"Why It Matters"* guides translate CHeCS devices (`i-STAT`, `CSA Astroskin`, `Ultrasound 2`, `Tempus Pro`, `Urolux`, `Polysomnography`) into plain crew instructions.
+**The AI agent.** The Assistant's agent has 16 tools. Four form a chain where each output decides the next call: `schedule_smartwatch_exam` → `analyze_telemetry_and_diagnose` → `trigger_central_alert` (CRITICAL or escalated WARNING) → `activate_psychological_stimuli` (psychological cause only). It runs on Qwen 3.8 27B through Groq. With no network or key, a deterministic bilingual pipeline runs the same tools, and scheduled smartwatch exams run the chain in the background.
 
-**AI Disclosure Summary:**  
-AI coding assistants were used during hackathon software development, and AstraCare's diagnostic engine uses local `scikit-learn` models alongside optional LangChain/Gemini orchestration grounded strictly in deterministic NASA clinical rules.
+**Why it matters.** Challenge 05 asks for a visual tool that lets astronauts evaluate their own health without medical training and get guidance despite communication delays. AstraCare AI answers that with personal baselines instead of population averages, causes instead of raw numbers, plain-language "How to measure / Why it matters" guides and an auditable record for Flight Surgeons.
+
+**Honest limits.** The ML is trained on a NASA-calibrated stochastic generator, not on astronaut records; its ~99 % accuracy on synthetic data is not an estimate of clinical performance. Smartwatch readings are simulated.
+
+**Tools.** Python, FastAPI, scikit-learn, React, Vite, Tailwind CSS, Three.js / React Three Fiber, Recharts, Groq API, NASA DONKI and JPL Horizons APIs.
 
 ---
 
 ## NASA Data
-- **NASA Human Research Program (HRP) — 5 Hazards & Risks of Human Spaceflight:** https://www.nasa.gov/hrp/hazards/ & https://www.nasa.gov/hrp/risks/ — Grounds the 8 core physiological/behavioral biomarkers and 5 combined clinical triage scenarios.
-- **NASA DONKI API (`FLR` & `SEP` Space Weather):** https://api.nasa.gov/DONKI/FLR & https://api.nasa.gov/DONKI/SEP — Queried by the backend (`nasa_donki.py`) with a curated local sample fallback (`nasa_donki_sample.json`) to correlate real solar flares and proton storms with astronaut radiation dose limits.
-- **NASA OCHMO Standards & Technical Briefs (`NASA-STD-3001`, `OCHMO-MTB-006`, `OCHMO-MTB-009`, `OCHMO-MTB-011`, `OCHMO-TB-043`, `OCHMO-TB-044`, `OCHMO-TB-051`):** Rules for EVA shoulder injuries, circadian light/sleep countermeasures, PFO/DCS prebreathe screening, longitudinal health surveillance (SANS & bone loss), and MORD Flight Surgeon telemedicine roles.
-- **NASA ISS Crew Health Care System (CHeCS) & Space Food Systems:** Hardware reference (`i-STAT`, `Tempus Pro`, `Ultrasound 2`, `MELFI`, `CMRS`, `ARED`) and spaceflight dietary caps (`Sodium <= 3500 mg/day`, `Iron <= 10 mg/day`).
+- **NASA DONKI API (SEP, FLR, RBE):** https://api.nasa.gov/ — live solar energetic particle, flare and radiation-belt events. They drive the cause tree and an ML feature, with cache and an offline fallback.
+- **NASA JPL Horizons API:** https://ssd.jpl.nasa.gov/api/horizons.api — live Earth–Mars range, converted to the one-way and round-trip light-time used by the Earth link and the telemedicine dossier.
+- **NASA-STD-3001 and OCHMO technical briefs** (radiation protection, MTB-006, MTB-009, MTB-011, TB-043, TB-044, TB-051): thresholds, crew checklists and Flight Surgeon roles.
+- **NASA Human Research Program (hazards, risks, Human Research Roadmap) and NASA OSDR (OSD-570, OSD-571 standard measures):** physiological ranges and gravity-phase priors that calibrate the telemetry generator and the adaptive baseline.
+- **NASA ISS Crew Health Care System (CHeCS) and Space Food Systems:** the "How to measure" device guides and dietary limits (sodium ≤ 3,500 mg/day, iron ≤ 10 mg/day).
 
 ---
 
 ## Space Agency Partner and Other Data
-- **Agência Espacial Brasileira (AEB):** Challenge 05 sponsor and space medicine scope guidelines.
-- **Canadian Space Agency (CSA) — Astroskin Bio-Monitor & Radiation Monitoring:** https://www.asc-csa.gc.ca/eng/iss/bio-monitor.asp & https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp
-- **Design System:** Adapted from `VoltAgent/awesome-design-md` (`spacex` & `sentry`, MIT License).
-- **Open-Source Libraries:** FastAPI, Uvicorn, Pydantic, HTTPX, scikit-learn, NumPy, Pandas, LangChain, React, Vite, Tailwind CSS, Three.js / React Three Fiber, Recharts, Lucide React.
+- **Agência Espacial Brasileira (AEB):** Challenge 05 co-sponsor and scope.
+- **Canadian Space Agency (CSA):** Astroskin Bio-Monitor and radiation-monitoring references.
+- **MakeHuman base mesh and skeleton weights (CC0 1.0):** the 3D anatomical body.
+- **Design system:** adapted from `VoltAgent/awesome-design-md` (MIT).
+- **Open-source libraries:** FastAPI, Uvicorn, Pydantic, HTTPX, scikit-learn, NumPy, Pandas, React, Vite, Tailwind CSS, Three.js, React Three Fiber, drei, Recharts, Lucide.
 
 ---
 
 ## Use of Artificial Intelligence
-Artificial Intelligence assistants supported code scaffolding and clinical documentation structuring during the hackathon. Inside the application, `scikit-learn` (`IsolationForest` and `RandomForestClassifier`) performs local anomaly/syndrome scoring and `LangChain` orchestrates 6 medical tools (with Gemini when configured and deterministic NLP fallback offline), gated by deterministic `NASA-STD-3001` clinical rules. No AI-generated audio, video, or photorealistic imagery of people is used.
+AI coding assistants (Claude, Gemini) helped write code and documentation during the hackathon; the team set the direction and reviewed the results. Inside the application, scikit-learn models score anomalies and syndromes locally, and a large language model (Qwen 3.8 27B on Groq, or optionally Gemini) orchestrates the clinical tools in the chat. Its answers are grounded in tool outputs and gated by deterministic NASA-STD-3001 / OCHMO rules, and it never prescribes treatment. No AI-generated images, audio or video appear in the app or demo materials.
 
 ---
 
 ## References
-*(Paste full contents of `SOURCES.md`)*
+*(Paste the full contents of `docs/instruções/SOURCES.md`.)*
 
 ---
 
 ## Pre-Submission Eligibility Checklist
-- [ ] Public URL of AstraCare AI opens in an incognito browser window without login.
-- [ ] GitHub repository (`https://github.com/Nickddb/NASA_Hackaton`) is public with English `README.md`.
-- [ ] Demo is <= 30 seconds video or <= 7 slides in English, accessible without login.
-- [ ] No NASA logos, insignia, or "Space Apps" branding inside the app UI or slides.
-- [ ] No under-18 likenesses or unlicensed media appear in demo materials.
+- [ ] Public URL of AstraCare AI opens in an incognito window without login.
+- [x] GitHub repository (https://github.com/Nickddb/NASA_Hackaton) is public, with an English `README.md`.
+- [ ] Demo is ≤ 30 seconds of video or ≤ 7 slides, in English, accessible without login.
+- [ ] No NASA logos, insignia or "Space Apps" branding inside the app UI or slides.
+- [ ] No under-18 likenesses or unlicensed media in the demo materials.
 - [ ] Team Owner submits before **Sunday, November 15, 2026, 11:59 PM** local time.

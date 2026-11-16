@@ -40,10 +40,31 @@ def _float(name: str, default: float) -> float:
 load_env_file()
 
 # LLM (optional: without a key the agent runs the deterministic offline pipeline)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-LLM_MODEL = os.getenv("ASTRACARE_LLM_MODEL", "gemini-2.5-flash")
+# groq | gemini | offline. Empty = first provider with a key (Groq first).
+LLM_PROVIDER = (os.getenv("ASTRACARE_LLM_PROVIDER") or ("groq" if GROQ_API_KEY else "gemini" if GEMINI_API_KEY else "offline")).lower()
+DEFAULT_MODELS = {"groq": "qwen/qwen3.8-27b", "gemini": "gemini-2.5-flash"}
+LLM_MODEL = os.getenv("ASTRACARE_LLM_MODEL") or DEFAULT_MODELS.get(LLM_PROVIDER, "")
+# Groq reasoning models (Qwen): "hidden" drops the <think> trace from the answer; empty = provider default
+GROQ_REASONING_FORMAT = os.getenv("ASTRACARE_GROQ_REASONING_FORMAT", "hidden")
+# On HTTP 429, wait the provider's retry-after (when it is at most this many seconds) and try again
+GROQ_RATE_LIMIT_RETRIES = int(_float("ASTRACARE_GROQ_RATE_LIMIT_RETRIES", 2))
+GROQ_RATE_LIMIT_MAX_WAIT_S = _float("ASTRACARE_GROQ_RATE_LIMIT_MAX_WAIT_S", 8.0)
+# Tools offered to the LLM (comma list, or "all"). Every round resends their schemas, and free tiers are small
+# (Groq free: 8k tokens/minute on qwen/qwen3.8-27b), so the default is the monitoring chain + space weather + check-in.
+DEFAULT_LLM_TOOLS = (
+    "schedule_smartwatch_exam,analyze_telemetry_and_diagnose,trigger_central_alert,activate_psychological_stimuli,"
+    "run_monitoring_cycle,check_nasa_donki_and_horizons_tool,log_sleep_mood_context_tool"
+)
+LLM_TOOLS = [t.strip() for t in os.getenv("ASTRACARE_LLM_TOOLS", DEFAULT_LLM_TOOLS).split(",") if t.strip()]
+# Tool results longer than this are cut before going back to the model (the key fields come first)
+LLM_TOOL_RESULT_MAX_CHARS = int(_float("ASTRACARE_LLM_TOOL_RESULT_MAX_CHARS", 1200))
 LLM_MAX_TOOL_ROUNDS = int(_float("ASTRACARE_LLM_MAX_TOOL_ROUNDS", 5))
-LLM_TIMEOUT_S = _float("ASTRACARE_LLM_TIMEOUT_S", 12.0)
+LLM_TIMEOUT_S = _float("ASTRACARE_LLM_TIMEOUT_S", 30.0)
+
+# NASA DONKI + JPL Horizons refresh period, in minutes (each feed also keeps its own cache)
+NASA_REFRESH_MIN = _float("ASTRACARE_NASA_REFRESH_MIN", 30.0)
 
 # Autonomous smartwatch monitoring
 SCHEDULER_ENABLED = _bool("ASTRACARE_SCHEDULER_ENABLED", True)

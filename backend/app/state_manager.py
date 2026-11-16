@@ -19,8 +19,9 @@ from app.engine.earth_sync import FOLLOWUP_STORE_PATH, EarthSyncManager
 from app.engine.followup_loop import FollowUpCaseManager
 from app.engine.nasa_feeds import (
     fetch_nasa_space_weather,
+    load_horizons,
     load_sample_donki,
-    load_sample_horizons,
+    refresh_horizons,
 )
 from app.engine.telemetry_generator import CRISIS_PROFILES, TelemetryGenerator
 from app.ml.adaptive_baseline import AdaptiveBaselineEngine
@@ -167,7 +168,7 @@ class CrewMemberRecord:
         now_iso = datetime.now(timezone.utc).isoformat()
         self.last_measured_at: str = now_iso
         self.last_updated: str = now_iso
-        self.horizons_link: HorizonsLinkStatus = load_sample_horizons(self.environment_id)
+        self.horizons_link: HorizonsLinkStatus = load_horizons(self.environment_id)
 
 
 class MissionStateManager:
@@ -483,7 +484,7 @@ class MissionStateManager:
         member.mission_context.gravitational_g = float(env_info.get("gravitational_g", 0.0))
         if "mission_phase" in env_info:
             member.mission_context.mission_phase = env_info["mission_phase"]
-        member.horizons_link = load_sample_horizons(env_id)
+        member.horizons_link = load_horizons(env_id)
         self._generate_telemetry(member)  # gravity phase shifts the nominal centre
         self.earth_sync.record_audit_event(
             event_type="ENVIRONMENT_CALIBRATION_CHANGED",
@@ -997,6 +998,14 @@ class MissionStateManager:
             comms_available=self.horizons_link.comms_available
         )
 
+    async def refresh_horizons(self, force: bool = False) -> dict[str, HorizonsLinkStatus]:
+        """Pull the live Earth range from NASA JPL Horizons and update every crew member's link and latency."""
+        await refresh_horizons(force=force)
+        for member in self.crew_records.values():
+            member.horizons_link = load_horizons(member.environment_id)
+        self._touch()
+        return {cid: m.horizons_link for cid, m in self.crew_records.items()}
+
     async def refresh_space_weather(self, force: bool = False) -> SpaceWeatherSummary:
         self.space_weather = await fetch_nasa_space_weather(simulated=self._scenario_donki(), force=force)
         self._touch()
@@ -1009,7 +1018,7 @@ class MissionStateManager:
             crew_member=state.crew_member,
             mission_day=state.mission_day,
             environment_id=state.environment_id,
-            horizons_link=state.horizons_link or load_sample_horizons(state.environment_id),
+            horizons_link=state.horizons_link or load_horizons(state.environment_id),
             space_weather_alert=state.space_weather.alert_level if state.space_weather else "NOMINAL",
             adaptive_baseline=state.adaptive_baseline,
             contextual_report=state.contextual_intelligence,
@@ -1024,8 +1033,9 @@ class MissionStateManager:
     def compile_dossier(self, crew_id: str | None = None) -> TelemedicineDossier:
         pkg = self.create_earth_sync_package(crew_id=crew_id)
         state = self.get_state(crew_id=crew_id)
-        env = self.environments_by_id[state.environment_id]
-        latency = int(env.get("one_way_latency_seconds", 720))
+        latency = int(round(state.horizons_link.one_way_light_time_seconds)) if state.horizons_link else int(
+            self.environments_by_id[state.environment_id].get("one_way_latency_seconds", 720)
+        )
         tx_mode = (
             "Asynchronous Store-and-Forward Telemetry + Audit Bundle (Deep Space Delay)"
             if latency > 30
@@ -1247,7 +1257,9 @@ class MissionStateManager:
         astro_profile = self.astronauts_by_id[member.crew_id]
         sc = self.scenarios_by_id[member.scenario_id]
         env = self.environments_by_id[member.environment_id]
-        latency_sec = int(env.get("one_way_latency_seconds", 720))
+        # one-way light time from JPL Horizons (live/cached range) for this environment
+        member.horizons_link = load_horizons(member.environment_id)
+        latency_sec = int(round(member.horizons_link.one_way_light_time_seconds))
 
         # 1. Pillar 1: Adaptive Individual Baseline
         adaptive_base = self.baseline_engine.evaluate(

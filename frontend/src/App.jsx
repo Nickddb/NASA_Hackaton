@@ -9,10 +9,8 @@ import EmergencyProtocol from "./components/EmergencyProtocol";
 import { EnvironmentSectorSummary } from "./components/EnvironmentPanel";
 import HomeDashboard, { MissionTelemetryBar } from "./components/HomeDashboard";
 import { PsychCrewBar } from "./components/PsychRankPanel";
-import SmartwatchSim from "./components/SmartwatchSim";
 import SpaceBackdrop from "./components/SpaceBackdrop";
 import TelemedDossier from "./components/TelemedDossier";
-import VitalsDashboard from "./components/VitalsDashboard";
 import {
   acknowledgeCrewAlert,
   dispatchCrewAlert,
@@ -31,7 +29,6 @@ import {
   stabilizeCrewMember,
   subscribeConnectionMode,
   switchEnvironment,
-  switchScenario,
   triggerMeasurement,
 } from "./services/api";
 
@@ -233,21 +230,6 @@ export default function App() {
     }
   };
 
-  const handleSwitchScenario = async (scenarioId) => {
-    setBusyAction(true);
-    try {
-      const next = await switchScenario(scenarioId, activeCrewId);
-      setState(next);
-      const nextRoster = await getCrewRoster(next?.astronaut_id ? next : undefined);
-      setRoster(nextRoster);
-      setError("");
-    } catch (err) {
-      setError(err?.message || "Failed to switch scenario.");
-    } finally {
-      setBusyAction(false);
-    }
-  };
-
   const handleSwitchEnvironment = async (envId) => {
     setBusyAction(true);
     try {
@@ -438,7 +420,6 @@ export default function App() {
     mind: { title: "Mind", subtitle: `${firstName} · psychological readiness and behavioural load`, astronaut: true },
     assistant: { title: "Assistant", subtitle: `Ask about ${firstName || "the crew"}: vitals, causes, follow-up, NASA data`, astronaut: true },
     environment: { title: "Environment", subtitle: "Space weather (NASA DONKI) and cabin sensors by habitat" },
-    simulator: { title: "Simulator", subtitle: "Drive scenarios and habitats for demos. Not part of the clinical workflow." },
   };
   const current = PAGES[page] || PAGES.crew;
 
@@ -500,21 +481,6 @@ export default function App() {
             />
             <EnvironmentSectorSummary crew={crewList} />
             <HomeDashboard key={dashboardKey} {...dashboardProps} sections={["environment"]} />
-          </div>
-        );
-      case "simulator":
-        return (
-          <div className="rounded-2xl bg-[#F7FBF9] p-4 text-[#113D2E] sm:p-5">
-            <SmartwatchSim
-              state={state}
-              loadingScenario={busyAction}
-              onSwitchScenario={handleSwitchScenario}
-              onSwitchEnvironment={handleSwitchEnvironment}
-              onTriggerWristScan={handleTriggerMeasurement}
-            />
-            <div className="mt-5">
-              <VitalsDashboard state={state} onSelectSystem={setSelectedSystem} />
-            </div>
           </div>
         );
       default:

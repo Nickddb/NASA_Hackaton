@@ -472,8 +472,9 @@ class SpaceWeatherSummary(BaseModel):
 
 
 class HorizonsLinkStatus(BaseModel):
-    source: Literal["live_nasa_jpl_horizons", "curated_local_fallback"]
+    source: Literal["live_nasa_jpl_horizons", "cached_nasa_jpl_horizons", "curated_local_fallback"]
     fetched_at: str
+    fetch_status: str = Field("", description="Why this source was used, e.g. 'live', 'ConnectTimeout -> last good range'")
     target_body: str
     distance_km: float
     distance_au: float
@@ -573,7 +574,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    mode: Literal["langchain_gemini", "offline_hybrid_edge", "ml_only_stage"]
+    mode: Literal["groq", "langchain_gemini", "offline_hybrid_edge", "ml_only_stage"]
     tool_trace: list[ToolTraceItem] = Field(default_factory=list)
     state: MissionState
 

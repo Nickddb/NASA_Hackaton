@@ -207,22 +207,30 @@ async def fetch_donki_raw(force: bool = False) -> tuple[dict[str, list[dict[str,
                 return_exceptions=True,
             )
         raw: dict[str, list[dict[str, Any]]] = {}
+        failed: list[str] = []
         for kind, resp in zip(DONKI_TYPES, responses):
             if isinstance(resp, Exception):
-                failure = f"{kind}: {type(resp).__name__}"
-                break
-            if resp.status_code == 429:
-                failure = f"{kind}: HTTP 429 rate limit"
-                break
-            if resp.status_code != 200:
-                failure = f"{kind}: HTTP {resp.status_code}"
-                break
-            body = resp.json() if resp.content else []
-            raw[kind] = body if isinstance(body, list) else []  # DONKI answers an empty body when there are no events
-        else:
+                failed.append(f"{kind}: {type(resp).__name__}")
+            elif resp.status_code != 200:
+                failed.append(f"{kind}: HTTP {resp.status_code}" + (" rate limit" if resp.status_code == 429 else ""))
+            else:
+                body = resp.json() if resp.content else []
+                raw[kind] = body if isinstance(body, list) else []  # DONKI answers an empty body when there are no events
+        if raw:
+            # one feed down at NASA (e.g. FLR 404) must not throw away the others: fill only the gaps
             fetched_at = now.isoformat()
+            filled = []
+            for kind in DONKI_TYPES:
+                if kind not in raw:
+                    if cache and kind in cache["data"]:
+                        raw[kind] = cache["data"][kind]
+                        filled.append(f"{kind} from cache")
+                    else:
+                        raw[kind] = []
             _write_cache(raw, fetched_at)
-            return raw, "live_nasa_donki", "live", fetched_at
+            status = "live" if not failed else f"live ({'; '.join(failed)}" + (f" -> {', '.join(filled)}" if filled else "") + ")"
+            return raw, "live_nasa_donki", status, fetched_at
+        failure = "; ".join(failed)
     except Exception as exc:  # network down onboard: never break the medical UI
         failure = type(exc).__name__
 
@@ -250,6 +258,115 @@ async def fetch_nasa_space_weather(
 ) -> SpaceWeatherSummary:
     raw, source, status, fetched_at = await fetch_donki_raw(force=force)
     return summarize_donki(raw, source=source, fetch_status=status, fetched_at=fetched_at, simulated=simulated)
+
+
+# ---------------------------------------------------------------------------------- JPL Horizons (live range)
+HORIZONS_API = "https://ssd.jpl.nasa.gov/api/horizons.api"  # public, no key
+HORIZONS_CACHE_PATH = STATE_DIR / "horizons_cache.json"
+HORIZONS_CACHE_TTL_HOURS = 6  # Earth–Mars range changes ~0.1 % per hour
+AU_KM = 149_597_870.7
+LIGHT_KM_S = 299_792.458
+# environment -> (Horizons COMMAND, label). orbital_station stays curated: ISS/Gateway latency is relay-bound,
+# not light-time. transit uses the range to Mars (the transfer destination) as its worst-case latency.
+HORIZONS_TARGETS: dict[str, tuple[str, str]] = {
+    "planetary_surface": ("499", "Mars (499) — surface habitat"),
+    "transit": ("499", "Earth–Mars transfer — range to destination Mars (499)"),
+}
+_horizons_live: dict[str, dict[str, Any]] = {}  # COMMAND -> {"delta_au", "fetched_at", "source", "status"}
+
+
+def _read_horizons_cache() -> dict[str, Any]:
+    try:
+        return json.loads(HORIZONS_CACHE_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _write_horizons_cache(data: dict[str, Any]) -> None:
+    try:
+        HORIZONS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        HORIZONS_CACHE_PATH.write_text(json.dumps(data), encoding="utf-8")
+    except OSError:
+        logger.exception("Could not write Horizons cache")
+
+
+def parse_horizons_range_au(result_text: str) -> float:
+    """First 'delta' (observer range, AU) between $$SOE and $$EOE of a QUANTITIES='20' CSV ephemeris."""
+    start, end = result_text.index("$$SOE"), result_text.index("$$EOE")
+    first_row = next(line for line in result_text[start + 5 : end].splitlines() if line.strip())
+    cells = [c.strip() for c in first_row.split(",")]
+    return float(next(c for c in cells[1:] if c and c.replace(".", "", 1).replace("-", "", 1).isdigit()))
+
+
+async def fetch_horizons_range(command: str, force: bool = False) -> dict[str, Any]:
+    """Earth (geocenter) -> target range now. Never raises: live -> cache (any age) -> {}."""
+    now = datetime.now(timezone.utc)
+    cache = _read_horizons_cache()
+    cached = cache.get(command)
+    if cached and not force:
+        age = now - datetime.fromisoformat(cached["fetched_at"])
+        if age < timedelta(hours=HORIZONS_CACHE_TTL_HOURS):
+            return {**cached, "source": "cached_nasa_jpl_horizons", "status": f"cache reused ({int(age.total_seconds() // 60)} min old)"}
+    params = {
+        "format": "json",
+        "COMMAND": f"'{command}'",
+        "OBJ_DATA": "NO",
+        "MAKE_EPHEM": "YES",
+        "EPHEM_TYPE": "OBSERVER",
+        "CENTER": "'500@399'",
+        "START_TIME": f"'{now:%Y-%m-%d %H:%M}'",
+        "STOP_TIME": f"'{now + timedelta(hours=1):%Y-%m-%d %H:%M}'",
+        "STEP_SIZE": "'1 h'",
+        "QUANTITIES": "'20'",
+        "CSV_FORMAT": "YES",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_S * 2) as client:
+            resp = await client.get(HORIZONS_API, params=params)
+        resp.raise_for_status()
+        delta_au = parse_horizons_range_au(resp.json()["result"])
+        entry = {"delta_au": delta_au, "fetched_at": now.isoformat()}
+        cache[command] = entry
+        _write_horizons_cache(cache)
+        return {**entry, "source": "live_nasa_jpl_horizons", "status": "live"}
+    except Exception as exc:  # offline onboard / API change: keep the last good range
+        failure = f"{type(exc).__name__}"
+        if cached:
+            return {**cached, "source": "cached_nasa_jpl_horizons", "status": f"{failure} -> last good range"}
+        return {}
+
+
+async def refresh_horizons(force: bool = False) -> dict[str, dict[str, Any]]:
+    """Fetch every distinct Horizons target once and keep the result for load_horizons()."""
+    commands = sorted({cmd for cmd, _ in HORIZONS_TARGETS.values()})
+    results = await asyncio.gather(*(fetch_horizons_range(cmd, force=force) for cmd in commands))
+    for cmd, res in zip(commands, results):
+        if res:
+            _horizons_live[cmd] = res
+    return dict(_horizons_live)
+
+
+def load_horizons(environment_id: str) -> HorizonsLinkStatus:
+    """Link status for an environment: live/cached JPL Horizons range when available, else the curated sample."""
+    sample = load_sample_horizons(environment_id)
+    target = HORIZONS_TARGETS.get(environment_id)
+    live = _horizons_live.get(target[0]) if target else None
+    if not live:
+        return sample
+    distance_km = live["delta_au"] * AU_KM
+    one_way = distance_km / LIGHT_KM_S
+    return sample.model_copy(
+        update={
+            "source": live["source"],
+            "fetched_at": live["fetched_at"],
+            "fetch_status": live["status"],
+            "target_body": target[1],
+            "distance_km": round(distance_km, 1),
+            "distance_au": round(live["delta_au"], 6),
+            "one_way_light_time_seconds": round(one_way, 1),
+            "round_trip_light_time_seconds": round(2 * one_way, 1),
+        }
+    )
 
 
 def load_sample_horizons(environment_id: str) -> HorizonsLinkStatus:

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
 from app import config
+from app.agent.llm_groq import run_groq_chat
 from app.agent.mission_tools import MissionAgentTools, build_mission_tools
 from app.agent.tools import (
     build_agent_tools,
@@ -29,6 +31,17 @@ run_monitoring_cycle, then analyze_telemetry_and_diagnose. Read its status/categ
 trigger_central_alert when it lists it (CRITICAL or escalated WARNING) and activate_psychological_stimuli only when the
 category is PSYCHOLOGICAL (never for a physical or space-weather cause). Each tool returns JSON; base the next call on it."""
 
+# Same rules in ~1/3 of the tokens, for providers with small per-minute token budgets (Groq free tier).
+SYSTEM_PROMPT_COMPACT = """You are AstraCare Medical Officer, an auditable decision-support AI aboard a space mission.
+Rules: compare vitals with the astronaut's personal baseline, not only population ranges; context (sleep, exercise, EVA,
+cabin, NASA DONKI space weather) is correlation, not proof of cause; cite the signals, confidence and uncertainty the
+tools return; never invent treatments or decide alone: actions are NASA-STD-3001/OCHMO checklists the Crew Medical
+Officer or Earth Flight Surgeon confirms.
+Tool chaining: to check someone call run_monitoring_cycle (or schedule_smartwatch_exam then
+analyze_telemetry_and_diagnose). Follow next_tools: trigger_central_alert for CRITICAL or escalated WARNING;
+activate_psychological_stimuli only when category is PSYCHOLOGICAL. Base each call on the previous JSON.
+Answer briefly in the user's language (Portuguese if they write in Portuguese)."""
+
 # chat intents for the multi-tool chain when no LLM is configured
 EXAM_INTENT = re.compile(
     r"\b(agend\w*|schedul\w*|exame|exam|smartwatch|rel[oó]gio|ciclo de monitoramento|monitoring cycle|"
@@ -42,6 +55,7 @@ EXAM_TYPE_WORDS = {
     "respiratory": ("respir", "spo2", "oxig"),
     "metabolic": ("metab", "glic", "glucose"),
 }
+log = logging.getLogger("astracare.agent")
 INTERVAL = re.compile(r"(?:a cada|every)\s+(\d+(?:[.,]\d+)?)\s*(h|hora|hour|min)", re.IGNORECASE)
 
 
@@ -56,6 +70,57 @@ class AstraCareOrchestrator:
         self.state_manager = state_manager
         self.mission_agent = mission_agent or MissionAgentTools(state_manager)
 
+    def _context_line(self) -> str:
+        state = self.state_manager.get_state()
+        return (
+            f"Active Crew={state.crew_member} ({state.astronaut_id}), Scenario={state.scenario_name}, "
+            f"Env={state.environment_name} ({state.mission_context.gravitational_g}g), "
+            f"Personal Drift={state.adaptive_baseline.personal_drift_score}% "
+            f"(Mahalanobis={state.adaptive_baseline.multivariate_mahalanobis_distance}), "
+            f"Context-Adjusted ML Anomaly={state.ml_prediction.anomaly_score}% "
+            f"({state.ml_prediction.predicted_syndrome_label}, {state.ml_prediction.confidence_pct}% ± "
+            f"{state.ml_prediction.uncertainty.total_uncertainty_pct}%), "
+            f"Sensor Quality={state.measurement_quality.overall_quality_pct}% ({state.measurement_quality.reliability_grade}). "
+            f"Crew ids: {', '.join(self.state_manager.crew_records)}."
+        )
+
+    async def _run_gemini(self, system_prompt: str, message: str, tools: list[Any], tools_by_name: dict[str, Any]) -> tuple[str, bool]:
+        """Gemini through LangChain (pip install -r requirements-llm.txt)."""
+        import asyncio
+
+        from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        llm = ChatGoogleGenerativeAI(
+            model=config.LLM_MODEL, google_api_key=config.GEMINI_API_KEY, temperature=0.15
+        ).bind_tools([t.to_langchain_tool() for t in tools])
+        messages: list[Any] = [SystemMessage(content=system_prompt), HumanMessage(content=message)]
+        ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
+        rounds = 0
+        while getattr(ai_msg, "tool_calls", None) and rounds < config.LLM_MAX_TOOL_ROUNDS:
+            rounds += 1
+            messages.append(ai_msg)
+            for tc in ai_msg.tool_calls:
+                fn = tools_by_name.get(tc["name"])
+                result = fn.invoke(tc["args"]) if fn else json.dumps({"error": f"unknown tool {tc['name']}"})
+                messages.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
+            ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
+        return str(ai_msg.content or ""), rounds > 0
+
+    @staticmethod
+    def _trace_reply(trace_log: list[ToolTraceItem], message: str) -> str:
+        pt = bool(re.search(r"[ãçõáéíóúê]|\b(o|a|de|que|agora|se)\b", message.lower()))
+        head = (
+            "**Resultado das ferramentas** (o modelo atingiu o limite gratuito de tokens; resposta montada direto das ferramentas):"
+            if pt
+            else "**Tool results** (the model hit its free token limit; answer built directly from the tools):"
+        )
+        lines = [
+            f"- `{t.status}` **{t.tool_name}**: {t.summary}" + (f" ({t.rule_or_score})" if t.rule_or_score else "")
+            for t in trace_log
+        ]
+        return head + "\n" + "\n".join(lines)
+
     async def handle_chat(self, message: str, crew_id: str | None = None) -> ChatResponse:
         if crew_id and crew_id in self.state_manager.crew_records:
             self.state_manager.select_crew_member(crew_id)
@@ -63,66 +128,31 @@ class AstraCareOrchestrator:
         tools = build_agent_tools(self.state_manager, trace_log) + build_mission_tools(self.mission_agent, trace_log)
         tools_by_name = {t.name: t for t in tools}
 
-        api_key = config.GEMINI_API_KEY
-        if api_key:
+        if config.LLM_PROVIDER in ("groq", "gemini"):
             try:
-                import asyncio
-                from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
-                from langchain_google_genai import ChatGoogleGenerativeAI
-
-                lc_tools = [t.to_langchain_tool() for t in tools]
-                llm = ChatGoogleGenerativeAI(
-                    model=config.LLM_MODEL,
-                    google_api_key=api_key,
-                    temperature=0.15,
-                ).bind_tools(lc_tools)
-
-                state = self.state_manager.get_state()
-                context_msg = (
-                    f"Active Crew={state.crew_member} ({state.astronaut_id}), Scenario={state.scenario_name}, "
-                    f"Env={state.environment_name} ({state.mission_context.gravitational_g}g), "
-                    f"Personal Drift={state.adaptive_baseline.personal_drift_score}% "
-                    f"(Mahalanobis={state.adaptive_baseline.multivariate_mahalanobis_distance}), "
-                    f"Context-Adjusted ML Anomaly={state.ml_prediction.anomaly_score}% "
-                    f"({state.ml_prediction.predicted_syndrome_label}, {state.ml_prediction.confidence_pct}% ± "
-                    f"{state.ml_prediction.uncertainty.total_uncertainty_pct}%), "
-                    f"Sensor Quality={state.measurement_quality.overall_quality_pct}% ({state.measurement_quality.reliability_grade})."
-                )
-
-                messages: list[Any] = [
-                    SystemMessage(content=f"{SYSTEM_PROMPT}\n{context_msg}"),
-                    HumanMessage(content=message),
-                ]
-
-                # tool chaining: each round's tool results go back to the model, which decides the next call
-                ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
-                rounds = 0
-                used_tools = False
-                while getattr(ai_msg, "tool_calls", None) and rounds < config.LLM_MAX_TOOL_ROUNDS:
-                    used_tools = True
-                    rounds += 1
-                    messages.append(ai_msg)
-                    for tc in ai_msg.tool_calls:
-                        fn = tools_by_name.get(tc["name"])
-                        result = fn.invoke(tc["args"]) if fn else json.dumps({"error": f"unknown tool {tc['name']}"})
-                        messages.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
-                    ai_msg = await asyncio.wait_for(llm.ainvoke(messages), timeout=config.LLM_TIMEOUT_S)
-
-                if used_tools:
-                    reply_text = str(ai_msg.content or "") or "\n".join(f"- {t.tool_name}: {t.summary}" for t in trace_log)
+                base_prompt = SYSTEM_PROMPT_COMPACT if config.LLM_PROVIDER == "groq" else SYSTEM_PROMPT
+                system_prompt = f"{base_prompt}\n{self._context_line()}"
+                llm_tools = tools if "all" in config.LLM_TOOLS else [t for t in tools if t.name in config.LLM_TOOLS]
+                if config.LLM_PROVIDER == "groq":
+                    reply_text, used_tools = await run_groq_chat(system_prompt, message, llm_tools)
+                    mode = "groq"
                 else:
+                    reply_text, used_tools = await self._run_gemini(system_prompt, message, llm_tools, tools_by_name)
+                    mode = "langchain_gemini"
+                if not used_tools:  # keep the explainability trace even for a plain answer
                     tools_by_name["inspect_adaptive_baseline_tool"].invoke({"astronaut_query": "current"})
                     tools_by_name["predict_calibrated_ml_and_uncertainty_tool"].invoke({"horizon": "72h"})
                     tools_by_name["audit_explainable_alerts_and_rules_tool"].invoke({"note": "sync"})
-                    reply_text = str(ai_msg.content)
-
+                if not reply_text:  # e.g. provider rate limit after the tools ran
+                    reply_text = self._trace_reply(trace_log, message)
                 return ChatResponse(
                     reply=reply_text,
-                    mode="langchain_gemini",
+                    mode=mode,
                     tool_trace=trace_log,
                     state=self.state_manager.get_state(),
                 )
-            except Exception:
+            except Exception as exc:  # network, quota, invalid model... -> deterministic offline pipeline
+                log.warning("LLM provider %s failed, using offline pipeline: %s %s", config.LLM_PROVIDER, type(exc).__name__, exc)
                 trace_log.clear()
 
         # --- Deterministic Offline-First Hybrid Edge Pipeline (Bilingual EN/PT, Zero Network Required) ---
