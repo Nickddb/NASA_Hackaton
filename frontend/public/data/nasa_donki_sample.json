@@ -1,0 +1,75 @@
+{
+  "_note": "Curated offline fallback in the exact NASA DONKI response schema (arrays per endpoint, same field names). These are illustrative records, NOT real events; they are dated in the past so they never count as active. Live data: https://api.nasa.gov/DONKI/{SEP,FLR,RBE}?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&api_key=...",
+  "FLR": [
+    {
+      "flrID": "2026-10-20T14:20:00-FLR-001",
+      "catalog": "M2M_CATALOG",
+      "instruments": [
+        {
+          "displayName": "GOES-P: EXIS 1.0-8.0"
+        }
+      ],
+      "beginTime": "2026-10-20T14:20Z",
+      "peakTime": "2026-10-20T14:38Z",
+      "endTime": "2026-10-20T14:55Z",
+      "classType": "M4.8",
+      "sourceLocation": "S14W28",
+      "activeRegionNum": 13894,
+      "note": "",
+      "submissionTime": "2026-10-20T16:10Z",
+      "versionId": 1,
+      "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/FLR/00000/-1",
+      "linkedEvents": null
+    },
+    {
+      "flrID": "2026-10-22T06:05:00-FLR-001",
+      "catalog": "M2M_CATALOG",
+      "instruments": [
+        {
+          "displayName": "GOES-P: EXIS 1.0-8.0"
+        }
+      ],
+      "beginTime": "2026-10-22T06:05Z",
+      "peakTime": "2026-10-22T06:24Z",
+      "endTime": "2026-10-22T06:51Z",
+      "classType": "C3.1",
+      "sourceLocation": "N12W42",
+      "activeRegionNum": 13901,
+      "note": "",
+      "submissionTime": "2026-10-22T07:30Z",
+      "versionId": 1,
+      "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/FLR/00000/-1",
+      "linkedEvents": null
+    }
+  ],
+  "SEP": [
+    {
+      "sepID": "2026-10-20T19:10:00-SEP-001",
+      "eventTime": "2026-10-20T19:10Z",
+      "instruments": [
+        {
+          "displayName": "GOES-P: SEISS >10 MeV"
+        }
+      ],
+      "submissionTime": "2026-10-20T20:02Z",
+      "versionId": 1,
+      "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/SEP/00000/-1",
+      "linkedEvents": null
+    }
+  ],
+  "RBE": [
+    {
+      "rbeID": "2026-10-24T12:00:00-RBE-001",
+      "eventTime": "2026-10-24T12:00Z",
+      "instruments": [
+        {
+          "displayName": "GOES-P: SEISS >2 MeV"
+        }
+      ],
+      "submissionTime": "2026-10-24T13:45Z",
+      "versionId": 1,
+      "link": "https://webtools.ccmc.gsfc.nasa.gov/DONKI/view/RBE/00000/-1",
+      "linkedEvents": null
+    }
+  ]
+}

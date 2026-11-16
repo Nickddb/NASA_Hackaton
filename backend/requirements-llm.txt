@@ -1,0 +1,4 @@
+# Optional: live LLM reasoning in the chat agent (needs GEMINI_API_KEY in backend/.env).
+# Without these packages the agent uses the deterministic offline pipeline.
+langchain-core>=0.3.0
+langchain-google-genai>=2.0.0

@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "skills": {
+    "choose-challenge": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/choose-challenge/SKILL.md",
+      "computedHash": "8856f29f7a667d0fa164524fab1a4460b0b2cbb7d4697a34f1d4376d57ad7bc5"
+    },
+    "design-reference": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/design-reference/SKILL.md",
+      "computedHash": "4ad887dba710cbe73cf6637c54ea30695931a2a998c9ce074d0102e4507ae357"
+    },
+    "hackathon-mode": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/hackathon-mode/SKILL.md",
+      "computedHash": "99388abd12accf62e5b5c1d899def77307771e64992c43575e1df8277b5a2546"
+    },
+    "nasa-data": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/nasa-data/SKILL.md",
+      "computedHash": "20ac6fc2aebb85b2f494a9a4d729346671e98e9813a3b200dd62531dd08167d2"
+    },
+    "pitch-deck": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/pitch-deck/SKILL.md",
+      "computedHash": "49721f8089d0f814ea32c6dd66c36b5e73d88b30286b3acc2a7f736c58c5ef62"
+    },
+    "submit-and-demo": {
+      "source": "angelinopires/space-apps-2026-kit",
+      "sourceType": "github",
+      "skillPath": "skills/submit-and-demo/SKILL.md",
+      "computedHash": "dc0dcb164204342b9b246f9643e53960b63332d9c000b1b97a8c0672db050512"
+    }
+  }
+}
