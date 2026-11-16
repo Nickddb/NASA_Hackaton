@@ -3,6 +3,16 @@
 > **NASA Space Apps Challenge 2026 · Challenge 05:** *Create Health Monitoring Software for Astronauts on Space Missions*
 > Built with NASA data · NASA-STD-3001 & OCHMO clinical standards
 
+<div align="center">
+
+[![Frontend - Live Demo](https://img.shields.io/badge/🚀%20Frontend-Live%20Demo%20(Vercel)-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://nasa-hackaton.vercel.app/)
+&nbsp;&nbsp;&nbsp;&nbsp;
+[![Backend - API Docs](https://img.shields.io/badge/⚡%20Backend-Swagger%20Docs%20(Render)-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://nasa-hackaton-butc.onrender.com/docs)
+
+**🌐 Web App:** [https://nasa-hackaton.vercel.app/](https://nasa-hackaton.vercel.app/) &nbsp;•&nbsp; **🛠️ API / Swagger Docs:** [https://nasa-hackaton-butc.onrender.com/docs](https://nasa-hackaton-butc.onrender.com/docs)
+
+</div>
+
 On a Mars mission a message to Earth takes **3 to 22 minutes each way**. When a fever, a solar particle event or a sleepless week hits, the crew cannot wait for a Flight Surgeon. **AstraCare AI** is an offline-first onboard medical officer that watches every crew member against their **own** baseline, explains *why* something is wrong, tells a non-medical astronaut what to do next, and keeps a tamper-evident record for Earth.
 
 It never diagnoses or treats on its own: every action is a NASA-STD-3001 / OCHMO checklist that the Crew Medical Officer or the Earth Flight Surgeon confirms.
