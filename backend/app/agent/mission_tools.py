@@ -286,7 +286,7 @@ class MissionAgentTools:
         self, astronaut_id: str, diagnosis_report: dict[str, Any] | None = None, reason: str = "", force: bool = False
     ) -> dict[str, Any]:
         """Start the psychophysiological countermeasure (Personal Crew Vault: family video, friends audio,
-        nature sounds, interest game, guided breathing) and notify the Behavioral Health console. Runs only for a
+        nature sounds, interest-based games) and notify the Behavioral Health console. Runs only for a
         psychological cause unless force=true (explicit crew request)."""
         category = (diagnosis_report or {}).get("category")
         base = {"tool": "activate_psychological_stimuli", "astronaut_id": astronaut_id}
@@ -452,7 +452,7 @@ def build_mission_tools(agent: MissionAgentTools, trace_log: list[ToolTraceItem]
     @tool
     def activate_psychological_stimuli(astronaut_id: str, reason: str = "", crew_requested: bool = False) -> str:
         """Start the psychological countermeasure for this crew member (Personal Crew Vault: family video, friends
-        audio, nature sounds, interest game, guided breathing) and notify the Behavioral Health console. Runs only when
+        audio, nature sounds, interest-based games) and notify the Behavioral Health console. Runs only when
         the latest diagnosis is PSYCHOLOGICAL, or when the astronaut asks for it (crew_requested=true)."""
         out = guard(
             "activate_psychological_stimuli",

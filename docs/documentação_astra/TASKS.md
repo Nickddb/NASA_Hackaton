@@ -52,3 +52,22 @@
 | **T14** | **Agente Orquestrador LangChain + 6 Tools + Fallback Offline-First** | `Gemini 4 Argon (Medium)` (`gemini-4-argon-medium`) | `Gemini 4 Hydrogen (High)` (`gemini-4-hydrogen-high`) *(só em último caso)* | Backend / IA | Módulos `agent/tools.py` e `orchestrator.py` com 6 tools (`evaluate_clinical_rules`, `predict_ml_risk`, `check_nasa_donki_weather`, `log_nutrition_hydration`, `log_sleep_mood_checkin`, `compile_telemedicine_dossier`), integração Gemini via LangChain e fallback offline determinístico/NLP+ML. | T06, T07, T13 | Done |
 | **T15** | **Modelo Corporal 3D Holográfico Interativo (`BodyModel3D.jsx` em Three.js/R3F)** | `Claude Opus 5.5 (Medium)` (`claude-opus-5-5-medium`) | `Gemini 4 Argon (High)` (`gemini-4-argon-high`) *(só em último caso)* | Frontend / 3D | Componente `BodyModel3D.jsx` com câmera orbital, avatar anatômico holográfico procedural em Three.js e 6 regiões/sistemas clicáveis (Cardiovascular, Nervoso/Sono, Respiratório, Metabólico, Musculoesquelético, Radiação) com cores dinâmicas e disparo de exames manuais. | T03, T06 | Done |
 | **T16** | **Painel Conversacional do Agente & Trace de Decisão em Tempo Real (`AgentChatPanel.jsx`)** | `Claude Sonnet 5.5 (Medium)` (`claude-sonnet-5-5-medium`) | `Gemini 4 Hydrogen (Medium)` (`gemini-4-hydrogen-medium`) | Frontend / IA | Componente `AgentChatPanel.jsx` conectado ao `/api/agent/chat` com *quick-prompts*, atualização em tempo real das barras nutricionais/sono/3D e exibição visual dos Badges de Raciocínio (Tools LangChain acionadas, Anomaly Score do ML e regra `NASA-STD-3001`). | T03, T14, T15 | Done |
+
+---
+
+## Evolução após o MVP (atualizado em 15/11/2026)
+
+| ID | Tarefa | Área | Entregável | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **T17** | **Consolidação do backend nos 5 pilares** | Backend / ML | Baseline adaptativo com quarentena e tendência, inteligência contextual, ciclo de acompanhamento fechado, ML calibrado e explicável, continuidade nave–Terra com cadeia SHA-256 (`backend/app/`). | Done |
+| **T18** | **Gerador estocástico calibrado pela NASA + árvore de diagnóstico cruzado** | Backend / NASA Data | `nasa_calibration.py` (cada limite com fonte), `telemetry_generator.py`, `cross_diagnosis.py` (camadas 0–3: nominal, DONKI, ambiente/fisiologia, psicológico por exclusão). | Done |
+| **T19** | **ML treinado no gerador (26 features, 8 síndromes)** | Backend / ML | Ensemble HistGradientBoosting + RandomForest calibrado + IsolationForest, com dor relatada e sintomas como features; métricas sintéticas declaradas como otimistas. | Done |
+| **T20** | **Frontend sem header, com barra lateral e telas separadas** | Frontend / UI | Telas Crew, Vitals, Diagnosis, Mind, Assistant e Environment; Diagnosis e Assistant na mesma paleta escura do app. | Done |
+| **T21** | **Corpo anatômico 3D em 25 partes + relato de dor** | Frontend / 3D | Malha MakeHuman (CC0) segmentada por pesos dos ossos (`frontend/public/models/anatomy.glb`); a dor por região entra no ML e na árvore de causas. | Done |
+| **T22** | **Agente multi-tool com encadeamento** | Backend / IA | `mission_tools.py`: exame do smartwatch → diagnóstico → alerta central → estímulos psicológicos; agendador em segundo plano; endpoints `/api/agent/*`. | Done |
+| **T23** | **Chat no Groq (Qwen 3.8 27B)** | Backend / IA | `llm_groq.py` com várias rodadas de tool calls, prompt compacto e tratamento do limite de tokens do plano gratuito; Gemini opcional; fallback offline. | Done |
+| **T24** | **NASA DONKI e JPL Horizons ao vivo** | Backend / NASA Data | DONKI SEP/FLR/RBE com chave própria, cache e fallback por feed; Horizons com distância Terra–Marte real definindo o atraso de comunicação. | Done |
+
+**Notas:**
+- **T09:** a aba "Simulator" saiu da navegação; a troca de cenários continua disponível pela API (`/api/scenario/{id}`).
+- **T12 (deploy público):** continua pendente e é requisito eliminatório da submissão.
