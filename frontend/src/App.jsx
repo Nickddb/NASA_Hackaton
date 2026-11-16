@@ -22,6 +22,7 @@ import {
   getSpaceWeather,
   measureCrewMember,
   nextTelemetryReading,
+  pingBackend,
   reportPain,
   resolvePain,
   selectCrewMember,
@@ -31,6 +32,8 @@ import {
   switchEnvironment,
   triggerMeasurement,
 } from "./services/api";
+
+const RECONNECT_INTERVAL_MS = 15000;
 
 const OCHMO_LIBRARY = [
   {
@@ -141,6 +144,16 @@ export default function App() {
   useEffect(() => {
     loadState();
   }, [loadState]);
+
+  // While in simulation, keep probing the backend (a hosted free-tier backend can take ~1 min to wake up) and
+  // switch back to live data as soon as it answers, without asking anyone to reload the page.
+  useEffect(() => {
+    if (connection !== "simulated") return undefined;
+    const id = setInterval(async () => {
+      if (await pingBackend()) loadState();
+    }, RECONNECT_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [connection, loadState]);
 
   const handleSelectAstronaut = async (crewId, targetPage = "vitals") => {
     setBusyAction(true);
