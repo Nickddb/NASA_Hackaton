@@ -1,64 +1,58 @@
-# AstraCare AI — Local Event Pitch Deck Script (`PITCH.md`)
+# AstraCare AI — Local Event Pitch Script (`PITCH.md`)
 
-> **Target Format:** 4-minute timed pitch + 2 minutes Q&A (6 slides, max 3 bullets of <= 8 words per slide, 1 key number per slide). Slides in English; spoken delivery adaptable to local judges' language.
+> **Format:** 4-minute pitch + 2 minutes Q&A · 6 slides · at most 3 bullets of ≤ 8 words per slide · one key number per slide. Slides in English; spoken delivery can follow the judges' language.
 
 ---
 
 ## Slide 1 · Hook · 25 s
-- **Title:** Twenty Minutes Between Symptoms and Earth
-- **Image:** Screenshot of AstraCare AI Critical Emergency banner showing Mars 12-min latency countdown (no NASA logos).
-- **Say:** "On a Mars mission, a medical message takes up to 20 minutes each way. When fever or solar radiation hits, an astronaut without a doctor onboard has to act in seconds, not forty minutes."
+- **Title:** Eleven Minutes Between Symptoms and Earth
+- **Image:** Diagnosis → Earth link tab showing the live JPL Horizons delay (no NASA logos).
+- **Say:** "Today, a message from a Mars-bound crew takes about eleven minutes to reach Earth, and eleven more to come back. When a fever, a solar storm or a sleepless week hits, the astronaut on board has to decide alone."
 
 ## Slide 2 · Challenge and Solution · 36 s
 - **Title:** AstraCare AI
 - **Bullets:**
-  - Challenge 05: Astronaut Health Monitoring Software
-  - Autonomous offline-first onboard medical officer
-  - Built for non-medical spaceflight crews
-- **Say:** "We built AstraCare AI for Challenge 05: an autonomous, offline-first medical officer inside a single mission cockpit. Instead of forcing astronauts to read raw spreadsheets, it combines a wearable smartwatch, an interactive 3D body scanner, and a conversational AI agent."
+  - Challenge 05: astronaut health monitoring
+  - Onboard medical officer, offline-first
+  - Built for non-medical crews
+- **Say:** "For Challenge 05 we built AstraCare AI: an onboard medical officer that compares each astronaut with their own baseline, explains why something is wrong and tells the crew what to do next, even with no link to Earth."
 
 ## Slide 3 · Demo · 96 s
-- **Title:** Log a Meal, Triage a Crisis, Downlink Earth
-- **Image:** Screen recording (or side-by-side screenshots: Natural-language chat nutrition update + 3D Critical Solar Storm / Systemic Infection triage).
-- **Say:** "Watch what happens live. First, I type 'I ate 2 apples and drank 500ml of water'—the LangChain tool updates calories, hydration, and blood glucose instantly while enforcing NASA sodium and iron caps. Now I trigger the Systemic Infection scenario: the 3D body turns red on heart and lungs, our IsolationForest anomaly score jumps to 99%, and the Critical Protocol opens with step-by-step CHeCS isolation instructions. On a lunar or Martian surface, it even blocks active cuff scans until the astronaut checks off the regolith dust decontamination list. Finally, one click compiles a Flight Surgeon Telemedicine Dossier ready for asynchronous transmission."
+- **Title:** From a Sore Chest to a Flight Surgeon Package
+- **Image:** Live app, or screenshots: Vitals with the 3D body and pain map → Diagnosis cause tree → Assistant with the executed tools.
+- **Say:** "Here is Liam, our deep-space habitat specialist. His heart rate and temperature are outside *his* personal range, not just a population table. He taps his chest on the 3D body and reports pain, and the machine-learning model takes that into account. In Diagnosis, the cause tree first checks live NASA DONKI space weather. No solar event explains this, so it points to a physiological cause, an infection. Then I ask the assistant to analyse Liam and warn Earth if it is serious. It runs the smartwatch exam, the diagnosis and the central alert by itself, and the package waits for the communication window computed from JPL Horizons."
 
 ## Slide 4 · NASA Data · 36 s
-- **Title:** Built on NASA-STD-3001, OCHMO & DONKI
+- **Title:** Live NASA Data, NASA Rules
 - **Bullets:**
-  - NASA HRP 5 Hazards & OCHMO Briefs
-  - Live NASA DONKI solar flare/proton feed
-  - Three-layer rules, scikit-learn ML, and LangChain
-- **Say:** "Safety comes first, so AI never guesses alone. Layer 1 runs deterministic NASA-STD-3001 and OCHMO rules for circadian desynchrony, EVA shoulder injuries, and PFO decompression risks; Layer 2 runs local IsolationForest and RandomForest models to explain which vitals drove the alert; and Layer 3 correlates live NASA DONKI space weather with a local offline fallback."
+  - DONKI space weather in every diagnosis
+  - JPL Horizons sets the Earth delay
+  - NASA-STD-3001, OCHMO and OSDR calibration
+- **Say:** "We use NASA data live, not as decoration. DONKI events decide whether a symptom is space weather before we call it physical or psychological. JPL Horizons gives the real light-time to Earth. Every threshold comes from NASA-STD-3001, OCHMO briefs or OSDR standard measures, with its source written next to it in the code."
 
 ## Slide 5 · Impact · 36 s
-- **Title:** Safer Autonomous Crews Beyond Low Earth Orbit
+- **Title:** Safer Crews Beyond Low Earth Orbit
 - **Bullets:**
-  - Empowers any crewmember with plain instructions
-  - Adapts across 0g, orbital, and surface bases
-  - Next: BLE smartwatch and CHeCS hardware bridge
-- **Say:** "Any crewmember on Artemis or Mars transit gains clear 'How to Measure' and 'Why It Matters' guidance on day one. Next, we will connect real Bluetooth Low Energy wearables and ISS i-STAT diagnostic feeds directly into our FastAPI edge engine."
+  - Personal baselines, not population averages
+  - Psychology only after ruling out physics
+  - Next: real wearables and CHeCS data
+- **Say:** "Any crew member gets plain-language guidance on day one. Psychological support is offered only after physical and environmental causes are ruled out, so a radiation problem is never mistaken for stress. Next, we connect real Bluetooth wearables and train on NASA standard-measures data instead of our calibrated generator."
 
 ## Slide 6 · Close · 10 s
 - **Title:** AstraCare AI
 - **Bullets:**
-  - `[Insert Public URL]`
-  - Built with NASA Data
-  - `[Insert Team Name & Members]`
-- **Say:** "AstraCare AI brings autonomous flight-surgeon intelligence to every astronaut's wrist and mission console—thank you."
+  - `[Insert public URL]`
+  - Built with NASA data
+  - `[Insert team name & members]`
+- **Say:** "AstraCare AI: a flight surgeon's reasoning on every astronaut's wrist. Thank you."
 
 ---
 
-## Judge Q&A Prep (6 Expected Questions)
+## Judge Q&A prep
 
-1. **Impact — "Who would actually use this, and how many of them?"**  
-   Any non-medical astronaut crewmember on ISS, Lunar Gateway, Artemis surface habitats, or future Mars transit vehicles—and analog mission crews (e.g., HERA/CHAPEA) today. Because every crew rotation includes engineers and scientists without medical degrees, autonomous triage reduces Flight Surgeon dependency across every human spaceflight mission.
-2. **Creativity — "What does this do that existing dashboards do not?"**  
-   Existing tools display isolated vital numbers; AstraCare AI fuses multi-variable `NASA-STD-3001` clinical rules with `IsolationForest` anomaly attribution, a 3D clickable body scanner, and a natural-language LangChain agent that logs meals, enforces spaceflight Na/Fe limits, and auto-generates MORD telemedicine bundles.
-3. **Validity — "How do you know the clinical numbers and alerts are right?"**  
-   Every hard threshold is anchored in NASA OCHMO Technical Briefs (`MTB-006` Shoulder, `MTB-009` Circadian, `MTB-011` PFO, `TB-043` LHS, `TB-044` MORD) and `NASA-STD-3001`, while our `scikit-learn` models are trained on synthetic physiological cohorts calibrated to those envelopes (explicitly scoped as simulated telemetry rather than clinical patient records).
-4. **Relevance — "The challenge asked for real space environments and non-medical guidance; where is that?"**  
-   AstraCare dynamically calibrates across 0g Transit, Orbital Station, and Planetary Surface—including a mandatory regolith decontamination gate—and embeds plain-English *"How to Measure"* and *"Why It Matters"* guides on every biomarker card and 3D system node.
-5. **Future — "What would you build next with one more week?"**  
-   We would integrate WebBluetooth streaming from a physical PPG/ECG smartwatch, add offline local audio/vision guidance for portable ultrasound positioning (`Ultrasound 2`), and store longitudinal trend logs in an encrypted onboard SQLite EMR.
-6. **AI Split — "What did the AI do and what did you do?"**  
-   Our team engineered the full React/Three.js cockpit, FastAPI architecture, and NASA clinical rule mappings, while AI assistants accelerated code scaffolding and AstraCare uses `scikit-learn` + `LangChain` internally for anomaly scoring and natural-language logging gated by deterministic safety rules.
+1. **"Who would use this?"** Non-medical crew members on the ISS, the Lunar Gateway, Artemis surface habitats and Mars transit vehicles, plus analogue crews (HERA, CHAPEA) today. Most crew members are engineers or scientists, and Earth is minutes away.
+2. **"What is new compared with a vitals dashboard?"** Personal baselines with drift quarantine, a cause tree that checks live space weather first, explainable and calibrated ML that includes crew-reported pain, a closed follow-up loop, and an AI agent that chains exam → diagnosis → alert → countermeasure.
+3. **"How do you know the numbers are right?"** Thresholds come from NASA-STD-3001, OCHMO briefs, HRP and OSDR, and each value in `nasa_calibration.py` cites its source and whether we verified it in the document. The ML is trained on a generator calibrated to those ranges. We say openly that its ~99 % synthetic accuracy is not clinical performance.
+4. **"What if the AI is wrong?"** It cannot act alone. Diagnosis and treatment are blocked by design, every action is a protocol checklist that a human confirms, and escalation to Earth is a human decision. Offline or without a key, a deterministic pipeline gives the same structured answer.
+5. **"Why an LLM at all?"** For natural language: "check Kenji every 30 minutes" or "I ate two apples" become tool calls. The medical reasoning stays in the deterministic rules and the ML. The LLM only chooses and chains tools, and reports what they returned.
+6. **"What did AI do and what did you do?"** We designed the architecture, the clinical logic and the NASA data mapping. AI coding assistants sped up implementation and documentation. Inside the app, scikit-learn does the scoring and Qwen on Groq orchestrates the tools.
